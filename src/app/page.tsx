@@ -1,5 +1,13 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Estimator } from "@/components/estimator";
+
+// Illustration d'en-tête, servie par Scryfall (art crop). L'artiste est crédité sous l'image.
+const HERO_ART = {
+  url: "https://cards.scryfall.io/art_crop/front/8/d/8d74a469-c71d-4773-99d3-5456b31df424.jpg?1783937526",
+  card: "Emrakul, the Promised End",
+  artist: "Jaime Jones",
+};
 
 const FEATURES = [
   {
@@ -34,8 +42,27 @@ const FEATURES = [
 export default function Home() {
   return (
     <main className="flex-1">
-      <section className="border-b border-line bg-[radial-gradient(ellipse_at_top,var(--accent-soft),transparent_70%)]">
-        <div className="mx-auto max-w-6xl px-4 pb-14 pt-14 sm:px-6 sm:pb-20 sm:pt-20">
+      <section className="relative overflow-hidden border-b border-line">
+        {/* Illustration de fond (Scryfall), estompée vers la gauche pour garder le texte lisible */}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <Image
+            src={HERO_ART.url}
+            alt=""
+            fill
+            preload
+            unoptimized
+            sizes="100vw"
+            className="object-cover object-[60%_35%] opacity-30 [mask-image:linear-gradient(to_right,transparent_5%,black_60%)] dark:opacity-50"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/75 to-background/10" />
+          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background to-transparent" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,var(--accent-soft),transparent_60%)] opacity-70" />
+        </div>
+        <p className="absolute bottom-2 right-4 z-10 text-[10px] text-muted/80 sm:right-6">
+          Illustration : {HERO_ART.card}, par {HERO_ART.artist}
+        </p>
+
+        <div className="relative mx-auto max-w-6xl px-4 pb-14 pt-14 sm:px-6 sm:pb-20 sm:pt-20">
           <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted">
             <span className="size-1.5 rounded-full bg-ok" />
             Format Modern · prix Cardmarket
