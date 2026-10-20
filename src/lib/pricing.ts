@@ -158,3 +158,10 @@ export function buildEstimate(
 export function formatEur(cents: number): string {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(cents / 100);
 }
+
+/** Saisie en euros ("3,50", "3.5", "12 €") -> centimes ; null si vide ou invalide. */
+export function parseEur(raw: string): number | null {
+  const cleaned = raw.replace(/[€\s]/g, "").replace(",", ".");
+  if (cleaned === "" || !/^\d+(\.\d{0,2})?$/.test(cleaned)) return null;
+  return Math.round(Number(cleaned) * 100);
+}

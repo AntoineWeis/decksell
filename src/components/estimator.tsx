@@ -1,27 +1,39 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { estimateAction, type EstimateState } from "@/app/actions";
 import { normalizeName } from "@/lib/decklist";
-import { buildEstimate, formatEur, type Estimate, type ManualPrices, type PricedLine } from "@/lib/pricing";
+import { buildEstimate, formatEur, parseEur, type Estimate, type ManualPrices, type PricedLine } from "@/lib/pricing";
 import { SAMPLE_DECK } from "@/lib/sample-deck";
 import { CardList } from "./card-list";
+import { SellPanel } from "./sell-panel";
 
-/** "3,50" ou "3.5" -> 350 centimes ; null si vide ou invalide. */
-function parseEurInput(raw: string): number | null {
-  const v = Number(raw.replace(",", ".").replace(/[€\s]/g, ""));
-  return raw.trim() !== "" && Number.isFinite(v) && v >= 0 ? Math.round(v * 100) : null;
-}
+const DRAFT_KEY = "decksell:draft";
 
 export function Estimator() {
   const [text, setText] = useState("");
   const [manualInputs, setManualInputs] = useState<Record<string, string>>({});
   const [state, formAction, pending] = useActionState<EstimateState, FormData>(estimateAction, { status: "idle" });
 
+  // Brouillon gardé dans l'onglet : la liste survit à un passage par la page de connexion.
+  useEffect(() => {
+    try {
+      const draft = sessionStorage.getItem(DRAFT_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture unique au chargement
+      if (draft) setText(draft);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      if (text) sessionStorage.setItem(DRAFT_KEY, text);
+      else sessionStorage.removeItem(DRAFT_KEY);
+    } catch {}
+  }, [text]);
+
   const manual = useMemo(() => {
     const out: ManualPrices = {};
     for (const [key, raw] of Object.entries(manualInputs)) {
-      const cents = parseEurInput(raw);
+      const cents = parseEur(raw);
       if (cents != null) out[key] = cents;
     }
     return out;
@@ -34,7 +46,7 @@ export function Estimator() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
-      <form action={formAction} className="rounded-2xl border border-line bg-surface p-4 sm:p-5 lg:sticky lg:top-6">
+      <form action={formAction} className="rounded-2xl border border-line bg-surface p-4 sm:p-5 lg:sticky lg:top-20">
         <div className="mb-2 flex items-baseline justify-between gap-2">
           <label htmlFor="decklist" className="font-semibold">
             Ta decklist
@@ -79,6 +91,7 @@ export function Estimator() {
         {state.status === "ok" && estimate && (
           <>
             <Summary estimate={estimate} pricesAsOf={state.pricesAsOf} />
+            <SellPanel decklist={text} estimate={estimate} manual={manual} />
             <ParseNotes deck={state.deck} />
             {!estimate.complete || Object.keys(manual).length > 0 ? (
               <MissingPrices
@@ -110,6 +123,7 @@ function EmptyState() {
     ["Colle ta liste", "Exporte-la depuis MTGO, Arena, Moxfield ou MTGGoldfish."],
     ["Obtiens le prix", "Chaque carte au prix de son impression la moins chère sur Cardmarket."],
     ["Complète si besoin", "Une carte sans prix ? Indique le tien, le total se met à jour."],
+    ["Mets-le en vente", "Fixe ton prix, publie l'annonce et suis-la depuis ton espace membre."],
   ];
   return (
     <div className="rounded-2xl border border-dashed border-line px-5 py-8 sm:px-8">

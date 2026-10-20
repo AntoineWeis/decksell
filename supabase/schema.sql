@@ -121,3 +121,116 @@ $$;
 
 -- Réservée au serveur (clé secrète), comme la table cards.
 revoke execute on function public.lookup_prices(text[]) from public, anon, authenticated;
+
+-- 7. Membres (phase 2 : comptes, profils, annonces)
+
+-- Profil public d'un membre, créé automatiquement à l'inscription.
+create table if not exists public.profiles (
+  id            uuid primary key references auth.users (id) on delete cascade,
+  display_name  text not null check (char_length(display_name) between 2 and 40),
+  avatar_url    text,
+  moxfield_url  text check (moxfield_url ~ '^https://(www\.)?moxfield\.com/'),
+  archidekt_url text check (archidekt_url ~ '^https://(www\.)?archidekt\.com/'),
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql security definer set search_path = ''
+as $$
+begin
+  insert into public.profiles (id, display_name)
+  values (
+    new.id,
+    coalesce(
+      nullif(left(trim(new.raw_user_meta_data ->> 'display_name'), 40), ''),
+      split_part(new.email, '@', 1)
+    )
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Decks mis en vente par les membres.
+create table if not exists public.listings (
+  id                uuid primary key default gen_random_uuid(),
+  seller_id         uuid not null references public.profiles (id) on delete cascade,
+  title             text not null check (char_length(title) between 3 and 80),
+  decklist          text not null check (char_length(decklist) <= 20000),
+  card_count        integer not null check (card_count > 0),
+  estimated_cents   integer not null check (estimated_cents >= 0),
+  estimate_complete boolean not null,
+  asking_cents      integer not null check (asking_cents > 0),
+  condition         text not null check (condition in ('near_mint', 'excellent', 'good', 'played')),
+  description       text check (char_length(description) <= 2000),
+  status            text not null default 'active' check (status in ('active', 'reserved', 'sold', 'withdrawn')),
+  sold_cents        integer check (sold_cents > 0),
+  sold_at           timestamptz,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now()
+);
+
+create index if not exists listings_seller_idx on public.listings (seller_id, created_at desc);
+
+alter table public.profiles enable row level security;
+alter table public.listings enable row level security;
+
+-- Chaque membre ne voit et ne modifie que son profil et ses annonces.
+-- (Les annonces publiques viendront avec la place de marché.)
+drop policy if exists "profil : lecture par son propriétaire" on public.profiles;
+create policy "profil : lecture par son propriétaire" on public.profiles
+  for select to authenticated using ((select auth.uid()) = id);
+
+drop policy if exists "profil : modification par son propriétaire" on public.profiles;
+create policy "profil : modification par son propriétaire" on public.profiles
+  for update to authenticated
+  using ((select auth.uid()) = id) with check ((select auth.uid()) = id);
+
+drop policy if exists "annonces : lecture par le vendeur" on public.listings;
+create policy "annonces : lecture par le vendeur" on public.listings
+  for select to authenticated using ((select auth.uid()) = seller_id);
+
+drop policy if exists "annonces : création par le vendeur" on public.listings;
+create policy "annonces : création par le vendeur" on public.listings
+  for insert to authenticated with check ((select auth.uid()) = seller_id);
+
+drop policy if exists "annonces : modification par le vendeur" on public.listings;
+create policy "annonces : modification par le vendeur" on public.listings
+  for update to authenticated
+  using ((select auth.uid()) = seller_id) with check ((select auth.uid()) = seller_id);
+
+drop policy if exists "annonces : suppression par le vendeur" on public.listings;
+create policy "annonces : suppression par le vendeur" on public.listings
+  for delete to authenticated using ((select auth.uid()) = seller_id);
+
+-- Photos de profil : lisibles par tous, chaque membre écrit seulement dans son dossier <id>/.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 1048576, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do nothing;
+
+drop policy if exists "avatars : envoi dans son dossier" on storage.objects;
+create policy "avatars : envoi dans son dossier" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+drop policy if exists "avatars : remplacement dans son dossier" on storage.objects;
+create policy "avatars : remplacement dans son dossier" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+drop policy if exists "avatars : suppression dans son dossier" on storage.objects;
+create policy "avatars : suppression dans son dossier" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+drop policy if exists "avatars : lecture de son dossier" on storage.objects;
+create policy "avatars : lecture de son dossier" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);

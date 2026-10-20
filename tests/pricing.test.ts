@@ -105,3 +105,15 @@ test("homonymes de première face : le nom complet exact l'emporte", () => {
 test("format des montants en euros", () => {
   assert.equal(formatEur(123456).replace(/\s/g, " "), "1 234,56 €");
 });
+
+test("saisie de prix en euros", async () => {
+  const { parseEur } = await import("../src/lib/pricing.ts");
+  assert.equal(parseEur("3,50"), 350);
+  assert.equal(parseEur("3.5"), 350);
+  assert.equal(parseEur(" 12 € "), 1200);
+  assert.equal(parseEur("0"), 0);
+  assert.equal(parseEur(""), null);
+  assert.equal(parseEur("-2"), null);
+  assert.equal(parseEur("abc"), null);
+  assert.equal(parseEur("1,234"), null);
+});
