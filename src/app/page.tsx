@@ -1,13 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Estimator } from "@/components/estimator";
-
-// Illustration d'en-tête, servie par Scryfall (art crop). L'artiste est crédité sous l'image.
-const HERO_ART = {
-  url: "https://cards.scryfall.io/art_crop/front/8/d/8d74a469-c71d-4773-99d3-5456b31df424.jpg?1783937526",
-  card: "Emrakul, the Promised End",
-  artist: "Jaime Jones",
-};
+// Ville néon de Kamigawa, 2000 × 758, © Wizards of the Coast.
+import heroArt from "../../public/hero-kamigawa.webp";
 
 const FEATURES = [
   {
@@ -43,50 +38,53 @@ export default function Home() {
   return (
     <main className="flex-1">
       <section className="relative overflow-hidden border-b border-line">
-        {/* Illustration de fond (Scryfall), estompée vers la gauche pour garder le texte lisible */}
+        {/* Illustration en fond, couverte d'un dégradé à gauche pour que le texte reste lisible */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <Image
-            src={HERO_ART.url}
+            src={heroArt}
             alt=""
             fill
             preload
-            unoptimized
+            placeholder="blur"
             sizes="100vw"
-            className="object-cover object-[60%_35%] opacity-30 [mask-image:linear-gradient(to_right,transparent_5%,black_60%)] dark:opacity-50"
+            className="object-cover object-[45%_40%]"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/75 to-background/10" />
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background to-transparent" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,var(--accent-soft),transparent_60%)] opacity-70" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-background/30 sm:from-background/90 sm:via-background/65 sm:to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/70 to-transparent" />
         </div>
-        <p className="absolute bottom-2 right-4 z-10 text-[10px] text-muted/80 sm:right-6">
-          Illustration : {HERO_ART.card}, par {HERO_ART.artist}
+        <p className="absolute right-4 top-3 z-10 text-[10px] text-white/70 [text-shadow:0_1px_2px_rgba(0,0,0,0.6)] sm:right-6">
+          Kamigawa · © Wizards of the Coast
         </p>
 
-        <div className="relative mx-auto max-w-6xl px-4 pb-14 pt-14 sm:px-6 sm:pb-20 sm:pt-20">
-          <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted">
-            <span className="size-1.5 rounded-full bg-ok" />
-            Format Modern · prix Cardmarket
-          </p>
-          <h1 className="mt-5 max-w-3xl text-4xl font-bold tracking-tight sm:text-6xl">
-            Combien vaut ton deck ? <span className="text-accent">Vends-le au juste prix.</span>
-          </h1>
-          <p className="mt-5 max-w-2xl text-lg text-muted">
-            decksell calcule la valeur de ta decklist Magic carte par carte, d&apos;après les prix Cardmarket. Ensuite,
-            mets ton deck en vente et suis tes ventes au même endroit.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href="#estimer"
-              className="inline-flex h-11 items-center rounded-xl bg-accent px-5 font-semibold text-on-accent transition hover:brightness-110"
-            >
-              Estimer mon deck
-            </a>
-            <Link
-              href="/inscription"
-              className="inline-flex h-11 items-center rounded-xl border border-line bg-surface px-5 font-semibold transition hover:bg-sunken"
-            >
-              Créer un compte vendeur
-            </Link>
+        <div className="relative mx-auto max-w-6xl px-4 pb-14 pt-14 sm:px-6 sm:pb-20 sm:pt-24">
+          <div className="max-w-2xl">
+            <div>
+              <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted">
+                <span className="size-1.5 rounded-full bg-ok" />
+                Format Modern · prix Cardmarket
+              </p>
+              <h1 className="mt-5 max-w-3xl text-4xl font-bold tracking-tight sm:text-6xl">
+                Combien vaut ton deck ? <span className="text-accent">Vends-le au juste prix.</span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-lg text-muted">
+                decksell calcule la valeur de ta decklist Magic carte par carte, d&apos;après les prix Cardmarket.
+                Ensuite, mets ton deck en vente et suis tes ventes au même endroit.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <a
+                  href="#estimer"
+                  className="inline-flex h-11 items-center rounded-xl bg-accent px-5 font-semibold text-on-accent transition hover:brightness-110"
+                >
+                  Estimer mon deck
+                </a>
+                <Link
+                  href="/inscription"
+                  className="inline-flex h-11 items-center rounded-xl border border-line bg-surface px-5 font-semibold transition hover:bg-sunken"
+                >
+                  Créer un compte vendeur
+                </Link>
+              </div>
+            </div>
           </div>
 
           <ul className="mt-14 grid gap-4 sm:grid-cols-3">
