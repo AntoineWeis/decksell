@@ -87,3 +87,37 @@ create policy "lecture publique price_imports" on public.price_imports
 -- Aucune politique sur cards : la table n'est PAS lisible avec la clé publishable.
 -- Elle n'est lue que côté serveur (clé secrète), pour calculer les estimations.
 -- Aucune politique d'écriture nulle part : seules les clés secrètes écrivent.
+
+-- 6. Recherche des prix pour une estimation (ajouté pour le calcul du prix)
+-- On cherche par nom de première face en minuscules : "Fable of the Mirror-Breaker"
+-- trouve aussi "Fable of the Mirror-Breaker // Reflection of Kiki-Jiki".
+create index if not exists cards_front_name_idx
+  on public.cards (lower(split_part(name, ' // ', 1)));
+
+-- Une ligne par carte (oracle_id) : l'impression la moins chère en non-foil
+-- (null si aucune n'a de prix) et le prix foil le plus bas, pour info.
+create or replace function public.lookup_prices(front_names text[])
+returns table (
+  oracle_id          uuid,
+  name               text,
+  print_id           uuid,
+  set_code           text,
+  collector_number   text,
+  image_url          text,
+  artist             text,
+  price_eur          numeric,
+  min_price_eur_foil numeric
+)
+language sql stable security invoker set search_path = ''
+as $$
+  select distinct on (c.oracle_id)
+    c.oracle_id, c.name, c.id, c.set_code, c.collector_number, c.image_url, c.artist,
+    c.price_eur,
+    min(c.price_eur_foil) over (partition by c.oracle_id)
+  from public.cards c
+  where lower(split_part(c.name, ' // ', 1)) = any(front_names)
+  order by c.oracle_id, c.price_eur asc nulls last, c.released_at desc nulls last;
+$$;
+
+-- Réservée au serveur (clé secrète), comme la table cards.
+revoke execute on function public.lookup_prices(text[]) from public, anon, authenticated;
