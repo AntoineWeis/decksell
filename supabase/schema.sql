@@ -234,3 +234,15 @@ drop policy if exists "avatars : lecture de son dossier" on storage.objects;
 create policy "avatars : lecture de son dossier" on storage.objects
   for select to authenticated
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+-- 8. Place de marché : langue des cartes et carte phare des annonces
+alter table public.listings
+  add column if not exists french_percent smallint check (french_percent between 0 and 100),
+  add column if not exists cover_card_name text,
+  add column if not exists cover_image_url text;
+
+-- Index public : annonces en vente ou réservées, les plus récentes d'abord.
+create index if not exists listings_public_idx on public.listings (status, created_at desc);
+
+-- La lecture publique passe par le serveur (clé secrète) qui ne renvoie que les colonnes
+-- publiques des annonces « active » et « reserved » : aucune règle RLS n'est ouverte ici.

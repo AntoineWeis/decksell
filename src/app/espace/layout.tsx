@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { EspaceTabs } from "@/components/espace-tabs";
 import { signOut } from "@/app/auth-actions";
 
@@ -15,7 +16,10 @@ export default function EspaceLayout({ children }: LayoutProps<"/espace">) {
           </button>
         </form>
       </div>
-      <EspaceTabs />
+      {/* Les onglets lisent l'adresse : à part, pour les pages à adresse variable. */}
+      <Suspense fallback={<div className="h-[42px] border-b border-line" />}>
+        <EspaceTabs />
+      </Suspense>
       <div className="pt-6">{children}</div>
     </main>
   );

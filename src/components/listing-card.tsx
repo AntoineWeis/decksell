@@ -1,10 +1,13 @@
 "use client";
 
 import { submitWithoutReset } from "@/lib/form";
+import Image from "next/image";
+import Link from "next/link";
 import { useActionState, useTransition } from "react";
 import { deleteListing, updateListing, type FormState } from "@/app/espace/actions";
 import { formatEur } from "@/lib/pricing";
-import { CONDITIONS, STATUSES, type Listing, type ListingStatus } from "@/lib/listings";
+import { CONDITIONS, PUBLIC_STATUSES, STATUSES, artCrop, type Listing, type ListingStatus } from "@/lib/listings";
+import { LanguageBar } from "./language-bar";
 
 const STATUS_STYLE: Record<ListingStatus, string> = {
   active: "bg-ok-soft text-ok",
@@ -26,9 +29,15 @@ export function ListingCard({ listing: l }: { listing: Listing }) {
   const diff = l.estimated_cents > 0 ? Math.round(((l.asking_cents - l.estimated_cents) / l.estimated_cents) * 100) : null;
 
   return (
-    <li className={`rounded-2xl border border-line bg-surface p-4 sm:p-5 ${deleting ? "opacity-50" : ""}`}>
+    <li className={`rounded-xl border border-line bg-surface p-4 sm:p-5 ${deleting ? "opacity-50" : ""}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="relative hidden h-14 w-20 shrink-0 overflow-hidden rounded-md bg-sunken sm:block">
+            {artCrop(l.cover_image_url) && (
+              <Image src={artCrop(l.cover_image_url)!} alt="" fill sizes="80px" unoptimized className="object-cover" />
+            )}
+          </div>
+          <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate font-semibold">{l.title}</h3>
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[l.status]}`}>
@@ -39,6 +48,8 @@ export function ListingCard({ listing: l }: { listing: Listing }) {
             {l.card_count} cartes · {CONDITIONS[l.condition]} · publiée le {date(l.created_at)}
             {l.status === "sold" && l.sold_at && ` · vendue le ${date(l.sold_at)}`}
           </p>
+          <LanguageBar frenchPercent={l.french_percent} className="mt-2 max-w-60" />
+          </div>
         </div>
         <div className="text-right">
           <p className="text-lg font-bold tabular-nums">
@@ -72,6 +83,18 @@ export function ListingCard({ listing: l }: { listing: Listing }) {
             className={`${fieldClass} w-28 tabular-nums`}
           />
         </label>
+        <label className="text-xs text-muted">
+          <span className="mb-1 block">Français (%)</span>
+          <input
+            name="french_percent"
+            type="number"
+            min={0}
+            max={100}
+            inputMode="numeric"
+            defaultValue={l.french_percent ?? ""}
+            className={`${fieldClass} w-20 tabular-nums`}
+          />
+        </label>
         <button
           type="submit"
           disabled={saving}
@@ -96,13 +119,16 @@ export function ListingCard({ listing: l }: { listing: Listing }) {
         </button>
       </form>
 
-      <details className="mt-3 text-sm">
-        <summary className="cursor-pointer text-muted hover:text-foreground">Voir la liste et la description</summary>
-        {l.description && <p className="mt-2 whitespace-pre-line">{l.description}</p>}
-        <pre className="mt-2 max-h-72 overflow-auto rounded-xl bg-sunken p-3 font-mono text-xs leading-5">
-          {l.decklist}
-        </pre>
-      </details>
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+        <Link href={`/espace/annonces/${l.id}`} className="font-medium text-link hover:underline">
+          Voir le deck en détail
+        </Link>
+        {(PUBLIC_STATUSES as readonly string[]).includes(l.status) && (
+          <Link href={`/decks/${l.id}`} className="font-medium text-link hover:underline">
+            Voir l&apos;annonce publique
+          </Link>
+        )}
+      </div>
     </li>
   );
 }

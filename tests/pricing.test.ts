@@ -118,3 +118,14 @@ test("saisie de prix en euros", async () => {
   assert.equal(parseEur("abc"), null);
   assert.equal(parseEur("1,234"), null);
 });
+
+test("pourcentage de cartes en français", async () => {
+  const { parsePercent } = await import("../src/lib/listings.ts");
+  assert.equal(parsePercent("70"), 70);
+  assert.equal(parsePercent(" 100 % "), 100);
+  assert.equal(parsePercent("0"), 0);
+  assert.equal(parsePercent(""), null);
+  assert.equal(parsePercent("101"), null);
+  assert.equal(parsePercent("-5"), null);
+  assert.equal(parsePercent("12,5"), null);
+});

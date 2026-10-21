@@ -13,7 +13,8 @@ export function EspaceTabs() {
   return (
     <nav className="flex gap-1 border-b border-line">
       {TABS.map((t) => {
-        const active = pathname === t.href;
+        // « Mes annonces » reste actif sur la vue détaillée d'une annonce.
+        const active = t.href === "/espace" ? pathname === "/espace" || pathname.startsWith("/espace/annonces") : pathname === t.href;
         return (
           <Link
             key={t.href}

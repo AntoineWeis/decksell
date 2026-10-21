@@ -18,7 +18,18 @@ function byValue(a: PricedLine, b: PricedLine) {
 }
 
 /** Tableau de cartes façon page de deck : quantité, carte, prix, trié par valeur. */
-export function CardList({ title, lines, totalCents }: { title: string; lines: PricedLine[]; totalCents: number }) {
+export function CardList({
+  title,
+  lines,
+  totalCents,
+  previewSide = "left",
+}: {
+  title: string;
+  lines: PricedLine[];
+  totalCents: number;
+  /** Côté où s'ouvre l'aperçu agrandi sur grand écran (là où il y a de la place). */
+  previewSide?: "left" | "right";
+}) {
   if (lines.length === 0) return null;
   const count = lines.reduce((n, l) => n + l.quantity, 0);
   const sorted = [...lines].sort(byValue);
@@ -39,14 +50,19 @@ export function CardList({ title, lines, totalCents }: { title: string; lines: P
       <ul className="divide-y divide-line">
         {sorted.map((l, i) => (
           // Les lignes apparaissent de la moins chère à la plus chère.
-          <CardRow key={`${l.board}-${l.name}`} line={l} delayMs={Math.min((sorted.length - 1 - i) * 20, 500)} />
+          <CardRow
+            key={`${l.board}-${l.name}`}
+            line={l}
+            delayMs={Math.min((sorted.length - 1 - i) * 20, 500)}
+            previewSide={previewSide}
+          />
         ))}
       </ul>
     </section>
   );
 }
 
-function CardRow({ line, delayMs }: { line: PricedLine; delayMs: number }) {
+function CardRow({ line, delayMs, previewSide }: { line: PricedLine; delayMs: number; previewSide: "left" | "right" }) {
   const { card } = line;
   const missing = line.unitCents == null;
   const rarity = card?.rarity ?? null;
@@ -61,9 +77,11 @@ function CardRow({ line, delayMs }: { line: PricedLine; delayMs: number }) {
         {card?.imageUrl && <Image src={card.imageUrl} alt="" fill sizes="30px" unoptimized className="object-cover" />}
       </div>
 
-      {/* Aperçu agrandi au survol : à gauche, par-dessus la colonne de la decklist (écrans larges). */}
+      {/* Aperçu agrandi au survol (écrans larges), ouvert du côté où il y a de la place. */}
       {card?.imageUrl && (
-        <div className="pointer-events-none absolute top-1/2 z-20 hidden w-[244px] -translate-y-1/2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 sm:left-1/2 sm:block lg:left-auto lg:right-full lg:mr-4">
+        <div className={`pointer-events-none absolute top-1/2 z-20 hidden w-[244px] -translate-y-1/2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 sm:left-1/2 sm:block ${
+            previewSide === "left" ? "lg:left-auto lg:right-full lg:mr-4" : "lg:left-full lg:ml-4"
+          }`}>
           <Image src={card.imageUrl} alt={card.name} width={244} height={340} unoptimized className="rounded-[12px] shadow-2xl" />
         </div>
       )}

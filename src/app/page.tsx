@@ -184,16 +184,14 @@ export default function Home() {
             </Link>
           </div>
           <div className="rounded-xl border border-line bg-background p-6">
-            <div className="flex items-center gap-3">
-              <h2 className="display text-2xl">Tu cherches un deck</h2>
-              <span className="rounded-md bg-brand-soft px-2 py-0.5 text-xs font-semibold text-link">En préparation</span>
-            </div>
+            <h2 className="display text-2xl">Tu cherches un deck</h2>
             <ul className="mt-4 space-y-2 text-sm leading-relaxed text-muted">
-              <li>Estime déjà n&apos;importe quelle liste pour savoir ce qu&apos;un prix demandé représente.</li>
-              <li>La page des decks en vente arrive : tu pourras y parcourir les annonces des joueurs.</li>
+              <li>Parcours les decks complets mis en vente par les joueurs.</li>
+              <li>Compare le prix demandé à la valeur du jour, carte par carte.</li>
+              <li>Vois d&apos;un coup d&apos;œil la part de cartes en français et en anglais.</li>
             </ul>
-            <Link href="/estimer" className="mt-6 inline-flex font-semibold text-link hover:underline">
-              Estimer une liste →
+            <Link href="/decks" className="mt-6 inline-flex font-semibold text-link hover:underline">
+              Voir les decks en vente →
             </Link>
           </div>
         </div>

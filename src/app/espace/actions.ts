@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { parseEur } from "@/lib/pricing";
-import { STATUSES, type ListingStatus } from "@/lib/listings";
+import { STATUSES, parsePercent, type ListingStatus } from "@/lib/listings";
 
 // Chaque action revérifie le membre : elles sont joignables par n'importe qui (POST).
 // Les règles RLS limitent en plus chaque écriture aux données du membre.
@@ -23,6 +23,11 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
   const status = str(formData.get("status")) as ListingStatus;
   const askingCents = parseEur(str(formData.get("asking_price")));
   if (!(status in STATUSES)) return { status: "error", message: "Statut inconnu." };
+  const rawPercent = str(formData.get("french_percent"));
+  const frenchPercent = rawPercent === "" ? null : parsePercent(rawPercent);
+  if (rawPercent !== "" && frenchPercent == null) {
+    return { status: "error", message: "Part en français : un nombre entre 0 et 100." };
+  }
   if (askingCents == null || askingCents <= 0 || askingCents > 10_000_000) {
     return { status: "error", message: "Prix invalide." };
   }
@@ -47,7 +52,7 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
 
   const { error } = await supabase
     .from("listings")
-    .update({ status, asking_cents: askingCents, ...sold, updated_at: new Date().toISOString() })
+    .update({ status, asking_cents: askingCents, french_percent: frenchPercent, ...sold, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("seller_id", user.id);
   if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };

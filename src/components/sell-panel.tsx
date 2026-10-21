@@ -53,8 +53,8 @@ export function SellPanel({
       <input type="hidden" name="decklist" value={decklist} />
       <input type="hidden" name="manual" value={JSON.stringify(manual)} />
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <label className="sm:col-span-2">
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <label className="sm:col-span-3">
           <span className="mb-1 block text-sm font-medium">Titre de l&apos;annonce</span>
           <input name="title" required minLength={3} maxLength={80} placeholder="Eldrazi Ramp complet, sleevé" className={inputClass} />
         </label>
@@ -81,7 +81,25 @@ export function SellPanel({
             ))}
           </select>
         </label>
-        <label className="sm:col-span-2">
+        <label>
+          <span className="mb-1 block text-sm font-medium">Cartes en français</span>
+          <span className="relative block">
+            <input
+              name="french_percent"
+              required
+              type="number"
+              min={0}
+              max={100}
+              step={1}
+              inputMode="numeric"
+              placeholder="100"
+              className={`${inputClass} pr-8 tabular-nums`}
+            />
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted">%</span>
+          </span>
+          <span className="mt-1 block text-xs text-muted">Le reste est compté en anglais.</span>
+        </label>
+        <label className="sm:col-span-3">
           <span className="mb-1 block text-sm font-medium">
             Description <span className="font-normal text-muted">(facultatif)</span>
           </span>
@@ -89,7 +107,7 @@ export function SellPanel({
             name="description"
             rows={3}
             maxLength={2000}
-            placeholder="Langue des cartes, sleeves, remise en main propre ou envoi…"
+            placeholder="Sleeves, deck box, remise en main propre ou envoi…"
             className={`${inputClass} resize-y`}
           />
         </label>

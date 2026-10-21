@@ -7,13 +7,17 @@ import { Avatar } from "./avatar";
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-banner text-banner-ink">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 sm:gap-6 sm:px-6">
         <Link href="/" className="flex items-center gap-2.5 rounded-md">
           <LogoMark />
-          <span className="text-lg font-semibold tracking-tight">decksell</span>
+          <span className="hidden text-lg font-semibold tracking-tight min-[400px]:inline">decksell</span>
         </Link>
-        <nav className="hidden items-center gap-1 text-sm sm:flex">
-          <Link href="/estimer" className="rounded-md px-3 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink">
+        <nav className="flex items-center gap-1 text-sm">
+          <Link href="/decks" className="whitespace-nowrap rounded-md px-2 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:px-3">
+            <span className="sm:hidden">Decks</span>
+            <span className="hidden sm:inline">Decks en vente</span>
+          </Link>
+          <Link href="/estimer" className="hidden whitespace-nowrap rounded-md px-3 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:block">
             Estimer un deck
           </Link>
         </nav>

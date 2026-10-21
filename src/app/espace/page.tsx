@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { formatEur } from "@/lib/pricing";
-import type { Listing } from "@/lib/listings";
+import { LISTING_COLUMNS, type Listing } from "@/lib/listings";
 import { ListingCard } from "@/components/listing-card";
 
 export const metadata: Metadata = { title: "Mes annonces" };
@@ -22,14 +22,12 @@ async function Dashboard() {
   const supabase = await createSupabaseServer();
   const { data, error } = await supabase
     .from("listings")
-    .select(
-      "id, title, decklist, card_count, estimated_cents, estimate_complete, asking_cents, condition, description, status, sold_cents, sold_at, created_at",
-    )
+    .select(`${LISTING_COLUMNS}, sold_cents, sold_at`)
     .eq("seller_id", user.id)
     .order("created_at", { ascending: false });
 
   if (error) {
-    return <p className="rounded-2xl bg-danger-soft px-5 py-4 text-danger">Impossible de charger tes annonces.</p>;
+    return <p className="rounded-xl bg-danger-soft px-5 py-4 text-danger">Impossible de charger tes annonces.</p>;
   }
   const listings = (data ?? []) as Listing[];
 
@@ -47,14 +45,14 @@ async function Dashboard() {
       </dl>
 
       {listings.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-line px-6 py-12 text-center">
+        <div className="rounded-xl border border-dashed border-line px-6 py-12 text-center">
           <p className="font-semibold">Aucune annonce pour l&apos;instant</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             Estime un deck, puis clique sur « Mettre en vente » sous le résultat.
           </p>
           <Link
             href="/estimer"
-            className="mt-5 inline-flex h-10 items-center rounded-xl bg-accent px-4 font-semibold text-on-accent hover:brightness-110"
+            className="mt-5 inline-flex h-10 items-center rounded-lg bg-accent px-4 font-semibold text-on-accent hover:bg-accent-hover"
           >
             Estimer un deck
           </Link>
@@ -72,7 +70,7 @@ async function Dashboard() {
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface px-4 py-3">
+    <div className="rounded-xl border border-line bg-surface px-4 py-3">
       <dt className="text-xs text-muted">{label}</dt>
       <dd className="mt-0.5 text-xl font-bold tabular-nums">{value}</dd>
       {hint && <dd className="text-xs tabular-nums text-muted">{hint} demandés</dd>}
@@ -85,10 +83,10 @@ function DashboardSkeleton() {
     <div className="space-y-6" aria-busy>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-[74px] animate-pulse rounded-2xl bg-sunken" />
+          <div key={i} className="h-[74px] animate-pulse rounded-xl bg-sunken" />
         ))}
       </div>
-      <div className="h-32 animate-pulse rounded-2xl bg-sunken" />
+      <div className="h-32 animate-pulse rounded-xl bg-sunken" />
     </div>
   );
 }
