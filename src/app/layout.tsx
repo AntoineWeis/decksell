@@ -4,6 +4,8 @@ import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { siteUrl } from "@/lib/site-url";
+import { Suspense } from "react";
+import { FlashToasts, ToastProvider } from "@/components/toaster";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,9 +44,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${sora.variable} ${rajdhani.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
-        <SiteHeader />
-        <div className="flex flex-1 flex-col">{children}</div>
-        <SiteFooter />
+        <ToastProvider>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col">{children}</div>
+          <SiteFooter />
+          {/* Lit l'adresse courante : à part, pour ne pas bloquer le rendu statique. */}
+          <Suspense fallback={null}>
+            <FlashToasts />
+          </Suspense>
+        </ToastProvider>
       </body>
     </html>
   );

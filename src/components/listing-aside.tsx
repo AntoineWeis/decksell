@@ -3,6 +3,7 @@ import { formatEur } from "@/lib/pricing";
 import { CONDITIONS, STATUSES, type Listing } from "@/lib/listings";
 import { Avatar } from "./avatar";
 import { LanguageBar } from "./language-bar";
+import { hasMixedConditions } from "@/lib/card-details";
 
 type Seller = { id?: string; display_name: string; avatar_url: string | null; moxfield_url: string | null; archidekt_url: string | null };
 
@@ -18,7 +19,7 @@ export function ListingAside({
 }: {
   listing: Pick<
     Listing,
-    "asking_cents" | "estimated_cents" | "estimate_complete" | "condition" | "french_percent" | "description" | "status" | "created_at" | "card_count"
+    "asking_cents" | "estimated_cents" | "estimate_complete" | "condition" | "french_percent" | "description" | "status" | "created_at" | "card_count" | "card_details"
   >;
   seller: Seller | null;
   todayCents: number;
@@ -51,13 +52,16 @@ export function ListingAside({
             {formatEur(l.estimated_cents)}
             {!l.estimate_complete && "+"}
           </Row>
-          <Row label="État des cartes">{CONDITIONS[l.condition]}</Row>
+          <Row label="État des cartes">
+            {CONDITIONS[l.condition]}
+            {hasMixedConditions(l.card_details ?? []) && <span className="font-normal text-muted"> en majorité</span>}
+          </Row>
           <Row label="Cartes">{l.card_count}</Row>
           <Row label="Publiée le">{date(l.created_at)}</Row>
         </dl>
         <div className="mt-4 border-t border-line pt-4">
           <p className="mb-2 text-sm font-medium">Langue des cartes</p>
-          <LanguageBar frenchPercent={l.french_percent} />
+          <LanguageBar frenchPercent={l.french_percent} details={l.card_details} />
         </div>
         {children}
       </div>

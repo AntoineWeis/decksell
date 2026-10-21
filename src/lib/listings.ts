@@ -1,4 +1,5 @@
 // Libellés partagés entre le navigateur et le serveur pour les annonces.
+import type { CardDetail } from "./card-details.ts";
 
 export const CONDITIONS = {
   near_mint: "Near Mint",
@@ -35,6 +36,7 @@ export type Listing = {
   cover_image_url: string | null;
   colors: ManaColor[]; // couleurs du deck, déclarées par le vendeur ; vide = incolore
   archetype: Archetype | null; // archétype choisi dans la liste fixe
+  card_details: CardDetail[]; // état et langue par ligne de carte ; vide pour les anciennes annonces
 };
 
 /** Couleurs de Magic, dans l'ordre WUBRG. */
@@ -77,7 +79,7 @@ export function artCrop(imageUrl: string | null): string | null {
 
 /** Colonnes sélectionnées pour une annonce. */
 export const LISTING_COLUMNS =
-  "id, title, decklist, card_count, estimated_cents, estimate_complete, asking_cents, condition, description, status, created_at, french_percent, cover_card_name, cover_image_url, colors, archetype:archetypes(id, slug, name)";
+  "id, title, decklist, card_count, estimated_cents, estimate_complete, asking_cents, condition, description, status, created_at, french_percent, cover_card_name, cover_image_url, colors, card_details, archetype:archetypes(id, slug, name)";
 
 /** « 70 », « 70 % » -> 70 ; null si vide ou hors de 0 à 100. */
 export function parsePercent(raw: string): number | null {

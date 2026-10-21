@@ -4,7 +4,9 @@ import { refresh } from "next/cache";
 import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { parseEur } from "@/lib/pricing";
-import { STATUSES, normalizeColors, parsePercent, type ListingStatus } from "@/lib/listings";
+import { CONDITIONS, STATUSES, normalizeColors, parsePercent, type Condition, type ListingStatus } from "@/lib/listings";
+import { parseDecklist } from "@/lib/decklist";
+import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
 
 // Chaque action revérifie le membre : elles sont joignables par n'importe qui (POST).
 // Les règles RLS limitent en plus chaque écriture aux données du membre.
@@ -58,7 +60,16 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
 
   const { error } = await supabase
     .from("listings")
-    .update({ status, asking_cents: askingCents, french_percent: frenchPercent, colors, archetype_id: archetypeId, ...sold, updated_at: new Date().toISOString() })
+    .update({
+      status,
+      asking_cents: askingCents,
+      // Champ absent quand la langue vient du détail carte par carte : on n'y touche pas.
+      ...(formData.has("french_percent") ? { french_percent: frenchPercent } : {}),
+      colors,
+      archetype_id: archetypeId,
+      ...sold,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id)
     .eq("seller_id", user.id);
   if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };
@@ -67,12 +78,54 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
   return { status: "saved" };
 }
 
-export async function deleteListing(id: string): Promise<void> {
+/** État et langue carte par carte d'une annonce déjà publiée. */
+export async function updateCardDetails(id: string, _prev: FormState, formData: FormData): Promise<FormState> {
   const user = await getUser();
-  if (!user) return;
+  if (!user) return NOT_LOGGED;
+
   const supabase = await createSupabaseServer();
-  await supabase.from("listings").delete().eq("id", id).eq("seller_id", user.id);
+  const { data: current } = await supabase
+    .from("listings")
+    .select("decklist, condition")
+    .eq("id", id)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!current) return { status: "error", message: "Annonce introuvable." };
+
+  let raw: unknown = [];
+  try {
+    raw = JSON.parse(str(formData.get("card_details")) || "[]");
+  } catch {
+    return { status: "error", message: "Saisie illisible. Recharge la page et réessaie." };
+  }
+  const fallback: Condition = current.condition in CONDITIONS ? (current.condition as Condition) : "near_mint";
+  // La liste enregistrée fait foi pour les noms et les quantités.
+  const details = buildDetails(parseDecklist(current.decklist), raw, { condition: fallback, lang: "en" });
+
+  const { error } = await supabase
+    .from("listings")
+    .update({
+      card_details: details,
+      condition: dominantCondition(details, fallback),
+      french_percent: frenchPercentOf(details),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("seller_id", user.id);
+  if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };
+
   refresh();
+  return { status: "saved" };
+}
+
+export async function deleteListing(id: string): Promise<FormState> {
+  const user = await getUser();
+  if (!user) return NOT_LOGGED;
+  const supabase = await createSupabaseServer();
+  const { error } = await supabase.from("listings").delete().eq("id", id).eq("seller_id", user.id);
+  if (error) return { status: "error", message: "Suppression impossible. Réessaie." };
+  refresh();
+  return { status: "saved" };
 }
 
 /* ---------- Profil ---------- */

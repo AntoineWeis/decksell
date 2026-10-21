@@ -6,6 +6,7 @@ import { updateProfile, uploadAvatar, type FormState } from "@/app/espace/action
 import type { Profile } from "@/lib/auth";
 import Link from "next/link";
 import { Avatar } from "./avatar";
+import { useActionToast } from "./toaster";
 
 const inputClass =
   "block w-full rounded-xl border border-line bg-sunken px-3 py-2.5 outline-none focus:border-link focus:ring-2 focus:ring-link/25";
@@ -30,6 +31,8 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
   const [avatarMsg, setAvatarMsg] = useState<FormState>({ status: "idle" });
   const [uploading, startUpload] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
+  useActionToast(state, { success: "Profil enregistré" });
+  useActionToast(avatarMsg, { success: "Photo de profil mise à jour" });
 
   function onPickFile(file: File | undefined) {
     if (!file) return;
@@ -77,7 +80,6 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
           {uploading ? "Envoi…" : profile.avatarUrl ? "Changer la photo" : "Ajouter une photo"}
         </label>
         {avatarMsg.status === "error" && <p className="mt-2 text-xs text-danger">{avatarMsg.message}</p>}
-        {avatarMsg.status === "saved" && !uploading && <p className="mt-2 text-xs text-ok">Photo mise à jour</p>}
         <p className="mt-2 text-xs text-muted">JPEG, PNG ou WebP. Recadrée en carré.</p>
       </section>
 
@@ -116,7 +118,6 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
           >
             {saving ? "Enregistrement…" : "Enregistrer"}
           </button>
-          {state.status === "saved" && !saving && <span className="text-sm text-ok">Profil enregistré</span>}
           {state.status === "error" && <span className="text-sm text-danger">{state.message}</span>}
         </div>
       </form>

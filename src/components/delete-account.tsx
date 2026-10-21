@@ -5,12 +5,14 @@ import { useActionState, useState } from "react";
 import { submitWithoutReset } from "@/lib/form";
 import { DELETE_WORD } from "@/lib/account";
 import { deleteAccount, type DeleteState } from "@/app/espace/account-actions";
+import { useActionToast } from "./toaster";
 
 /** Zone de suppression définitive du compte, repliée par défaut. */
 export function DeleteAccount({ listingCount }: { listingCount: number }) {
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
   const [state, action, pending] = useActionState<DeleteState, FormData>(deleteAccount, { status: "idle" });
+  useActionToast(state, {});
   const ready = typed.trim().toUpperCase() === DELETE_WORD;
 
   return (

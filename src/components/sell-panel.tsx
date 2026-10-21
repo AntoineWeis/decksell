@@ -5,8 +5,10 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { createListing, type SellState } from "@/app/listing-actions";
 import { formatEur, type Estimate, type ManualPrices } from "@/lib/pricing";
-import { CONDITIONS, type Archetype } from "@/lib/listings";
+import type { Archetype } from "@/lib/listings";
 import { ArchetypeSelect, ColorPicker } from "./deck-tags-fields";
+import { CardDetailsEditor } from "./card-details-editor";
+import { useActionToast } from "./toaster";
 
 const inputClass =
   "w-full rounded-lg border border-line bg-sunken px-3 py-2 outline-none focus:border-link focus:ring-2 focus:ring-link/25";
@@ -25,6 +27,7 @@ export function SellPanel({
 }) {
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState<SellState, FormData>(createListing, { status: "idle" });
+  useActionToast(state, {});
   const suggested = (Math.round(estimate.totalCents / 100) || 1).toString();
 
   if (!open) {
@@ -81,34 +84,9 @@ export function SellPanel({
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted">€</span>
           </span>
         </label>
-        <label>
-          <span className="mb-1 block text-sm font-medium">État des cartes</span>
-          <select name="condition" defaultValue="near_mint" className={inputClass}>
-            {Object.entries(CONDITIONS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span className="mb-1 block text-sm font-medium">Cartes en français</span>
-          <span className="relative block">
-            <input
-              name="french_percent"
-              required
-              type="number"
-              min={0}
-              max={100}
-              step={1}
-              inputMode="numeric"
-              placeholder="100"
-              className={`${inputClass} pr-8 tabular-nums`}
-            />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted">%</span>
-          </span>
-          <span className="mt-1 block text-xs text-muted">Le reste est compté en anglais.</span>
-        </label>
+        <div className="sm:col-span-3">
+          <CardDetailsEditor lines={estimate.lines.map(({ board, name, quantity }) => ({ board, name, quantity }))} />
+        </div>
         <label className="sm:col-span-3">
           <span className="mb-1 block text-sm font-medium">
             Description <span className="font-normal text-muted">(facultatif)</span>

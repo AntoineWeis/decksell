@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { getUser, safeNext } from "@/lib/auth";
+import { setFlash } from "@/lib/flash";
 
 export type AuthState =
   | { status: "idle" }
@@ -40,6 +41,7 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   const supabase = await createSupabaseServer();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { status: "error", message: frenchError(error.message) };
+  await setFlash("success", "Connexion réussie");
   redirect(safeNext(formData.get("next")));
 }
 
@@ -66,13 +68,18 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
     },
   });
   if (error) return { status: "error", message: frenchError(error.message) };
-  if (data.session) redirect(next); // confirmation par email désactivée
+  if (data.session) {
+    // Confirmation par email désactivée : le compte est déjà actif.
+    await setFlash("success", "Compte créé, bienvenue !");
+    redirect(next);
+  }
   return { status: "check_email", email };
 }
 
 export async function signOut() {
   const supabase = await createSupabaseServer();
   await supabase.auth.signOut();
+  await setFlash("success", "Déconnexion réussie");
   redirect("/");
 }
 

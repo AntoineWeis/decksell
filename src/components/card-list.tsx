@@ -1,5 +1,7 @@
 import Image from "next/image";
 import { formatEur, type PricedLine } from "@/lib/pricing";
+import { CONDITIONS } from "@/lib/listings";
+import { CONDITION_SHORT, CONDITION_TONE, LANGUAGES, detailKey, type CardDetail } from "@/lib/card-details";
 
 const RARITY_LABEL: Record<string, string> = {
   common: "Commune",
@@ -23,10 +25,13 @@ export function CardList({
   lines,
   totalCents,
   previewSide = "left",
+  details,
 }: {
   title: string;
   lines: PricedLine[];
   totalCents: number;
+  /** État et langue déclarés par le vendeur, par ligne (annonces seulement). */
+  details?: Map<string, CardDetail>;
   /** Côté où s'ouvre l'aperçu agrandi sur grand écran (là où il y a de la place). */
   previewSide?: "left" | "right";
 }) {
@@ -55,6 +60,7 @@ export function CardList({
             line={l}
             delayMs={Math.min((sorted.length - 1 - i) * 20, 500)}
             previewSide={previewSide}
+            detail={details?.get(detailKey(l.board, l.name))}
           />
         ))}
       </ul>
@@ -62,7 +68,17 @@ export function CardList({
   );
 }
 
-function CardRow({ line, delayMs, previewSide }: { line: PricedLine; delayMs: number; previewSide: "left" | "right" }) {
+function CardRow({
+  line,
+  delayMs,
+  previewSide,
+  detail,
+}: {
+  line: PricedLine;
+  delayMs: number;
+  previewSide: "left" | "right";
+  detail?: CardDetail;
+}) {
   const { card } = line;
   const missing = line.unitCents == null;
   const rarity = card?.rarity ?? null;
@@ -94,6 +110,18 @@ function CardRow({ line, delayMs, previewSide }: { line: PricedLine; delayMs: nu
             </span>
           )}
           <span className="truncate">{line.name}</span>
+          {detail && (
+            <span className="flex shrink-0 items-center gap-1 text-[11px] font-semibold tabular-nums">
+              <span className="rounded bg-sunken px-1.5 py-0.5 text-muted" title={LANGUAGES[detail.lang].label}>
+                {LANGUAGES[detail.lang].short}
+                <span className="sr-only"> ({LANGUAGES[detail.lang].label})</span>
+              </span>
+              <span className={`rounded px-1.5 py-0.5 ring-1 ring-inset ${CONDITION_TONE[detail.condition]}`} title={CONDITIONS[detail.condition]}>
+                {CONDITION_SHORT[detail.condition]}
+                <span className="sr-only"> ({CONDITIONS[detail.condition]})</span>
+              </span>
+            </span>
+          )}
         </p>
         <p className="truncate text-xs text-muted">
           {card ? (

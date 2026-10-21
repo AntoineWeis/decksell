@@ -297,3 +297,14 @@ on conflict (slug) do nothing;
 alter table public.cards
   add column if not exists cmc       numeric(4,1),
   add column if not exists type_line text;
+
+-- 11. État et langue de chaque carte d'une annonce, saisis par le vendeur.
+-- Un tableau JSON, une entrée par ligne de la liste :
+-- [{ "board": "main", "name": "Lightning Bolt", "quantity": 4, "condition": "near_mint", "lang": "fr" }]
+-- Vide pour les annonces publiées avant cette fonction.
+alter table public.listings
+  add column if not exists card_details jsonb not null default '[]'::jsonb;
+
+alter table public.listings drop constraint if exists listings_card_details_array;
+alter table public.listings
+  add constraint listings_card_details_array check (jsonb_typeof(card_details) = 'array');

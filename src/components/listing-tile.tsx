@@ -5,6 +5,7 @@ import { CONDITIONS, artCrop, type PublicListing } from "@/lib/listings";
 import type { CardHit } from "@/lib/deck-index";
 import { Avatar } from "./avatar";
 import { LanguageBar } from "./language-bar";
+import { hasMixedConditions } from "@/lib/card-details";
 import { ManaColors } from "./mana";
 
 /**
@@ -63,6 +64,7 @@ export function ListingTile({
             <h2 className="line-clamp-2 font-semibold group-hover:text-link">{l.title}</h2>
             <p className="mt-0.5 text-xs text-muted">
               {l.card_count} cartes · {CONDITIONS[l.condition]}
+              {hasMixedConditions(l.card_details ?? []) && " en majorité"}
             </p>
             <p className="mt-2 flex flex-wrap items-center gap-2">
               <ManaColors colors={l.colors ?? []} size={16} />
@@ -95,7 +97,7 @@ export function ListingTile({
             </p>
           )}
 
-          <LanguageBar frenchPercent={l.french_percent} />
+          <LanguageBar frenchPercent={l.french_percent} details={l.card_details} />
 
           {showSeller && l.seller && (
             <p className="mt-auto flex items-center gap-2 border-t border-line pt-3 text-sm text-muted">

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useTransition } from "react";
 import { deleteListing, updateListing, type FormState } from "@/app/espace/actions";
+import { useActionToast, useToast } from "./toaster";
 import { formatEur } from "@/lib/pricing";
 import { CONDITIONS, PUBLIC_STATUSES, STATUSES, artCrop, type Archetype, type Listing, type ListingStatus } from "@/lib/listings";
 import { LanguageBar } from "./language-bar";
@@ -28,6 +29,8 @@ export function ListingCard({ listing: l, archetypes }: { listing: Listing; arch
     status: "idle",
   });
   const [deleting, startDelete] = useTransition();
+  const toast = useToast();
+  useActionToast(state, { success: "Annonce mise à jour" });
   const diff = l.estimated_cents > 0 ? Math.round(((l.asking_cents - l.estimated_cents) / l.estimated_cents) * 100) : null;
   // Ce qui manque pour que l'annonce soit bien trouvée dans les filtres de l'index.
   const missing = [
@@ -60,7 +63,7 @@ export function ListingCard({ listing: l, archetypes }: { listing: Listing; arch
             <ManaColors colors={l.colors ?? []} size={16} emptyLabel="Couleurs à renseigner" />
             <span className="rounded-md bg-sunken px-1.5 py-0.5 font-medium text-muted">{l.archetype?.name ?? "Non classé"}</span>
           </p>
-          <LanguageBar frenchPercent={l.french_percent} className="mt-2 max-w-60" />
+          <LanguageBar frenchPercent={l.french_percent} details={l.card_details} className="mt-2 max-w-60" />
           </div>
         </div>
         <div className="text-right">
@@ -106,18 +109,21 @@ export function ListingCard({ listing: l, archetypes }: { listing: Listing; arch
           <span className="mb-1 block">Archétype</span>
           <ArchetypeSelect archetypes={archetypes} defaultId={l.archetype?.id ?? null} className={`${fieldClass} max-w-44`} />
         </label>
-        <label className="text-xs text-muted">
-          <span className="mb-1 block">Français (%)</span>
-          <input
-            name="french_percent"
-            type="number"
-            min={0}
-            max={100}
-            inputMode="numeric"
-            defaultValue={l.french_percent ?? ""}
-            className={`${fieldClass} w-20 tabular-nums`}
-          />
-        </label>
+        {/* Sans détail carte par carte (anciennes annonces), la part de français se saisit ici. */}
+        {(l.card_details ?? []).length === 0 && (
+          <label className="text-xs text-muted">
+            <span className="mb-1 block">Français (%)</span>
+            <input
+              name="french_percent"
+              type="number"
+              min={0}
+              max={100}
+              inputMode="numeric"
+              defaultValue={l.french_percent ?? ""}
+              className={`${fieldClass} w-20 tabular-nums`}
+            />
+          </label>
+        )}
         <button
           type="submit"
           disabled={saving}
@@ -125,7 +131,6 @@ export function ListingCard({ listing: l, archetypes }: { listing: Listing; arch
         >
           {saving ? "…" : "Enregistrer"}
         </button>
-        {state.status === "saved" && !saving && <span className="pb-2 text-xs text-ok">Enregistré</span>}
         {state.status === "error" && <span className="pb-2 text-xs text-danger">{state.message}</span>}
 
         <button
@@ -133,7 +138,11 @@ export function ListingCard({ listing: l, archetypes }: { listing: Listing; arch
           disabled={deleting}
           onClick={() => {
             if (confirm(`Supprimer l'annonce « ${l.title} » ? Cette action est définitive.`)) {
-              startDelete(() => deleteListing(l.id));
+              startDelete(async () => {
+                const res = await deleteListing(l.id);
+                if (res.status === "error") toast("error", res.message);
+                else toast("success", `Annonce « ${l.title} » supprimée`);
+              });
             }
           }}
           className="ml-auto h-[34px] rounded-lg px-3 text-sm text-danger hover:bg-danger-soft"

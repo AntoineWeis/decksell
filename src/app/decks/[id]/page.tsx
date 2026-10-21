@@ -67,7 +67,7 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
       </DeckBanner>
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-20 pt-6 sm:px-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:items-start">
         <div className="min-w-0 lg:order-1">
-          <DeckView estimate={estimate} pricesAsOf={pricesAsOf} />
+          <DeckView estimate={estimate} pricesAsOf={pricesAsOf} details={listing.card_details} />
         </div>
         <div className="lg:order-2">
           <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents}

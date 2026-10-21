@@ -32,6 +32,15 @@
   --warn-soft: #fdf0d7;
   --danger: #b42318;
   --danger-soft: #fdecea;
+  /* État des cartes, du meilleur au moins bon : vert, vert-jaune, ambre, rouge. */
+  --cond-nm: #157a3a;
+  --cond-nm-soft: #e1f3e7;
+  --cond-ex: #44700c;
+  --cond-ex-soft: #edf5dc;
+  --cond-gd: #a15c00;
+  --cond-gd-soft: #fdf0d7;
+  --cond-pl: #b42318;
+  --cond-pl-soft: #fdecea;
   --hatch: rgba(143, 82, 0, 0.14);
 }
 
@@ -62,6 +71,14 @@
     --warn-soft: #2e2210;
     --danger: #ff8a80;
     --danger-soft: #2f1412;
+    --cond-nm: #6fd28f;
+    --cond-nm-soft: #12291a;
+    --cond-ex: #b5d96a;
+    --cond-ex-soft: #1e2a10;
+    --cond-gd: #f3b85c;
+    --cond-gd-soft: #2e2210;
+    --cond-pl: #ff8a80;
+    --cond-pl-soft: #2f1412;
     --hatch: rgba(243, 184, 92, 0.13);
   }
 }
@@ -88,6 +105,14 @@
   --color-warn-soft: var(--warn-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  --color-cond-nm: var(--cond-nm);
+  --color-cond-nm-soft: var(--cond-nm-soft);
+  --color-cond-ex: var(--cond-ex);
+  --color-cond-ex-soft: var(--cond-ex-soft);
+  --color-cond-gd: var(--cond-gd);
+  --color-cond-gd-soft: var(--cond-gd-soft);
+  --color-cond-pl: var(--cond-pl);
+  --color-cond-pl-soft: var(--cond-pl-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-sora);
@@ -169,6 +194,20 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .slide-out,
   .flip-in {
+    animation: none;
+  }
+}
+
+/* Notifications : glissent depuis le bas à l'apparition. */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.toast-in {
+  animation: toast-in 220ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-in {
     animation: none;
   }
 }

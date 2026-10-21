@@ -1,12 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { setFlash } from "@/lib/flash";
 import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { parseDecklist } from "@/lib/decklist";
 import { buildEstimate, parseEur, starCard, type ManualPrices } from "@/lib/pricing";
 import { lookupDeckPrices } from "@/lib/estimate";
-import { CONDITIONS, normalizeColors, parsePercent, type Condition } from "@/lib/listings";
+import { CONDITIONS, normalizeColors, type Condition } from "@/lib/listings";
+import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
 
 export type SellState = { status: "idle" } | { status: "error"; message: string } | { status: "auth" };
 
@@ -35,9 +37,9 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   const decklist = str(formData.get("decklist"));
   const title = str(formData.get("title"));
   const askingCents = parseEur(str(formData.get("asking_price")));
-  const condition = str(formData.get("condition")) as Condition;
+  const conditionRaw = str(formData.get("condition"));
+  const defaultCondition: Condition = conditionRaw in CONDITIONS ? (conditionRaw as Condition) : "near_mint";
   const description = str(formData.get("description"));
-  const frenchPercent = parsePercent(str(formData.get("french_percent")));
   const colors = normalizeColors(formData.getAll("colors"));
   const archetypeRaw = str(formData.get("archetype_id"));
   const archetypeId = archetypeRaw === "" ? null : Number(archetypeRaw);
@@ -46,8 +48,6 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   if (askingCents == null || askingCents <= 0 || askingCents > 10_000_000) {
     return { status: "error", message: "Indique un prix de vente valide." };
   }
-  if (!(condition in CONDITIONS)) return { status: "error", message: "Choisis l'état des cartes." };
-  if (frenchPercent == null) return { status: "error", message: "Indique la part de cartes en français, entre 0 et 100 %." };
   if (colors.length === 0) return { status: "error", message: "Coche au moins une couleur du deck." };
   if (archetypeId != null && !(Number.isInteger(archetypeId) && archetypeId > 0)) {
     return { status: "error", message: "Archétype inconnu." };
@@ -58,6 +58,17 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   const deck = parseDecklist(decklist);
   const cardCount = deck.mainCount + deck.sideCount;
   if (cardCount === 0) return { status: "error", message: "Aucune carte reconnue dans la liste." };
+
+  // État et langue par carte : la liste fait foi pour les noms et les quantités.
+  let rawDetails: unknown = [];
+  try {
+    rawDetails = JSON.parse(str(formData.get("card_details")) || "[]");
+  } catch {
+    rawDetails = [];
+  }
+  const cardDetails = buildDetails(deck, rawDetails, { condition: defaultCondition, lang: "en" });
+  const condition = dominantCondition(cardDetails, defaultCondition);
+  const frenchPercent = frenchPercentOf(cardDetails);
 
   // L'estimation est recalculée ici : on ne se fie pas au total envoyé par le navigateur.
   let estimate;
@@ -84,6 +95,7 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
     condition,
     description: description || null,
     french_percent: frenchPercent,
+    card_details: cardDetails,
     colors,
     archetype_id: archetypeId,
     cover_card_name: star?.name ?? null,
@@ -93,5 +105,6 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
     console.error("Mise en vente : écriture impossible", error.message);
     return { status: "error", message: "Impossible d'enregistrer l'annonce. Réessaie dans un instant." };
   }
+  await setFlash("success", `Annonce « ${title} » publiée`);
   redirect("/espace");
 }
