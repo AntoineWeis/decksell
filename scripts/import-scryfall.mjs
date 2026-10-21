@@ -1,7 +1,9 @@
 // Import des cartes Scryfall (bulk "default_cards") dans la table public.cards.
 // Usage : npm run import:scryfall            (import complet)
 //         npm run import:scryfall -- --limit 2000   (test sur 2000 cartes)
-// Nécessite dans .env.local : NEXT_PUBLIC_SUPABASE_URL et SUPABASE_SECRET_KEY.
+//         npm run import:scryfall -- --force        (réimporte même si le fichier est déjà importé)
+// Nécessite NEXT_PUBLIC_SUPABASE_URL et SUPABASE_SECRET_KEY : dans .env.local en local,
+// dans les secrets du dépôt pour l'import quotidien (.github/workflows/import-prix.yml).
 // N'affiche jamais les clés.
 import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
@@ -22,6 +24,8 @@ if (!(limit > 0)) {
   console.error("ECHEC : --limit doit être un nombre positif");
   process.exit(1);
 }
+
+const force = process.argv.includes("--force");
 
 const supabase = createClient(url, secretKey, { auth: { persistSession: false } });
 const HEADERS = { "User-Agent": "decksell/0.1 (import quotidien)", Accept: "application/json;q=0.9,*/*;q=0.8" };
@@ -79,7 +83,12 @@ async function inflateIfGzip(body) {
   return stream;
 }
 
-const meta = await (await fetch("https://api.scryfall.com/bulk-data", { headers: HEADERS })).json();
+const metaRes = await fetch("https://api.scryfall.com/bulk-data", { headers: HEADERS });
+if (!metaRes.ok) {
+  console.error("ECHEC : Scryfall ne répond pas (HTTP " + metaRes.status + ")");
+  process.exit(1);
+}
+const meta = await metaRes.json();
 const bulk = meta.data?.find((d) => d.type === "default_cards");
 if (!bulk) {
   console.error("ECHEC : fichier default_cards introuvable chez Scryfall");
@@ -95,6 +104,24 @@ if (!downloadUri) {
   console.error("ECHEC : adresse de téléchargement introuvable. Champs reçus :", Object.keys(bulk).join(", "));
   process.exit(1);
 }
+// Fichier déjà importé (import relancé le même jour) : rien à faire.
+if (!force && limit === Infinity) {
+  const { data: last, error } = await supabase
+    .from("price_imports")
+    .select("bulk_updated_at")
+    .order("imported_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    console.error("ECHEC : lecture du journal d'import impossible :", error.message);
+    process.exit(1);
+  }
+  if (last?.bulk_updated_at && new Date(last.bulk_updated_at).getTime() === new Date(bulk.updated_at).getTime()) {
+    console.log("Déjà à jour : le fichier Scryfall du", bulk.updated_at, "est déjà importé (--force pour réimporter).");
+    process.exit(0);
+  }
+}
+
 const sizeBytes = bulk.compressed_size ?? bulk.size;
 console.log(
   "Fichier Scryfall généré le", bulk.updated_at,

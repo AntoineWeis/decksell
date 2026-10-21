@@ -57,7 +57,7 @@ le découper carte par carte. L'estimation donne au vendeur et à l'acheteur le 
 |---|---|
 | Source | Prix Cardmarket en euros, via les données publiques de [Scryfall](https://scryfall.com) |
 | Impression retenue | L'impression **non-foil la moins chère** de chaque carte |
-| Fraîcheur | La date de l'import des prix est affichée avec chaque estimation |
+| Fraîcheur | Prix réimportés chaque jour ; leur date est affichée avec chaque estimation |
 | Cartes sans prix | Signalées et exclues du total ; le vendeur peut saisir un prix |
 | Statut | Indicatif : c'est un repère, pas une offre de rachat |
 
@@ -105,6 +105,13 @@ npm install
    npm run import:scryfall
    ```
 
+### Import quotidien des prix
+
+Le workflow [`.github/workflows/import-prix.yml`](.github/workflows/import-prix.yml) relance l'import chaque jour à
+10 h 23 UTC, après la mise à jour du fichier Scryfall. Pour l'activer sur ton dépôt, ajoute deux secrets dans
+GitHub › **Settings › Secrets and variables › Actions** : `NEXT_PUBLIC_SUPABASE_URL` et `SUPABASE_SECRET_KEY`.
+Tu peux aussi le lancer à la main depuis l'onglet **Actions** (bouton *Run workflow*).
+
 ### Lancer
 
 ```bash
@@ -121,7 +128,7 @@ Le site est alors disponible sur [http://localhost:3000](http://localhost:3000).
 | `npm run build` / `npm start` | Build et serveur de production |
 | `npm test` | Tests (lecteur de decklists, calcul des prix, saisies) |
 | `npm run lint` | Vérification ESLint |
-| `npm run import:scryfall` | Import des cartes et des prix Scryfall dans Supabase (`-- --limit 2000` pour un essai) |
+| `npm run import:scryfall` | Import des cartes et des prix Scryfall dans Supabase (`-- --limit 2000` pour un essai, `-- --force` pour réimporter le même fichier) |
 | `npm run check:supabase` | Test de connexion à Supabase |
 | `npm run estimate -- deck.txt` | Estimation d'une decklist en ligne de commande |
 
@@ -140,6 +147,7 @@ src/
 ├── lib/                 Logique métier : lecture des decklists, calcul des prix, accès aux données
 └── proxy.ts             Rafraîchissement de la session Supabase
 supabase/schema.sql      Schéma complet de la base (tables, règles RLS, archétypes)
+.github/workflows/       Import quotidien des prix (GitHub Actions)
 scripts/                 Import Scryfall, estimation en ligne de commande, test de connexion
 tests/                   Tests unitaires
 PRODUCT.md / DESIGN.md   Fiche produit et système de design
@@ -156,7 +164,7 @@ PRODUCT.md / DESIGN.md   Fiche produit et système de design
 ## Feuille de route
 
 - [ ] Prise de contact entre acheteur et vendeur
-- [ ] Import automatique et quotidien des prix
+- [x] Import automatique et quotidien des prix
 - [ ] Mot de passe oublié
 - [ ] Fourchette de prix de revente
 - [ ] Reconnaissance automatique de l'archétype d'une liste

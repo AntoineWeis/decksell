@@ -1,0 +1,42 @@
+# Import quotidien des cartes et des prix Scryfall (Cardmarket, en euros) dans Supabase.
+# Scryfall régénère son fichier vers 9 h UTC : l'import part à 10 h 23 UTC.
+# Secrets à créer dans GitHub › Settings › Secrets and variables › Actions :
+#   NEXT_PUBLIC_SUPABASE_URL et SUPABASE_SECRET_KEY
+name: Import quotidien des prix
+
+on:
+  schedule:
+    - cron: "23 10 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Réimporter même si le fichier du jour est déjà importé"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: import-prix
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Import Scryfall
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: node scripts/import-scryfall.mjs ${{ inputs.force && '--force' || '' }}
