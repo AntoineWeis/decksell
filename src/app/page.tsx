@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
-// Bandeau : ville néon de Kamigawa, 2000 × 758, © Wizards of the Coast.
-import heroArt from "../../public/hero-kamigawa.webp";
+// Bandeau : marais brumeux de Kamigawa, 1920 × 1120, © Wizards of the Coast.
+import heroArt from "../../public/hero-swamp.webp";
 
 /** Icônes au trait, même épaisseur partout. */
 function Icon({ children }: { children: React.ReactNode }) {
@@ -80,7 +80,7 @@ export default function Home() {
             preload
             placeholder="blur"
             sizes="100vw"
-            className="object-cover object-[45%_40%]"
+            className="object-cover object-[60%_45%]"
           />
           {/* Dégradé à gauche : le texte reste lisible sur l'illustration */}
           <div className="absolute inset-0 bg-gradient-to-r from-banner/95 via-banner/70 to-banner/20" />

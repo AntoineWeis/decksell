@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { loadGoogleFont } from "@/lib/og";
 
-// Icône d'onglet : le « d » du logo, en Rajdhani, bleu sur bleu nuit.
+// Icône d'onglet : « ds » aux couleurs du logo (d blanc, s bleu), en Rajdhani, sur bleu nuit.
 export const size = { width: 64, height: 64 };
 export const contentType = "image/png";
 
@@ -18,14 +18,14 @@ export default async function Icon() {
           justifyContent: "center",
           background: "#0f1830",
           borderRadius: 14,
-          color: "#5a90ff",
-          fontSize: 58,
+          color: "#f3f6fc",
+          fontSize: 52,
           fontWeight: 700,
           fontFamily: font ? "Rajdhani" : undefined,
           paddingBottom: 4,
         }}
       >
-        d
+        d<span style={{ color: "#5a90ff" }}>s</span>
       </div>
     ),
     { ...size, fonts: font ? [{ name: "Rajdhani", data: font, weight: 700, style: "normal" }] : undefined },
