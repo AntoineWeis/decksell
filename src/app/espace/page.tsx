@@ -53,7 +53,7 @@ async function Dashboard() {
             Estime un deck, puis clique sur « Mettre en vente » sous le résultat.
           </p>
           <Link
-            href="/#estimer"
+            href="/estimer"
             className="mt-5 inline-flex h-10 items-center rounded-xl bg-accent px-4 font-semibold text-on-accent hover:brightness-110"
           >
             Estimer un deck

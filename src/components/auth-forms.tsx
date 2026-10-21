@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { signIn, signUp, type AuthState } from "@/app/auth-actions";
 
 const inputClass =
-  "block w-full rounded-xl border border-line bg-sunken px-3 py-2.5 outline-none focus:border-accent focus:ring-2 focus:ring-accent/25";
+  "block w-full rounded-xl border border-line bg-sunken px-3 py-2.5 outline-none focus:border-link focus:ring-2 focus:ring-link/25";
 const buttonClass =
   "flex h-11 w-full items-center justify-center rounded-xl bg-accent font-semibold text-on-accent transition hover:brightness-110 disabled:opacity-50";
 
@@ -47,7 +47,7 @@ export function LoginForm() {
       </button>
       <p className="text-center text-sm text-muted">
         Pas encore de compte ?{" "}
-        <Link href={withNext("/inscription", next)} className="font-medium text-accent hover:underline">
+        <Link href={withNext("/inscription", next)} className="font-medium text-link hover:underline">
           Créer un compte
         </Link>
       </p>
@@ -63,7 +63,12 @@ export function SignupForm() {
   if (state.status === "check_email") {
     return (
       <div className="space-y-3 text-center">
-        <p className="mx-auto flex size-12 items-center justify-center rounded-full bg-accent-soft text-2xl">✉</p>
+        <p className="mx-auto flex size-12 items-center justify-center rounded-full bg-brand-soft text-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="size-6" aria-hidden>
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="m4 7 8 6 8-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </p>
         <p className="font-semibold">Vérifie ta boîte mail</p>
         <p className="text-sm text-muted">
           On a envoyé un lien de confirmation à <strong className="text-foreground">{state.email}</strong>. Clique
@@ -99,7 +104,7 @@ export function SignupForm() {
       </button>
       <p className="text-center text-sm text-muted">
         Déjà membre ?{" "}
-        <Link href={withNext("/connexion", next)} className="font-medium text-accent hover:underline">
+        <Link href={withNext("/connexion", next)} className="font-medium text-link hover:underline">
           Se connecter
         </Link>
       </p>

@@ -18,6 +18,7 @@ export type CardPrice = {
   collectorNumber: string;
   imageUrl: string | null;
   artist: string | null;
+  rarity: string | null; // common, uncommon, rare, mythic, special, bonus
   priceEur: number | null; // impression non-foil la moins chère ; null = aucun prix
   minPriceEurFoil: number | null; // pour info quand la carte n'existe qu'en foil
 };

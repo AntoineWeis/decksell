@@ -6,7 +6,7 @@ export default function EspaceLayout({ children }: LayoutProps<"/espace">) {
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Mon espace</h1>
+          <h1 className="display text-3xl sm:text-4xl">Mon espace</h1>
           <p className="mt-1 text-muted">Tes decks en vente et ton profil.</p>
         </div>
         <form action={signOut}>

@@ -7,7 +7,7 @@ import type { Profile } from "@/lib/auth";
 import { Avatar } from "./avatar";
 
 const inputClass =
-  "block w-full rounded-xl border border-line bg-sunken px-3 py-2.5 outline-none focus:border-accent focus:ring-2 focus:ring-accent/25";
+  "block w-full rounded-xl border border-line bg-sunken px-3 py-2.5 outline-none focus:border-link focus:ring-2 focus:ring-link/25";
 
 /** Recadre l'image au centre et la réduit à 256 × 256 en WebP, avant envoi. */
 async function toSquareWebp(file: File, size = 256): Promise<Blob> {

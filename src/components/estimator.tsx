@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useActionState, useEffect, useMemo, useState } from "react";
 import { estimateAction, type EstimateState } from "@/app/actions";
 import { normalizeName } from "@/lib/decklist";
@@ -9,6 +10,20 @@ import { CardList } from "./card-list";
 import { SellPanel } from "./sell-panel";
 
 const DRAFT_KEY = "decksell:draft";
+
+// Bandeau : illustration de carte (Scryfall), floutée comme l'en-tête d'une page de deck.
+const BANNER_ART =
+  "https://cards.scryfall.io/art_crop/front/8/d/8d74a469-c71d-4773-99d3-5456b31df424.jpg?1783937526";
+const BANNER_CREDIT = "Emrakul, the Promised End, par Jaime Jones";
+
+// Identifiant stable par estimation reçue : relance l'animation d'ouverture à chaque nouveau paquet,
+// mais pas quand on tape un prix à la main.
+const revealIds = new WeakMap<object, number>();
+let revealCounter = 0;
+function revealId(o: object) {
+  if (!revealIds.has(o)) revealIds.set(o, ++revealCounter);
+  return revealIds.get(o)!;
+}
 
 export function Estimator() {
   const [text, setText] = useState("");
@@ -30,6 +45,13 @@ export function Estimator() {
     } catch {}
   }, [text]);
 
+  // Sur une colonne, on amène le résultat à l'écran.
+  useEffect(() => {
+    if (state.status === "ok" && window.innerWidth < 1024) {
+      document.getElementById("resultat")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [state]);
+
   const manual = useMemo(() => {
     const out: ManualPrices = {};
     for (const [key, raw] of Object.entries(manualInputs)) {
@@ -45,97 +67,136 @@ export function Estimator() {
   );
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
-      <form action={formAction} className="rounded-2xl border border-line bg-surface p-4 sm:p-5 lg:sticky lg:top-20">
-        <div className="mb-2 flex items-baseline justify-between gap-2">
-          <label htmlFor="decklist" className="font-semibold">
-            Ta decklist
-          </label>
-          <button
-            type="button"
-            onClick={() => setText(SAMPLE_DECK)}
-            className="text-sm text-accent underline-offset-2 hover:underline"
-          >
-            Essayer avec un exemple
-          </button>
+    <>
+      {/* Bandeau façon page de deck : illustration floutée sous un dégradé. */}
+      <section className="relative overflow-hidden bg-banner text-banner-ink">
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <Image
+            src={BANNER_ART}
+            alt=""
+            fill
+            preload
+            unoptimized
+            sizes="100vw"
+            className="scale-110 object-cover object-[50%_30%] opacity-70 blur-[6px]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-banner via-banner/80 to-banner/10" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-banner to-transparent" />
         </div>
-        <textarea
-          id="decklist"
-          name="decklist"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          required
-          spellCheck={false}
-          rows={16}
-          placeholder={"4 Lightning Bolt\n4 Ragavan, Nimble Pilferer\n...\n\nSideboard\n2 Engineered Explosives"}
-          className="block w-full resize-y rounded-xl border border-line bg-sunken px-3 py-2.5 font-mono text-sm leading-6 outline-none placeholder:text-muted/70 focus:border-accent focus:ring-2 focus:ring-accent/25"
-        />
-        <p className="mt-2 text-xs text-muted">
-          Une carte par ligne. Formats MTGO, Arena, Moxfield et MTGGoldfish acceptés.
-        </p>
-        <button
-          type="submit"
-          disabled={pending || text.trim() === ""}
-          className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent font-semibold text-on-accent transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {pending && <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />}
-          {pending ? "Estimation…" : "Estimer le deck"}
-        </button>
-      </form>
+        <div className="relative mx-auto max-w-6xl px-4 pb-10 pt-10 sm:px-6 sm:pb-12 sm:pt-14">
+          <h1 className="display max-w-3xl text-4xl sm:text-5xl">Estime la valeur de ton deck</h1>
+          <p className="mt-3 max-w-2xl text-lg leading-relaxed text-banner-muted">
+            Colle ta decklist : decksell la chiffre carte par carte d&apos;après les prix Cardmarket, en euros, puis
+            t&apos;aide à la mettre en vente au juste prix.
+          </p>
+          <ul className="mt-6 flex flex-wrap gap-2 text-xs font-medium text-banner-ink/90">
+            {["Modern", "Prix Cardmarket en €", "MTGO · Arena · Moxfield · MTGGoldfish"].map((t) => (
+              <li key={t} className="rounded-md bg-white/10 px-2.5 py-1 ring-1 ring-white/10">
+                {t}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-6 text-[11px] text-banner-muted/80">Illustration : {BANNER_CREDIT}</p>
+        </div>
+      </section>
 
-      <div className={`space-y-5 transition-opacity ${pending ? "opacity-60" : ""}`} aria-live="polite">
-        {state.status === "idle" && <EmptyState />}
-        {state.status === "error" && (
-          <div className="rounded-2xl border border-danger/30 bg-danger-soft px-5 py-4 text-danger">{state.message}</div>
-        )}
-        {state.status === "ok" && estimate && (
-          <>
-            <Summary estimate={estimate} pricesAsOf={state.pricesAsOf} />
-            <SellPanel decklist={text} estimate={estimate} manual={manual} />
-            <ParseNotes deck={state.deck} />
-            {!estimate.complete || Object.keys(manual).length > 0 ? (
-              <MissingPrices
-                lines={estimate.lines.filter((l) => l.unitCents == null || l.status === "manual")}
-                complete={estimate.complete}
-                inputs={manualInputs}
-                onChange={(key, value) => setManualInputs((m) => ({ ...m, [key]: value }))}
+      {/* L'outil : la liste à gauche, le résultat à droite. */}
+      <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-20 pt-6 sm:px-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)] lg:items-start">
+        <form
+          id="estimer"
+          action={formAction}
+          className="scroll-mt-20 rounded-xl border border-line bg-surface p-4 shadow-sm sm:p-5 lg:sticky lg:top-20"
+        >
+          <div className="mb-2 flex items-baseline justify-between gap-3">
+            <label htmlFor="decklist" className="font-semibold">
+              Decklist
+            </label>
+            <button type="button" onClick={() => setText(SAMPLE_DECK)} className="text-sm font-medium text-link hover:underline">
+              Essayer avec un exemple
+            </button>
+          </div>
+          <textarea
+            id="decklist"
+            name="decklist"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            required
+            spellCheck={false}
+            rows={16}
+            placeholder={"4 Lightning Bolt\n4 Ragavan, Nimble Pilferer\n…\n\nSideboard\n2 Engineered Explosives"}
+            className="block w-full resize-y rounded-lg border border-line bg-sunken px-3 py-2.5 font-mono text-[13px] leading-6 outline-none placeholder:text-muted/70 focus:border-link focus:ring-2 focus:ring-link/25 max-sm:h-48"
+          />
+          <p className="mt-2 text-xs text-muted">Une carte par ligne, avec la réserve à la suite.</p>
+          <button
+            type="submit"
+            disabled={pending}
+            className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent font-semibold text-on-accent transition hover:bg-accent-hover disabled:cursor-progress disabled:opacity-70"
+          >
+            {pending && <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />}
+            {pending ? "Estimation…" : "Estimer le deck"}
+          </button>
+        </form>
+
+        <section
+          id="resultat"
+          aria-live="polite"
+          className={`min-w-0 scroll-mt-20 space-y-6 transition-opacity ${pending ? "opacity-60" : ""}`}
+        >
+          {state.status === "idle" && <HowItWorks />}
+          {state.status === "error" && (
+            <div className="rounded-xl border border-danger/30 bg-danger-soft px-5 py-4 text-danger">{state.message}</div>
+          )}
+          {state.status === "ok" && estimate && (
+            <div key={revealId(state)} className="space-y-6">
+              <Receipt estimate={estimate} pricesAsOf={state.pricesAsOf} />
+              <SellPanel decklist={text} estimate={estimate} manual={manual} />
+              <ParseNotes deck={state.deck} />
+              {!estimate.complete || Object.keys(manual).length > 0 ? (
+                <MissingPrices
+                  lines={estimate.lines.filter((l) => l.unitCents == null || l.status === "manual")}
+                  complete={estimate.complete}
+                  inputs={manualInputs}
+                  onChange={(key, value) => setManualInputs((m) => ({ ...m, [key]: value }))}
+                />
+              ) : null}
+              <CardList
+                title="Deck principal"
+                lines={estimate.lines.filter((l) => l.board === "main")}
+                totalCents={estimate.mainCents}
               />
-            ) : null}
-            <CardList
-              title="Deck principal"
-              lines={estimate.lines.filter((l) => l.board === "main")}
-              totalCents={estimate.mainCents}
-            />
-            <CardList
-              title="Réserve"
-              lines={estimate.lines.filter((l) => l.board === "side")}
-              totalCents={estimate.sideCents}
-            />
-          </>
-        )}
+              <CardList
+                title="Réserve"
+                lines={estimate.lines.filter((l) => l.board === "side")}
+                totalCents={estimate.sideCents}
+              />
+            </div>
+          )}
+        </section>
       </div>
-    </div>
+    </>
   );
 }
 
-function EmptyState() {
+/** Avant estimation : le mode d'emploi, dans la colonne du résultat. */
+function HowItWorks() {
   const steps = [
-    ["Colle ta liste", "Exporte-la depuis MTGO, Arena, Moxfield ou MTGGoldfish."],
-    ["Obtiens le prix", "Chaque carte au prix de son impression la moins chère sur Cardmarket."],
-    ["Complète si besoin", "Une carte sans prix ? Indique le tien, le total se met à jour."],
-    ["Mets-le en vente", "Fixe ton prix, publie l'annonce et suis-la depuis ton espace membre."],
+    ["Colle ta liste", "Exportée depuis MTGO, Arena, Moxfield ou MTGGoldfish, telle quelle."],
+    ["Lis le prix", "Chaque carte au prix de son impression la moins chère sur Cardmarket, avec la date des prix."],
+    ["Complète", "Une carte sans prix ? Indique le tien : le total se met à jour."],
+    ["Mets-le en vente", "Publie ton deck au prix de ton choix et suis la vente depuis ton espace."],
   ];
   return (
-    <div className="rounded-2xl border border-dashed border-line px-5 py-8 sm:px-8">
-      <ol className="space-y-5">
+    <div className="rounded-xl border border-line bg-surface">
+      <h2 className="border-b border-line px-5 py-4 font-semibold">Comment ça marche</h2>
+      <ol className="divide-y divide-line">
         {steps.map(([title, text], i) => (
-          <li key={title} className="flex gap-4">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-semibold text-accent">
+          <li key={title} className="flex gap-4 px-5 py-4">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-brand-soft text-sm font-semibold tabular-nums text-link">
               {i + 1}
             </span>
             <div>
               <p className="font-medium">{title}</p>
-              <p className="text-sm text-muted">{text}</p>
+              <p className="mt-0.5 text-sm leading-relaxed text-muted">{text}</p>
             </div>
           </li>
         ))}
@@ -144,63 +205,72 @@ function EmptyState() {
   );
 }
 
-function Summary({ estimate, pricesAsOf }: { estimate: Estimate; pricesAsOf: string | null }) {
+/** Le résultat : la carte phare révélée en dernier, et la valeur du deck écrite en toutes lettres. */
+function Receipt({ estimate, pricesAsOf }: { estimate: Estimate; pricesAsOf: string | null }) {
   const priced = estimate.lines.filter((l) => l.lineCents != null);
-  const top = [...priced].sort((a, b) => b.lineCents! - a.lineCents!).slice(0, 5);
-  const topCents = top.reduce((n, l) => n + l.lineCents!, 0);
-  const topShare = estimate.totalCents > 0 ? Math.round((topCents / estimate.totalCents) * 100) : 0;
+  const byValue = [...priced].sort((a, b) => b.unitCents! - a.unitCents!);
+  const star = byValue[0];
+  const top5 = [...priced].sort((a, b) => b.lineCents! - a.lineCents!).slice(0, 5);
+  const topShare =
+    estimate.totalCents > 0 ? Math.round((top5.reduce((n, l) => n + l.lineCents!, 0) / estimate.totalCents) * 100) : 0;
 
   return (
-    <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm font-medium text-muted">Valeur estimée</p>
-        {estimate.complete ? (
-          <span className="rounded-full bg-ok-soft px-2.5 py-1 text-xs font-medium text-ok">Estimation complète</span>
-        ) : (
-          <span className="rounded-full bg-warn-soft px-2.5 py-1 text-xs font-medium text-warn">
-            Incomplète · {estimate.unpricedCardCount} carte{estimate.unpricedCardCount > 1 ? "s" : ""} sans prix
-          </span>
-        )}
+    <section className="grid gap-6 rounded-xl border border-line bg-surface p-5 sm:p-6 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
+      {star?.card?.imageUrl && (
+        <figure className="flip-in mx-auto w-[160px] [animation-delay:600ms] sm:w-[180px]">
+          <div className="relative aspect-[488/680] overflow-hidden rounded-[4.75%/3.5%] shadow-[0_18px_40px_-16px_rgba(0,0,0,0.55)] ring-[3px] ring-reveal">
+            <Image src={star.card.imageUrl} alt={star.card.name} fill sizes="180px" unoptimized className="object-cover" />
+          </div>
+          <figcaption className="mt-3 text-center text-sm">
+            <span className="font-semibold text-reveal">Carte phare</span>
+            <span className="block text-muted">
+              {formatEur(star.unitCents!)} l&apos;unité
+              {star.card.artist && <> · Ill. {star.card.artist}</>}
+            </span>
+          </figcaption>
+        </figure>
+      )}
+
+      <div>
+        <p className="text-lg text-muted">Ce deck vaut environ</p>
+        <p className="display mt-1 text-[clamp(2.5rem,5vw,3.75rem)] tabular-nums">
+          {formatEur(estimate.totalCents)}
+          {!estimate.complete && <span className="ml-1 text-warn">+</span>}
+        </p>
+        <p className="mt-4 max-w-[60ch] leading-relaxed">
+          {formatEur(estimate.mainCents)} pour le deck principal et {formatEur(estimate.sideCents)} pour la réserve.
+          {top5.length > 0 && (
+            <>
+              {" "}
+              Les {top5.length} cartes les plus chères font <strong>{topShare} %</strong> du total.
+            </>
+          )}
+        </p>
+        <p className="mt-4">
+          {estimate.complete ? (
+            <span className="inline-flex items-center gap-2 rounded-full bg-ok-soft px-3 py-1 text-sm font-medium text-ok">
+              Estimation complète
+            </span>
+          ) : (
+            <span className="hatch inline-flex items-center gap-2 rounded-full border border-warn/40 px-3 py-1 text-sm font-medium text-warn">
+              Incomplète : {estimate.unpricedCardCount} carte{estimate.unpricedCardCount > 1 ? "s" : ""} sans prix
+            </span>
+          )}
+        </p>
+        <p className="mt-5 text-xs leading-relaxed text-muted">
+          Prix Cardmarket (impression non-foil la moins chère), via Scryfall
+          {pricesAsOf && <> · mis à jour le {new Date(pricesAsOf).toLocaleDateString("fr-FR")}</>}. Indicatif : ce
+          n&apos;est pas un prix de revente.
+        </p>
       </div>
-      <p className="mt-1 text-4xl font-bold tracking-tight tabular-nums sm:text-5xl">
-        {formatEur(estimate.totalCents)}
-        {!estimate.complete && <span className="ml-1 align-top text-2xl text-warn">+</span>}
-      </p>
-
-      <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Stat label="Deck principal" value={formatEur(estimate.mainCents)} />
-        <Stat label="Réserve" value={formatEur(estimate.sideCents)} />
-        {top.length > 0 && (
-          <Stat
-            label={`${top.length} cartes les plus chères`}
-            value={`${topShare} % du total`}
-            className="col-span-2 sm:col-span-1"
-          />
-        )}
-      </dl>
-
-      <p className="mt-4 text-xs text-muted">
-        Prix Cardmarket (impression non-foil la moins chère), via Scryfall
-        {pricesAsOf && <> · mis à jour le {new Date(pricesAsOf).toLocaleDateString("fr-FR")}</>}. Indicatif : ce
-        n&apos;est pas un prix de revente.
-      </p>
     </section>
-  );
-}
-
-function Stat({ label, value, className = "" }: { label: string; value: string; className?: string }) {
-  return (
-    <div className={`rounded-xl bg-sunken px-3 py-2.5 ${className}`}>
-      <dt className="text-xs text-muted">{label}</dt>
-      <dd className="mt-0.5 font-semibold tabular-nums">{value}</dd>
-    </div>
   );
 }
 
 function ParseNotes({ deck }: { deck: Extract<EstimateState, { status: "ok" }>["deck"] }) {
   if (deck.errors.length === 0 && deck.warnings.length === 0) return null;
   return (
-    <details className="rounded-2xl border border-line bg-surface px-5 py-3 text-sm">
+    <details className="rounded-xl border border-line bg-surface px-5 py-3 text-sm">
       <summary className="cursor-pointer font-medium">
         {deck.errors.length > 0
           ? `${deck.errors.length} ligne${deck.errors.length > 1 ? "s" : ""} ignorée${deck.errors.length > 1 ? "s" : ""}`
@@ -234,11 +304,9 @@ function MissingPrices({
 }) {
   if (lines.length === 0) return null;
   return (
-    <section
-      className={`rounded-2xl border p-5 ${complete ? "border-line bg-surface" : "border-warn/30 bg-warn-soft/60"}`}
-    >
-      <h2 className="font-semibold">{complete ? "Prix saisis à la main" : "Cartes à compléter"}</h2>
-      <p className="mt-1 text-sm text-muted">
+    <section className={`rounded-xl border p-5 ${complete ? "border-line bg-surface" : "hatch border-warn/40"}`}>
+      <h2 className="text-lg font-semibold">{complete ? "Prix saisis à la main" : "Cartes à compléter"}</h2>
+      <p className="mt-2 text-sm">
         {complete
           ? "Ces prix sont inclus dans le total. Vide un champ pour retirer la carte du total."
           : "Les cartes sans prix ne sont pas comptées dans le total. Indique un prix à l’unité pour les inclure."}
@@ -250,7 +318,7 @@ function MissingPrices({
           return (
             <li
               key={`${l.board}-${l.name}`}
-              className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-surface px-3 py-2"
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-surface px-3 py-2.5 ring-1 ring-line"
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">
@@ -273,7 +341,7 @@ function MissingPrices({
                   placeholder="0,00"
                   value={inputs[key] ?? ""}
                   onChange={(e) => onChange(key, e.target.value)}
-                  className="w-24 rounded-lg border border-line bg-sunken px-2 py-1.5 text-right tabular-nums outline-none focus:border-accent focus:ring-2 focus:ring-accent/25"
+                  className="w-24 rounded-lg border border-line bg-sunken px-2 py-1.5 text-right tabular-nums outline-none focus:border-link focus:ring-2 focus:ring-link/25"
                 />
                 <span className="text-muted">€</span>
               </label>

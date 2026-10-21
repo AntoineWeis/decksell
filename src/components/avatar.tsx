@@ -10,7 +10,7 @@ export function Avatar({ name, url, size = 32 }: { name: string; url: string | n
     .toUpperCase();
   return (
     <span
-      className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent-soft font-semibold text-accent"
+      className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-soft font-semibold text-link"
       style={{ width: size, height: size, fontSize: size * 0.4 }}
     >
       {url ? <Image src={url} alt="" fill sizes={`${size}px`} unoptimized className="object-cover" /> : initials}

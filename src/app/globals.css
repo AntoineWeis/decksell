@@ -1,40 +1,68 @@
 @import "tailwindcss";
 
+/* Outil de deck bleuté, dans la famille Moxfield / MTGGoldfish.
+   - accent : le bleu vif, pour les actions, les liens et le focus.
+   - reveal : l'orange mythique, réservé à la carte phare.
+   - gemmes de rareté aux couleurs de Magic.
+   - hachures : la seule marque des cartes sans prix. */
+
 :root {
-  --background: #f6f6f4;
-  --foreground: #18181b;
+  --background: #f3f5f9;
+  --foreground: #111827;
   --surface: #ffffff;
-  --sunken: #f1f1ef;
-  --line: #e4e4e0;
-  --muted: #6b6b70;
-  --accent: #4338ca;
-  --accent-soft: #e8e7fb;
+  --sunken: #eef1f6;
+  --line: #dde3ec;
+  --muted: #586378;
+  --banner: #0f1830;
+  --banner-ink: #f3f6fc;
+  --banner-muted: #b4c0d8;
+  --link: #2257d6;
+  --brand-soft: #e5edff;
+  --accent: #2563eb;
+  --accent-hover: #1d4fd0;
   --on-accent: #ffffff;
-  --ok: #15803d;
-  --ok-soft: #e3f4e8;
-  --warn: #a15c07;
-  --warn-soft: #fdf1dc;
+  --reveal: #e2511f;
+  --gem-common: #2a2d34;
+  --gem-uncommon: #8d98a6;
+  --gem-rare: #c3961a;
+  --gem-mythic: #e2511f;
+  --ok: #157a3a;
+  --ok-soft: #e1f3e7;
+  --warn: #8f5200;
+  --warn-soft: #fdf0d7;
   --danger: #b42318;
   --danger-soft: #fdecea;
+  --hatch: rgba(143, 82, 0, 0.14);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0c0c0e;
-    --foreground: #ececee;
-    --surface: #151518;
-    --sunken: #1c1c20;
-    --line: #2a2a30;
-    --muted: #9a9aa3;
-    --accent: #a5a1ff;
-    --accent-soft: #23214a;
-    --on-accent: #0c0c0e;
+    --background: #0e121b;
+    --foreground: #e6ebf4;
+    --surface: #161c28;
+    --sunken: #1c2331;
+    --line: #283143;
+    --muted: #8e9ab2;
+    --banner: #0b1222;
+    --banner-ink: #f3f6fc;
+    --banner-muted: #aab6cf;
+    --link: #7fa8ff;
+    --brand-soft: #1a2747;
+    --accent: #3b7bff;
+    --accent-hover: #5a90ff;
+    --on-accent: #ffffff;
+    --reveal: #ff6a36;
+    --gem-common: #d4d7de;
+    --gem-uncommon: #9aa6b4;
+    --gem-rare: #d9aa2b;
+    --gem-mythic: #ff6a36;
     --ok: #6fd28f;
     --ok-soft: #12291a;
     --warn: #f3b85c;
     --warn-soft: #2e2210;
     --danger: #ff8a80;
     --danger-soft: #2f1412;
+    --hatch: rgba(243, 184, 92, 0.13);
   }
 }
 
@@ -45,9 +73,15 @@
   --color-sunken: var(--sunken);
   --color-line: var(--line);
   --color-muted: var(--muted);
+  --color-banner: var(--banner);
+  --color-banner-ink: var(--banner-ink);
+  --color-banner-muted: var(--banner-muted);
+  --color-link: var(--link);
+  --color-brand-soft: var(--brand-soft);
   --color-accent: var(--accent);
-  --color-accent-soft: var(--accent-soft);
+  --color-accent-hover: var(--accent-hover);
   --color-on-accent: var(--on-accent);
+  --color-reveal: var(--reveal);
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
   --color-warn: var(--warn);
@@ -56,9 +90,82 @@
   --color-danger-soft: var(--danger-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-sora);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  caret-color: var(--accent);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+html {
+  scrollbar-color: var(--line) transparent;
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+@layer components {
+  /* Grands titres : Sora, géométrique et nette. */
+  .display {
+    font-family: var(--font-sora);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  /* Hachures : la seule marque de ce qui n'a pas de prix. */
+  .hatch {
+    background-image: repeating-linear-gradient(-45deg, var(--hatch) 0 6px, transparent 6px 12px);
+  }
+
+  /* Gemmes de rareté (losange). */
+  .gem {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    transform: rotate(45deg);
+    border-radius: 1.5px;
+    flex-shrink: 0;
+  }
+  .gem-common { background: var(--gem-common); }
+  .gem-uncommon { background: var(--gem-uncommon); }
+  .gem-rare { background: var(--gem-rare); }
+  .gem-mythic { background: var(--gem-mythic); }
+  .gem-special { background: var(--gem-rare); }
+  .gem-bonus { background: var(--gem-mythic); }
+}
+
+/* Résultat : les lignes apparaissent de la moins chère à la plus chère, la carte phare se retourne en dernier. */
+@keyframes slide-out {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes flip-in {
+  from { opacity: 0; transform: perspective(900px) rotateY(-80deg); }
+  to { opacity: 1; transform: none; }
+}
+.slide-out {
+  animation: slide-out 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.flip-in {
+  animation: flip-in 650ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .slide-out,
+  .flip-in {
+    animation: none;
+  }
 }

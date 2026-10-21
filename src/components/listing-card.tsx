@@ -9,12 +9,12 @@ import { CONDITIONS, STATUSES, type Listing, type ListingStatus } from "@/lib/li
 const STATUS_STYLE: Record<ListingStatus, string> = {
   active: "bg-ok-soft text-ok",
   reserved: "bg-warn-soft text-warn",
-  sold: "bg-accent-soft text-accent",
+  sold: "bg-brand-soft text-link",
   withdrawn: "bg-sunken text-muted",
 };
 
 const fieldClass =
-  "rounded-lg border border-line bg-sunken px-2.5 py-1.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/25";
+  "rounded-lg border border-line bg-sunken px-2.5 py-1.5 text-sm outline-none focus:border-link focus:ring-2 focus:ring-link/25";
 
 const date = (iso: string) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 
@@ -75,7 +75,7 @@ export function ListingCard({ listing: l }: { listing: Listing }) {
         <button
           type="submit"
           disabled={saving}
-          className="h-[34px] rounded-lg bg-foreground px-3 text-sm font-medium text-background hover:opacity-85 disabled:opacity-50"
+          className="h-[34px] rounded-lg bg-accent px-3 text-sm font-semibold text-on-accent hover:bg-accent-hover disabled:opacity-50"
         >
           {saving ? "…" : "Enregistrer"}
         </button>

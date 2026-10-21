@@ -27,7 +27,17 @@ export async function fetchCardPrices(client: SupabaseClient, names: string[]): 
       : "";
     throw new Error(`Lecture des prix impossible : ${error.message}${hint}`);
   }
-  return ((data ?? []) as LookupRow[]).map((r) => ({
+  const rows = (data ?? []) as LookupRow[];
+
+  // Rareté de l'impression retenue (gemme affichée devant chaque carte).
+  const rarityById = new Map<string, string | null>();
+  const ids = rows.map((r) => r.print_id);
+  if (ids.length > 0) {
+    const { data: rarities } = await client.from("cards").select("id, rarity").in("id", ids);
+    for (const r of (rarities ?? []) as { id: string; rarity: string | null }[]) rarityById.set(r.id, r.rarity);
+  }
+
+  return rows.map((r) => ({
     oracleId: r.oracle_id,
     name: r.name,
     printId: r.print_id,
@@ -35,6 +45,7 @@ export async function fetchCardPrices(client: SupabaseClient, names: string[]): 
     collectorNumber: r.collector_number,
     imageUrl: r.image_url,
     artist: r.artist,
+    rarity: rarityById.get(r.print_id) ?? null,
     priceEur: num(r.price_eur),
     minPriceEurFoil: num(r.min_price_eur_foil),
   }));

@@ -8,7 +8,7 @@ import { formatEur, type Estimate, type ManualPrices } from "@/lib/pricing";
 import { CONDITIONS } from "@/lib/listings";
 
 const inputClass =
-  "w-full rounded-lg border border-line bg-sunken px-3 py-2 outline-none focus:border-accent focus:ring-2 focus:ring-accent/25";
+  "w-full rounded-lg border border-line bg-sunken px-3 py-2 outline-none focus:border-link focus:ring-2 focus:ring-link/25";
 
 /** Mise en vente du deck qui vient d'être estimé. */
 export function SellPanel({
@@ -26,15 +26,15 @@ export function SellPanel({
 
   if (!open) {
     return (
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface px-5 py-4">
         <div>
-          <p className="font-semibold">Tu veux vendre ce deck ?</p>
+          <p className="text-lg font-semibold">Tu veux vendre ce deck ?</p>
           <p className="text-sm text-muted">Crée une annonce en un clic et suis-la depuis ton espace.</p>
         </div>
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="h-10 rounded-xl bg-foreground px-4 font-semibold text-background transition hover:opacity-85"
+          className="h-10 rounded-lg bg-accent px-4 font-semibold text-on-accent transition hover:bg-accent-hover"
         >
           Mettre en vente
         </button>
@@ -43,8 +43,8 @@ export function SellPanel({
   }
 
   return (
-    <form onSubmit={submitWithoutReset(action)} className="rounded-2xl border border-accent/40 bg-surface p-5">
-      <h2 className="font-semibold">Mettre ce deck en vente</h2>
+    <form onSubmit={submitWithoutReset(action)} className="rounded-xl border border-link/40 bg-surface p-5">
+      <h2 className="text-lg font-semibold">Mettre ce deck en vente</h2>
       <p className="mt-1 text-sm text-muted">
         Valeur estimée : {formatEur(estimate.totalCents)}
         {!estimate.complete && " (incomplète)"}. Tu restes libre de ton prix.
@@ -99,11 +99,11 @@ export function SellPanel({
       {state.status === "auth" && (
         <p className="mt-3 rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">
           Connecte-toi pour publier l&apos;annonce : ta liste est gardée.{" "}
-          <Link href="/connexion?next=/%23estimer" className="font-semibold underline">
+          <Link href="/connexion?next=/estimer" className="font-semibold underline">
             Se connecter
           </Link>{" "}
           ou{" "}
-          <Link href="/inscription?next=/%23estimer" className="font-semibold underline">
+          <Link href="/inscription?next=/estimer" className="font-semibold underline">
             créer un compte
           </Link>
           .

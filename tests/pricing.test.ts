@@ -12,6 +12,7 @@ function card(name: string, priceEur: number | null, extra: Partial<CardPrice> =
     collectorNumber: "1",
     imageUrl: null,
     artist: null,
+    rarity: null,
     priceEur,
     minPriceEurFoil: null,
     ...extra,

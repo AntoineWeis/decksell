@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-21T14:10:00+02:00",
+  "title": "Design System: decksell",
+  "extensions": {
+    "colorMeta": {
+      "action-blue": {
+        "role": "primary",
+        "displayName": "Bleu action",
+        "tonalRamp": [
+          "#0b1f5c",
+          "#122d82",
+          "#1a3fae",
+          "#2563eb",
+          "#4a80f0",
+          "#7ca3f5",
+          "#b4caf9",
+          "#e5edff"
+        ]
+      },
+      "banner-night": {
+        "role": "neutral",
+        "displayName": "Nuit bandeau",
+        "tonalRamp": [
+          "#060b16",
+          "#0b1222",
+          "#0f1830",
+          "#1a2645",
+          "#2b3a60",
+          "#4a5a82",
+          "#8090b3",
+          "#c5cde0"
+        ]
+      },
+      "star-orange": {
+        "role": "tertiary",
+        "displayName": "Orange phare"
+      },
+      "page": {
+        "role": "neutral",
+        "displayName": "Page"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Encre"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Titre Sora",
+        "purpose": "Titres des bandeaux et des sections, montant estimé."
+      },
+      "headline": {
+        "displayName": "Titre de panneau",
+        "purpose": "Titres des panneaux."
+      },
+      "label": {
+        "displayName": "En-tête de colonne",
+        "purpose": "En-têtes du tableau de cartes."
+      },
+      "data": {
+        "displayName": "Decklist",
+        "purpose": "Contenu collé des decklists."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card",
+        "value": "0 18px 40px -16px rgba(0,0,0,0.55)",
+        "purpose": "Carte phare et aperçu de carte."
+      }
+    ],
+    "motion": [
+      {
+        "name": "row-in",
+        "value": "320ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Apparition des lignes, de la moins chère à la plus chère (décalage 20ms, plafond 500ms)."
+      },
+      {
+        "name": "star-flip",
+        "value": "650ms cubic-bezier(0.16, 1, 0.3, 1), délai 600ms",
+        "purpose": "La carte phare se retourne en dernier."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Bouton principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Action principale d'un formulaire.",
+      "html": "<button class=\"ds-btn\">Estimer le deck</button>",
+      "css": ".ds-btn { height: 44px; padding: 0 20px; border: none; border-radius: 8px; background: var(--accent, #2563eb); color: #fff; font-family: Geist, sans-serif; font-weight: 600; cursor: pointer; transition: background 0.15s; } .ds-btn:hover { background: var(--accent-hover, #1d4fd0); } .ds-btn:focus-visible { outline: 2px solid var(--link, #2257d6); outline-offset: 2px; }"
+    },
+    {
+      "name": "Champ",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Champ de saisie standard.",
+      "html": "<input class=\"ds-input\" placeholder=\"0,00\" />",
+      "css": ".ds-input { border: 1px solid var(--line, #dde3ec); border-radius: 8px; padding: 10px 12px; background: var(--sunken, #eef1f6); color: var(--foreground, #111827); font-family: Geist, sans-serif; outline: none; } .ds-input:focus-visible { border-color: var(--link, #2257d6); box-shadow: 0 0 0 2px rgba(34,87,214,0.25); }"
+    },
+    {
+      "name": "Barre de navigation",
+      "kind": "nav",
+      "refersTo": "nav-bar",
+      "description": "Barre bleu nuit, identique dans les deux thèmes.",
+      "html": "<nav class=\"ds-nav\"><span class=\"ds-logo\">decksell</span><a class=\"ds-link\" href=\"#\">Estimer un deck</a><a class=\"ds-link ds-right\" href=\"#\">Connexion</a><a class=\"ds-cta\" href=\"#\">Créer un compte</a></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; gap: 6px; height: 56px; padding: 0 24px; background: var(--banner, #0f1830); color: var(--banner-ink, #f3f6fc); font-family: Geist, sans-serif; font-size: 14px; } .ds-logo { font-weight: 600; margin-right: 18px; } .ds-link { padding: 8px 12px; border-radius: 6px; color: var(--banner-muted, #b4c0d8); text-decoration: none; font-weight: 500; } .ds-link:hover { background: rgba(255,255,255,0.1); color: var(--banner-ink, #f3f6fc); } .ds-right { margin-left: auto; color: var(--banner-ink, #f3f6fc); } .ds-cta { padding: 8px 12px; border-radius: 6px; background: var(--accent, #2563eb); color: #fff; font-weight: 600; text-decoration: none; } .ds-link:focus-visible, .ds-cta:focus-visible { outline: 2px solid var(--link, #2257d6); outline-offset: 2px; }"
+    },
+    {
+      "name": "Ligne de carte",
+      "kind": "custom",
+      "description": "Une carte du tableau : quantité, gemme, nom, prix tabulaire.",
+      "html": "<div class=\"ds-row\"><span class=\"ds-qty\">4</span><span class=\"ds-gem\"></span><span class=\"ds-name\">Urza's Saga<small>MB2 · 114</small></span><span class=\"ds-price\">158,04 €</span></div>",
+      "css": ".ds-row { display: flex; align-items: center; gap: 12px; padding: 8px 20px; border-bottom: 1px solid var(--line, #dde3ec); background: var(--surface, #fff); font-family: Geist, sans-serif; } .ds-row:hover { background: var(--sunken, #eef1f6); } .ds-qty { width: 24px; text-align: right; color: var(--muted, #586378); font-variant-numeric: tabular-nums; } .ds-gem { width: 9px; height: 9px; transform: rotate(45deg); border-radius: 1.5px; background: #c3961a; } .ds-name { flex: 1; font-weight: 500; } .ds-name small { display: block; font-size: 12px; font-weight: 400; color: var(--muted, #586378); } .ds-price { font-weight: 500; font-variant-numeric: tabular-nums; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "L'outil de deck bien fini",
+    "overview": "decksell assume le standard de sa catégorie : il ressemble à un outil de joueur de la famille Moxfield, avec la densité de prix de MTGGoldfish. Une barre de navigation bleu nuit et, en haut de chaque page, un bandeau de page de deck où une illustration de carte floutée passe sous un dégradé. L'accueil présente le projet et rassure sur les prix ; la page « Estimer » est l'outil lui-même.",
+    "keyCharacteristics": [
+      "Barre et bandeau bleu nuit, identiques dans les deux thèmes.",
+      "Un seul bleu d'action pour les boutons, les liens et le focus.",
+      "Panneaux plats aux coins de 12px, séparés par des filets.",
+      "Tableau de cartes à en-têtes de colonnes, trié par valeur.",
+      "Gemmes de rareté, carte phare en orange, hachures pour les manques."
+    ],
+    "rules": [
+      {
+        "name": "The One Blue Rule",
+        "body": "Une seule teinte de bleu vif pour tout ce qui agit ; pas de second accent.",
+        "section": "colors"
+      },
+      {
+        "name": "The Star Rule",
+        "body": "L'orange ne marque que la carte phare ; la gemme mythique partage sa teinte parce qu'elle dit la même chose.",
+        "section": "colors"
+      },
+      {
+        "name": "The Hatch Rule",
+        "body": "Tout ce qui n'a pas de prix porte des hachures diagonales, partout la même marque.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Price Rule",
+        "body": "Tout prix et toute quantité s'affichent en chiffres tabulaires, au format français (1 234,56 €).",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do rester au niveau de finition de Moxfield et MTGGoldfish : sobre, dense, net.",
+      "Do garder les sections d'explication et de réassurance de l'accueil, demandées par l'utilisateur, et n'y écrire que des faits vérifiables dans le produit.",
+      "Do utiliser le seul bleu d'action pour agir, et l'orange seulement pour la carte phare.",
+      "Do afficher la rareté réelle avec les gemmes et marquer tout manque de prix par les hachures.",
+      "Do écrire la valeur comme une phrase (« Ce deck vaut environ… ») avec la source et la date des prix.",
+      "Do respecter « réduire les animations » : apparition des lignes et retournement désactivés."
+    ],
+    "donts": [
+      "Don't revenir à une direction illustrative ou « objet » (sachet, parchemin) : l'utilisateur l'a refusée.",
+      "Don't utiliser parchemins, enluminures ou polices médiévales (trop fantasy).",
+      "Don't transformer les prix en tableau de bord financier froid sans les détails Magic.",
+      "Don't ajouter un second accent de couleur ni de jaune.",
+      "Don't surcharger : le décor ne doit jamais noyer l'estimation ni les prix."
+    ]
+  }
+}

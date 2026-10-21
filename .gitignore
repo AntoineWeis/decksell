@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# impeccable : captures de revue et journaux locaux
+.impeccable/review/
+.impeccable/questions/

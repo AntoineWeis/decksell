@@ -3,23 +3,26 @@ import { Suspense } from "react";
 import { getProfile } from "@/lib/auth";
 import { Avatar } from "./avatar";
 
+// Barre de navigation façon outil de deck : bleu nuit dans les deux thèmes.
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-background/85 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 font-bold tracking-tight">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-accent text-sm text-on-accent">d</span>
-          decksell
+    <header className="sticky top-0 z-30 border-b border-white/10 bg-banner text-banner-ink">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
+        <Link href="/" className="flex items-center gap-2.5 rounded-md">
+          <LogoMark />
+          <span className="text-lg font-semibold tracking-tight">decksell</span>
         </Link>
-        <nav className="flex items-center gap-1 text-sm sm:gap-2">
-          <Link href="/#estimer" className="hidden rounded-lg px-3 py-2 text-muted hover:text-foreground sm:block">
+        <nav className="hidden items-center gap-1 text-sm sm:flex">
+          <Link href="/estimer" className="rounded-md px-3 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink">
             Estimer un deck
           </Link>
+        </nav>
+        <div className="ml-auto flex items-center gap-1.5 text-sm">
           {/* Lit la session : à part, pour ne pas ralentir le reste de la page */}
-          <Suspense fallback={<div className="h-9 w-28 rounded-lg bg-sunken" />}>
+          <Suspense fallback={<div className="h-9 w-28 rounded-md bg-white/10" />}>
             <UserMenu />
           </Suspense>
-        </nav>
+        </div>
       </div>
     </header>
   );
@@ -30,22 +33,45 @@ async function UserMenu() {
   if (!profile) {
     return (
       <>
-        <Link href="/connexion" className="rounded-lg px-3 py-2 font-medium hover:bg-sunken">
+        <Link
+          href="/connexion"
+          className="whitespace-nowrap rounded-md px-3 py-2 font-medium text-banner-ink hover:bg-white/10"
+        >
           Connexion
         </Link>
         <Link
           href="/inscription"
-          className="rounded-lg bg-foreground px-3 py-2 font-medium text-background transition hover:opacity-85"
+          className="whitespace-nowrap rounded-md bg-accent px-3 py-2 font-semibold text-on-accent transition hover:bg-accent-hover"
         >
-          Créer un compte
+          <span className="sm:hidden">S&apos;inscrire</span>
+          <span className="hidden sm:inline">Créer un compte</span>
         </Link>
       </>
     );
   }
   return (
-    <Link href="/espace" className="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 font-medium hover:bg-sunken">
-      <Avatar name={profile.displayName} url={profile.avatarUrl} size={30} />
-      <span className="max-w-32 truncate">{profile.displayName}</span>
-    </Link>
+    <>
+      <Link
+        href="/espace"
+        className="hidden whitespace-nowrap rounded-md px-3 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:block"
+      >
+        Mes annonces
+      </Link>
+      <Link href="/espace/profil" className="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 font-medium hover:bg-white/10">
+        <Avatar name={profile.displayName} url={profile.avatarUrl} size={28} />
+        <span className="max-w-32 truncate">{profile.displayName}</span>
+      </Link>
+    </>
+  );
+}
+
+/** Deux cartes décalées sur un carré bleu. */
+function LogoMark() {
+  return (
+    <svg viewBox="0 0 28 28" className="size-7" aria-hidden>
+      <rect width="28" height="28" rx="7" fill="var(--accent)" />
+      <rect x="7" y="8.5" width="10" height="13.5" rx="1.6" fill="#fff" fillOpacity="0.45" transform="rotate(-10 12 15)" />
+      <rect x="11" y="6.5" width="10" height="13.5" rx="1.6" fill="#fff" />
+    </svg>
   );
 }
