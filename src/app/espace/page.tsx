@@ -6,6 +6,7 @@ import { createSupabaseServer } from "@/lib/supabase-auth";
 import { formatEur } from "@/lib/pricing";
 import { LISTING_COLUMNS, type Listing } from "@/lib/listings";
 import { ListingCard } from "@/components/listing-card";
+import { getArchetypes } from "@/lib/archetypes";
 
 export const metadata: Metadata = { title: "Mes annonces" };
 
@@ -29,7 +30,8 @@ async function Dashboard() {
   if (error) {
     return <p className="rounded-xl bg-danger-soft px-5 py-4 text-danger">Impossible de charger tes annonces.</p>;
   }
-  const listings = (data ?? []) as Listing[];
+  const listings = (data ?? []) as unknown as Listing[];
+  const archetypes = await getArchetypes();
 
   const count = (s: Listing["status"]) => listings.filter((l) => l.status === s).length;
   const soldTotal = listings.reduce((n, l) => n + (l.status === "sold" ? (l.sold_cents ?? 0) : 0), 0);
@@ -60,7 +62,7 @@ async function Dashboard() {
       ) : (
         <ul className="space-y-3">
           {listings.map((l) => (
-            <ListingCard key={l.id} listing={l} />
+            <ListingCard key={l.id} listing={l} archetypes={archetypes} />
           ))}
         </ul>
       )}

@@ -31,7 +31,8 @@ La revente de decks complets entre particuliers. Moxfield et MTGGoldfish servent
 
 - En place : estimation d'une decklist (impression non-foil la moins chère, cartes sans prix signalées et complétables), comptes membres (email et mot de passe), mise en vente depuis l'estimation, espace membre (annonces, statuts, prix, profil avec photo et liens Moxfield / Archidekt).
 - Place de marché : index public des decks en vente et réservés (/decks), page de chaque deck avec sa valeur du jour carte par carte, la part de cartes en français / anglais déclarée par le vendeur (pourcentage saisi à la main, non vérifié) et le profil du vendeur.
-- Pas encore construit : la mise en relation acheteur / vendeur (contact, messagerie), la recherche et les filtres de decks.
+- Filtres de l'index : couleurs du deck (cumulables, « contient toutes les couleurs choisies ») et archétype (un seul par deck, choisi dans une liste fixe du méta Modern, facultatif). Couleurs et archétype sont déclarés par le vendeur.
+- Pas encore construit : la mise en relation acheteur / vendeur (contact, messagerie), la recherche par nom de carte.
 - Stack : Next.js 16 (App Router, Cache Components) sur Vercel, Supabase (Postgres, Auth, Storage), Tailwind CSS 4.
 - Données de cartes et images : Scryfall. Contenu de fans non officiel, non approuvé par Wizards of the Coast ; les mentions légales Scryfall et Wizards restent visibles.
 - Ouvert : modèle économique (gratuit, commission ou autre), non décidé.

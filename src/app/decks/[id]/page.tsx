@@ -5,6 +5,7 @@ import { estimateDecklistNow, fetchPublicListing } from "@/lib/public-listings";
 import { DeckBanner } from "@/components/deck-banner";
 import { DeckView } from "@/components/deck-view";
 import { ListingAside } from "@/components/listing-aside";
+import { DeckTags } from "@/components/deck-tags";
 
 export const metadata: Metadata = { title: "Deck en vente" };
 
@@ -33,7 +34,11 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
         coverImageUrl={listing.cover_image_url}
         coverCardName={listing.cover_card_name}
         back={{ href: "/decks", label: "Tous les decks en vente" }}
-      />
+      >
+        <div className="mt-4">
+          <DeckTags colors={listing.colors ?? []} archetype={listing.archetype} onDark />
+        </div>
+      </DeckBanner>
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-20 pt-6 sm:px-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:items-start">
         <div className="min-w-0 lg:order-1">
           <DeckView estimate={estimate} pricesAsOf={pricesAsOf} />

@@ -166,3 +166,11 @@ export function parseEur(raw: string): number | null {
   if (cleaned === "" || !/^\d+(\.\d{0,2})?$/.test(cleaned)) return null;
   return Math.round(Number(cleaned) * 100);
 }
+
+/** Carte phare d'une estimation : la plus chère à l'unité, avec une image. */
+export function starCard(estimate: Estimate): CardPrice | null {
+  const star = estimate.lines
+    .filter((l) => l.unitCents != null && l.card?.imageUrl)
+    .sort((a, b) => b.unitCents! - a.unitCents!)[0];
+  return star?.card ?? null;
+}

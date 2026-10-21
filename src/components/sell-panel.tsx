@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { createListing, type SellState } from "@/app/listing-actions";
 import { formatEur, type Estimate, type ManualPrices } from "@/lib/pricing";
-import { CONDITIONS } from "@/lib/listings";
+import { CONDITIONS, type Archetype } from "@/lib/listings";
+import { ArchetypeSelect, ColorPicker } from "./deck-tags-fields";
 
 const inputClass =
   "w-full rounded-lg border border-line bg-sunken px-3 py-2 outline-none focus:border-link focus:ring-2 focus:ring-link/25";
@@ -15,10 +16,12 @@ export function SellPanel({
   decklist,
   estimate,
   manual,
+  archetypes,
 }: {
   decklist: string;
   estimate: Estimate;
   manual: ManualPrices;
+  archetypes: Archetype[];
 }) {
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState<SellState, FormData>(createListing, { status: "idle" });
@@ -57,6 +60,13 @@ export function SellPanel({
         <label className="sm:col-span-3">
           <span className="mb-1 block text-sm font-medium">Titre de l&apos;annonce</span>
           <input name="title" required minLength={3} maxLength={80} placeholder="Eldrazi Ramp complet, sleevé" className={inputClass} />
+        </label>
+        <div className="sm:col-span-2">
+          <ColorPicker required />
+        </div>
+        <label>
+          <span className="mb-1 block text-sm font-medium">Archétype</span>
+          <ArchetypeSelect archetypes={archetypes} className={inputClass} />
         </label>
         <label>
           <span className="mb-1 block text-sm font-medium">Prix demandé</span>

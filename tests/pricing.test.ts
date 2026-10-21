@@ -129,3 +129,18 @@ test("pourcentage de cartes en français", async () => {
   assert.equal(parsePercent("-5"), null);
   assert.equal(parsePercent("12,5"), null);
 });
+
+test("couleurs d'un deck : valides, sans doublon, dans l'ordre WUBRG", async () => {
+  const { normalizeColors } = await import("../src/lib/listings.ts");
+  assert.deepEqual(normalizeColors(["R", "U", "R", "X", 3, "g"]), ["U", "R"]);
+  assert.deepEqual(normalizeColors(["G", "W", "B"]), ["W", "B", "G"]);
+  assert.deepEqual(normalizeColors([]), []);
+});
+
+test("carte phare : la plus chère à l'unité ayant une image", async () => {
+  const { starCard } = await import("../src/lib/pricing.ts");
+  const deck = parseDecklist("4 Lightning Bolt\n1 Ragavan, Nimble Pilferer\n1 Carte Inventee\n");
+  const prices = [card("Lightning Bolt", 0.95, { imageUrl: "a.jpg" }), card("Ragavan, Nimble Pilferer", 49.9, { imageUrl: "r.jpg" })];
+  assert.equal(starCard(buildEstimate(deck, prices))?.name, "Ragavan, Nimble Pilferer");
+  assert.equal(starCard(buildEstimate(parseDecklist("2 Carte Inventee\n"), prices)), null);
+});

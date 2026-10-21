@@ -4,9 +4,9 @@ import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { parseDecklist } from "@/lib/decklist";
-import { buildEstimate, parseEur, type ManualPrices } from "@/lib/pricing";
+import { buildEstimate, parseEur, starCard, type ManualPrices } from "@/lib/pricing";
 import { lookupDeckPrices } from "@/lib/estimate";
-import { CONDITIONS, parsePercent, type Condition } from "@/lib/listings";
+import { CONDITIONS, normalizeColors, parsePercent, type Condition } from "@/lib/listings";
 
 export type SellState = { status: "idle" } | { status: "error"; message: string } | { status: "auth" };
 
@@ -38,6 +38,9 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   const condition = str(formData.get("condition")) as Condition;
   const description = str(formData.get("description"));
   const frenchPercent = parsePercent(str(formData.get("french_percent")));
+  const colors = normalizeColors(formData.getAll("colors"));
+  const archetypeRaw = str(formData.get("archetype_id"));
+  const archetypeId = archetypeRaw === "" ? null : Number(archetypeRaw);
 
   if (title.length < 3 || title.length > 80) return { status: "error", message: "Le titre doit faire entre 3 et 80 caractères." };
   if (askingCents == null || askingCents <= 0 || askingCents > 10_000_000) {
@@ -45,6 +48,10 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   }
   if (!(condition in CONDITIONS)) return { status: "error", message: "Choisis l'état des cartes." };
   if (frenchPercent == null) return { status: "error", message: "Indique la part de cartes en français, entre 0 et 100 %." };
+  if (colors.length === 0) return { status: "error", message: "Coche au moins une couleur du deck." };
+  if (archetypeId != null && !(Number.isInteger(archetypeId) && archetypeId > 0)) {
+    return { status: "error", message: "Archétype inconnu." };
+  }
   if (description.length > 2000) return { status: "error", message: "Description trop longue (2000 caractères max)." };
   if (decklist === "" || decklist.length > 20_000) return { status: "error", message: "Decklist invalide." };
 
@@ -63,9 +70,7 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   }
 
   // Carte phare : la plus chère à l'unité, montrée en vignette dans l'index.
-  const star = estimate.lines
-    .filter((l) => l.unitCents != null && l.card?.imageUrl)
-    .sort((a, b) => b.unitCents! - a.unitCents!)[0];
+  const star = starCard(estimate);
 
   const supabase = await createSupabaseServer();
   const { error } = await supabase.from("listings").insert({
@@ -79,8 +84,10 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
     condition,
     description: description || null,
     french_percent: frenchPercent,
-    cover_card_name: star?.card?.name ?? null,
-    cover_image_url: star?.card?.imageUrl ?? null,
+    colors,
+    archetype_id: archetypeId,
+    cover_card_name: star?.name ?? null,
+    cover_image_url: star?.imageUrl ?? null,
   });
   if (error) {
     console.error("Mise en vente : écriture impossible", error.message);

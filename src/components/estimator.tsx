@@ -6,6 +6,7 @@ import { estimateAction, type EstimateState } from "@/app/actions";
 import { normalizeName } from "@/lib/decklist";
 import { buildEstimate, formatEur, parseEur, type Estimate, type ManualPrices, type PricedLine } from "@/lib/pricing";
 import { SAMPLE_DECK } from "@/lib/sample-deck";
+import type { Archetype } from "@/lib/listings";
 import { CardList } from "./card-list";
 import { SellPanel } from "./sell-panel";
 
@@ -25,7 +26,7 @@ function revealId(o: object) {
   return revealIds.get(o)!;
 }
 
-export function Estimator() {
+export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
   const [text, setText] = useState("");
   const [manualInputs, setManualInputs] = useState<Record<string, string>>({});
   const [state, formAction, pending] = useActionState<EstimateState, FormData>(estimateAction, { status: "idle" });
@@ -149,7 +150,7 @@ export function Estimator() {
           {state.status === "ok" && estimate && (
             <div key={revealId(state)} className="space-y-6">
               <Receipt estimate={estimate} pricesAsOf={state.pricesAsOf} />
-              <SellPanel decklist={text} estimate={estimate} manual={manual} />
+              <SellPanel decklist={text} estimate={estimate} manual={manual} archetypes={archetypes} />
               <ParseNotes deck={state.deck} />
               {!estimate.complete || Object.keys(manual).length > 0 ? (
                 <MissingPrices

@@ -246,3 +246,48 @@ create index if not exists listings_public_idx on public.listings (status, creat
 
 -- La lecture publique passe par le serveur (clé secrète) qui ne renvoie que les colonnes
 -- publiques des annonces « active » et « reserved » : aucune règle RLS n'est ouverte ici.
+
+-- 9. Couleurs et archétype des decks en vente (filtres de l'index)
+-- Couleurs : sous-ensemble de W (blanc), U (bleu), B (noir), R (rouge), G (vert) ; vide = incolore.
+alter table public.listings
+  add column if not exists colors text[] not null default '{}'
+    check (colors <@ array['W', 'U', 'B', 'R', 'G']::text[]),
+  add column if not exists archetype_id bigint references public.archetypes (id) on delete set null;
+
+create index if not exists listings_colors_idx on public.listings using gin (colors);
+create index if not exists listings_archetype_idx on public.listings (archetype_id);
+
+-- Liste fixe des archétypes Modern proposés au vendeur (un seul par deck).
+-- Pour en ajouter : une ligne de plus ici, puis réexécuter le fichier.
+insert into public.archetypes (slug, name) values
+  ('affinity', 'Affinity'),
+  ('amulet-titan', 'Amulet Titan'),
+  ('azorius-control', 'Azorius Control'),
+  ('belcher', 'Belcher'),
+  ('boros-energy', 'Boros Energy'),
+  ('burn', 'Burn'),
+  ('crashing-footfalls', 'Crashing Footfalls'),
+  ('death-shadow', 'Death''s Shadow'),
+  ('dimir-control', 'Dimir Control'),
+  ('domain-zoo', 'Domain Zoo'),
+  ('eldrazi-ramp', 'Eldrazi Ramp'),
+  ('eldrazi-tron', 'Eldrazi Tron'),
+  ('elementals', 'Elementals'),
+  ('golgari-yawgmoth', 'Golgari Yawgmoth'),
+  ('hammer-time', 'Hammer Time'),
+  ('hardened-scales', 'Hardened Scales'),
+  ('izzet-murktide', 'Izzet Murktide'),
+  ('izzet-prowess', 'Izzet Prowess'),
+  ('jeskai-control', 'Jeskai Control'),
+  ('jund-midrange', 'Jund Midrange'),
+  ('living-end', 'Living End'),
+  ('merfolk', 'Merfolk'),
+  ('mill', 'Mill'),
+  ('neobrand', 'Neobrand'),
+  ('rakdos-midrange', 'Rakdos Midrange'),
+  ('reanimator', 'Reanimator (Goryo''s Vengeance)'),
+  ('ruby-storm', 'Ruby Storm'),
+  ('scam', 'Scam'),
+  ('tron', 'Tron (Mono-Green)'),
+  ('urza-artifacts', 'Urza Artifacts')
+on conflict (slug) do nothing;

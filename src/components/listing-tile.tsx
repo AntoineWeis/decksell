@@ -4,6 +4,7 @@ import { formatEur } from "@/lib/pricing";
 import { CONDITIONS, artCrop, type PublicListing } from "@/lib/listings";
 import { Avatar } from "./avatar";
 import { LanguageBar } from "./language-bar";
+import { ManaColors } from "./mana";
 
 /** Une annonce dans l'index public : illustration de la carte phare, prix, langue, vendeur. */
 export function ListingTile({ listing: l }: { listing: PublicListing }) {
@@ -50,6 +51,12 @@ export function ListingTile({ listing: l }: { listing: PublicListing }) {
             <h2 className="line-clamp-2 font-semibold group-hover:text-link">{l.title}</h2>
             <p className="mt-0.5 text-xs text-muted">
               {l.card_count} cartes · {CONDITIONS[l.condition]}
+            </p>
+            <p className="mt-2 flex flex-wrap items-center gap-2">
+              <ManaColors colors={l.colors ?? []} size={16} />
+              {l.archetype && (
+                <span className="rounded-md bg-brand-soft px-1.5 py-0.5 text-xs font-semibold text-link">{l.archetype.name}</span>
+              )}
             </p>
           </div>
 

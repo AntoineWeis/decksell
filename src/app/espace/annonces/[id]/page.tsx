@@ -8,6 +8,7 @@ import { estimateDecklistNow } from "@/lib/public-listings";
 import { LISTING_COLUMNS, PUBLIC_STATUSES, STATUSES, type Listing } from "@/lib/listings";
 import { DeckView } from "@/components/deck-view";
 import { ListingAside } from "@/components/listing-aside";
+import { DeckTags } from "@/components/deck-tags";
 
 export const metadata: Metadata = { title: "Mon annonce" };
 
@@ -49,7 +50,10 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
         <h2 className="display text-2xl sm:text-3xl">{listing.title}</h2>
         <span className="rounded-md bg-sunken px-2 py-0.5 text-xs font-semibold text-muted">{STATUSES[listing.status]}</span>
       </div>
-      <p className="mt-1 text-sm text-muted">
+      <div className="mt-2">
+        <DeckTags colors={listing.colors ?? []} archetype={listing.archetype} />
+      </div>
+      <p className="mt-2 text-sm text-muted">
         {isPublic ? (
           <>
             Visible par tous dans les{" "}
@@ -61,7 +65,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
         ) : (
           "Cette annonce n'est pas visible publiquement."
         )}{" "}
-        Statut, prix et langue se modifient depuis « Mes annonces ».
+        Statut, prix, couleurs, archétype et langue se modifient depuis « Mes annonces ».
       </p>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:items-start">

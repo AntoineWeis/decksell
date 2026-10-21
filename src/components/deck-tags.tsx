@@ -1,0 +1,33 @@
+import Link from "next/link";
+import type { Archetype, ManaColor } from "@/lib/listings";
+import { ManaColors } from "./mana";
+import { decksHref } from "./deck-filters";
+
+/** Couleurs et archétype d'un deck ; l'archétype mène à l'index filtré. */
+export function DeckTags({
+  colors,
+  archetype,
+  onDark = false,
+}: {
+  colors: ManaColor[];
+  archetype: Archetype | null;
+  onDark?: boolean;
+}) {
+  return (
+    <p className="flex flex-wrap items-center gap-3">
+      <ManaColors colors={colors} size={22} />
+      {archetype && (
+        <Link
+          href={decksHref({ colors: [], archetype: archetype.slug })}
+          className={
+            onDark
+              ? "rounded-md bg-white/10 px-2 py-0.5 text-sm font-semibold text-banner-ink ring-1 ring-white/15 hover:bg-white/20"
+              : "rounded-md bg-brand-soft px-2 py-0.5 text-sm font-semibold text-link hover:underline"
+          }
+        >
+          {archetype.name}
+        </Link>
+      )}
+    </p>
+  );
+}

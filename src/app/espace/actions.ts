@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { parseEur } from "@/lib/pricing";
-import { STATUSES, parsePercent, type ListingStatus } from "@/lib/listings";
+import { STATUSES, normalizeColors, parsePercent, type ListingStatus } from "@/lib/listings";
 
 // Chaque action revérifie le membre : elles sont joignables par n'importe qui (POST).
 // Les règles RLS limitent en plus chaque écriture aux données du membre.
@@ -23,6 +23,12 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
   const status = str(formData.get("status")) as ListingStatus;
   const askingCents = parseEur(str(formData.get("asking_price")));
   if (!(status in STATUSES)) return { status: "error", message: "Statut inconnu." };
+  const colors = normalizeColors(formData.getAll("colors"));
+  const archetypeRaw = str(formData.get("archetype_id"));
+  const archetypeId = archetypeRaw === "" ? null : Number(archetypeRaw);
+  if (archetypeId != null && !(Number.isInteger(archetypeId) && archetypeId > 0)) {
+    return { status: "error", message: "Archétype inconnu." };
+  }
   const rawPercent = str(formData.get("french_percent"));
   const frenchPercent = rawPercent === "" ? null : parsePercent(rawPercent);
   if (rawPercent !== "" && frenchPercent == null) {
@@ -52,7 +58,7 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
 
   const { error } = await supabase
     .from("listings")
-    .update({ status, asking_cents: askingCents, french_percent: frenchPercent, ...sold, updated_at: new Date().toISOString() })
+    .update({ status, asking_cents: askingCents, french_percent: frenchPercent, colors, archetype_id: archetypeId, ...sold, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("seller_id", user.id);
   if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };
