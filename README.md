@@ -165,7 +165,7 @@ PRODUCT.md / DESIGN.md   Fiche produit et système de design
 
 - [ ] Prise de contact entre acheteur et vendeur
 - [x] Import automatique et quotidien des prix
-- [ ] Mot de passe oublié
+- [x] Mot de passe oublié
 - [ ] Fourchette de prix de revente
 - [ ] Reconnaissance automatique de l'archétype d'une liste
 

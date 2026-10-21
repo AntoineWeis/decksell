@@ -4,6 +4,7 @@ import { submitWithoutReset } from "@/lib/form";
 import { useActionState, useRef, useState, useTransition } from "react";
 import { updateProfile, uploadAvatar, type FormState } from "@/app/espace/actions";
 import type { Profile } from "@/lib/auth";
+import Link from "next/link";
 import { Avatar } from "./avatar";
 
 const inputClass =
@@ -58,6 +59,9 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
         </div>
         <p className="mt-3 font-semibold">{profile.displayName}</p>
         <p className="text-sm text-muted">{email}</p>
+        <Link href="/nouveau-mot-de-passe" className="mt-1 inline-block text-sm text-link hover:underline">
+          Changer de mot de passe
+        </Link>
         <input
           ref={fileRef}
           type="file"
