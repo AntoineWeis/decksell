@@ -8,9 +8,10 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-banner text-banner-ink">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 sm:gap-6 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5 rounded-md">
-          <LogoMark />
-          <span className="hidden text-lg font-semibold tracking-tight min-[400px]:inline">decksell</span>
+        <Link href="/" aria-label="decksell, accueil" className="shrink-0 rounded-md font-logo text-[25px] font-bold leading-none sm:text-[27px]">
+          <span aria-hidden>
+            deck<span className="text-[#5a90ff]">sell</span>
+          </span>
         </Link>
         <nav className="flex items-center gap-1 text-sm">
           <Link href="/decks" className="whitespace-nowrap rounded-md px-2 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:px-3">
@@ -66,16 +67,5 @@ async function UserMenu() {
         <span className="max-w-32 truncate">{profile.displayName}</span>
       </Link>
     </>
-  );
-}
-
-/** Deux cartes décalées sur un carré bleu. */
-function LogoMark() {
-  return (
-    <svg viewBox="0 0 28 28" className="size-7" aria-hidden>
-      <rect width="28" height="28" rx="7" fill="var(--accent)" />
-      <rect x="7" y="8.5" width="10" height="13.5" rx="1.6" fill="#fff" fillOpacity="0.45" transform="rotate(-10 12 15)" />
-      <rect x="11" y="6.5" width="10" height="13.5" rx="1.6" fill="#fff" />
-    </svg>
   );
 }

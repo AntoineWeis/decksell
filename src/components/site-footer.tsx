@@ -8,12 +8,6 @@ export function SiteFooter() {
           <Link href="/qui-sommes-nous" className="text-muted hover:text-foreground">
             Qui sommes-nous
           </Link>
-          <Link href="/decks" className="text-muted hover:text-foreground">
-            Decks en vente
-          </Link>
-          <Link href="/estimer" className="text-muted hover:text-foreground">
-            Estimer un deck
-          </Link>
           <Link href="/conditions-utilisation" className="text-muted hover:text-foreground">
             Conditions d&apos;utilisation
           </Link>
