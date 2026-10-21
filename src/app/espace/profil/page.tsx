@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getProfile, requireUser } from "@/lib/auth";
 import { ProfileForm } from "@/components/profile-form";
+import { DeleteAccount } from "@/components/delete-account";
+import { createSupabaseServer } from "@/lib/supabase-auth";
 
 export const metadata: Metadata = { title: "Profil" };
 
@@ -19,5 +21,15 @@ async function ProfileSection() {
   if (!profile) {
     return <p className="rounded-2xl bg-danger-soft px-5 py-4 text-danger">Profil introuvable.</p>;
   }
-  return <ProfileForm profile={profile} email={user.email} />;
+  const supabase = await createSupabaseServer();
+  const { count } = await supabase
+    .from("listings")
+    .select("id", { count: "exact", head: true })
+    .eq("seller_id", user.id);
+  return (
+    <>
+      <ProfileForm profile={profile} email={user.email} />
+      <DeleteAccount listingCount={count ?? 0} />
+    </>
+  );
 }

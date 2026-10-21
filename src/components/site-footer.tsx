@@ -17,6 +17,9 @@ export function SiteFooter() {
           <Link href="/conditions-utilisation" className="text-muted hover:text-foreground">
             Conditions d&apos;utilisation
           </Link>
+          <Link href="/confidentialite" className="text-muted hover:text-foreground">
+            Confidentialité
+          </Link>
         </nav>
         <div className="space-y-1 text-xs text-muted">
           <p>
