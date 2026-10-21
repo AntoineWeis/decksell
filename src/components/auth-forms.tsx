@@ -102,6 +102,13 @@ export function SignupForm() {
       <button type="submit" disabled={pending} className={buttonClass}>
         {pending ? "Création…" : "Créer mon compte"}
       </button>
+      <p className="text-center text-xs leading-relaxed text-muted">
+        En créant un compte, tu confirmes avoir 18 ans ou plus et accepter les{" "}
+        <Link href="/conditions-utilisation" className="font-medium text-link hover:underline">
+          conditions d&apos;utilisation
+        </Link>
+        .
+      </p>
       <p className="text-center text-sm text-muted">
         Déjà membre ?{" "}
         <Link href={withNext("/connexion", next)} className="font-medium text-link hover:underline">
