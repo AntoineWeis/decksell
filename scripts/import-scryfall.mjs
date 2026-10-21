@@ -53,6 +53,9 @@ function toRow(c, now) {
     cardmarket_id: c.cardmarket_id ?? null,
     scryfall_uri: c.scryfall_uri ?? null,
     legal_modern: c.legalities?.modern === "legal",
+    // Plafonnée : la colonne va jusqu'à 999,9 (Gleemax, carte humoristique, coûte 1 000 000).
+    cmc: typeof c.cmc === "number" ? Math.min(c.cmc, 999) : null,
+    type_line: c.type_line ?? c.card_faces?.[0]?.type_line ?? null,
     price_eur: num(c.prices?.eur),
     price_eur_foil: num(c.prices?.eur_foil),
     updated_at: now,

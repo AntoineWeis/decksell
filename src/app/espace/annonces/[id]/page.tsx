@@ -8,6 +8,8 @@ import { estimateDecklistNow } from "@/lib/public-listings";
 import { LISTING_COLUMNS, PUBLIC_STATUSES, STATUSES, type Listing } from "@/lib/listings";
 import { DeckView } from "@/components/deck-view";
 import { ListingAside } from "@/components/listing-aside";
+import { ManaCurveCard } from "@/components/mana-curve";
+import { manaCurve } from "@/lib/deck-stats";
 import { DeckTags } from "@/components/deck-tags";
 
 export const metadata: Metadata = { title: "Mon annonce" };
@@ -89,6 +91,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
               : null
           }
           todayCents={estimate.totalCents}
+          stats={<ManaCurveCard curve={manaCurve(estimate)} />}
         />
       </div>
     </div>

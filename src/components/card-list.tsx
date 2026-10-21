@@ -68,7 +68,7 @@ function CardRow({ line, delayMs, previewSide }: { line: PricedLine; delayMs: nu
   const rarity = card?.rarity ?? null;
   return (
     <li
-      className={`slide-out group relative flex items-center gap-3 px-4 py-2 transition-colors hover:bg-sunken sm:px-5 ${missing ? "hatch" : ""}`}
+      className={`slide-out group relative flex items-center gap-3 px-4 py-2 transition-colors hover:z-20 hover:bg-sunken sm:px-5 ${missing ? "hatch" : ""}`}
       style={{ animationDelay: `${delayMs}ms` }}
     >
       <span className="w-6 shrink-0 text-right text-sm font-medium tabular-nums text-muted">{line.quantity}</span>

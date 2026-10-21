@@ -291,3 +291,9 @@ insert into public.archetypes (slug, name) values
   ('tron', 'Tron (Mono-Green)'),
   ('urza-artifacts', 'Urza Artifacts')
 on conflict (slug) do nothing;
+
+-- 10. Courbe de mana : valeur de mana (coût converti) et type de chaque carte,
+-- remplis par l'import Scryfall. Après exécution, relancer l'import pour les remplir.
+alter table public.cards
+  add column if not exists cmc       numeric(4,1),
+  add column if not exists type_line text;

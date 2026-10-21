@@ -14,6 +14,7 @@ export function ListingAside({
   seller,
   todayCents,
   children,
+  stats,
 }: {
   listing: Pick<
     Listing,
@@ -22,6 +23,8 @@ export function ListingAside({
   seller: Seller | null;
   todayCents: number;
   children?: React.ReactNode;
+  /** Encadrés de statistiques affichés sous le prix (ex. courbe de mana). */
+  stats?: React.ReactNode;
 }) {
   const diff = todayCents > 0 ? Math.round(((l.asking_cents - todayCents) / todayCents) * 100) : null;
   return (
@@ -58,6 +61,8 @@ export function ListingAside({
         </div>
         {children}
       </div>
+
+      {stats}
 
       {seller && (
         <div className="rounded-xl border border-line bg-surface p-5">

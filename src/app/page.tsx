@@ -1,9 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
-// Bandeau : illustration de carte (Scryfall), floutée comme l'en-tête d'une page de deck.
-const BANNER_ART =
-  "https://cards.scryfall.io/art_crop/front/8/d/8d74a469-c71d-4773-99d3-5456b31df424.jpg?1783937526";
+// Bandeau : ville néon de Kamigawa, 2000 × 758, © Wizards of the Coast.
+import heroArt from "../../public/hero-kamigawa.webp";
 
 /** Icônes au trait, même épaisseur partout. */
 function Icon({ children }: { children: React.ReactNode }) {
@@ -74,10 +73,22 @@ export default function Home() {
       {/* Bandeau d'accueil */}
       <section className="relative overflow-hidden bg-banner text-banner-ink">
         <div aria-hidden className="pointer-events-none absolute inset-0">
-          <Image src={BANNER_ART} alt="" fill preload unoptimized sizes="100vw" className="scale-110 object-cover object-[50%_30%] opacity-70 blur-[6px]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-banner via-banner/80 to-banner/10" />
+          <Image
+            src={heroArt}
+            alt=""
+            fill
+            preload
+            placeholder="blur"
+            sizes="100vw"
+            className="object-cover object-[45%_40%]"
+          />
+          {/* Dégradé à gauche : le texte reste lisible sur l'illustration */}
+          <div className="absolute inset-0 bg-gradient-to-r from-banner/95 via-banner/70 to-banner/20" />
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-banner to-transparent" />
         </div>
+        <p className="absolute right-4 top-3 z-10 text-[10px] text-white/70 [text-shadow:0_1px_2px_rgba(0,0,0,0.6)] sm:right-6">
+          Kamigawa · © Wizards of the Coast
+        </p>
         <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pb-24 sm:pt-24">
           <h1 className="display max-w-3xl text-4xl sm:text-6xl">Combien vaut ton deck Modern&nbsp;?</h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-banner-muted">
@@ -98,7 +109,6 @@ export default function Home() {
               Créer un compte vendeur
             </Link>
           </div>
-          <p className="mt-10 text-[11px] text-banner-muted/80">Illustration : Emrakul, the Promised End, par Jaime Jones</p>
         </div>
       </section>
 

@@ -21,6 +21,8 @@ export type CardPrice = {
   rarity: string | null; // common, uncommon, rare, mythic, special, bonus
   priceEur: number | null; // impression non-foil la moins chère ; null = aucun prix
   minPriceEurFoil: number | null; // pour info quand la carte n'existe qu'en foil
+  cmc?: number | null; // valeur de mana (coût converti) ; absente avant la migration de la base
+  typeLine?: string | null; // ex. "Creature — Human Wizard", "Instant // Land"
 };
 
 export type LineStatus =

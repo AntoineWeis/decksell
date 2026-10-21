@@ -7,11 +7,26 @@ import { formatEur } from "@/lib/pricing";
 import { Avatar } from "@/components/avatar";
 import { ListingTile } from "@/components/listing-tile";
 
-export const metadata: Metadata = { title: "Vendeur" };
+type Props = { params: Promise<{ id: string }> };
+
+/** Titre et aperçu de partage : pseudo du vendeur et nombre de decks. */
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const data = await fetchPublicSeller(id);
+  if (!data) return { title: "Vendeur introuvable" };
+  const n = data.listings.length;
+  const description = `${n} deck${n > 1 ? "s" : ""} Modern en vente par ${data.seller.display_name} sur decksell.`;
+  return {
+    title: `${data.seller.display_name} · Vendeur`,
+    description,
+    alternates: { canonical: `/vendeurs/${data.seller.id}` },
+    openGraph: { title: `${data.seller.display_name} sur decksell`, description, siteName: "decksell", locale: "fr_FR" },
+  };
+}
 
 const monthYear = (iso: string) => new Date(iso).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 
-export default function SellerPage({ params }: { params: Promise<{ id: string }> }) {
+export default function SellerPage({ params }: Props) {
   return (
     <main className="flex-1">
       {/* L'identifiant vient de l'adresse : tout le contenu est lu au moment de la requête. */}

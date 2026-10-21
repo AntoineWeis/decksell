@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { connection } from "next/server";
 import { parseDecklist, type ParsedDeck } from "./decklist.ts";
 import { buildEstimate, starCard, type Estimate } from "./pricing.ts";
@@ -56,7 +57,8 @@ export async function fetchPublicListings(): Promise<PublicListing[]> {
   return listings;
 }
 
-export async function fetchPublicListing(id: string): Promise<PublicListing | null> {
+/** Une annonce publique. Mise en cache le temps de la requête : le titre et la page la partagent. */
+export const fetchPublicListing = cache(async function fetchPublicListing(id: string): Promise<PublicListing | null> {
   await connection();
   if (!UUID.test(id)) return null;
   const { data, error } = await getSupabaseAdmin()
@@ -69,7 +71,7 @@ export async function fetchPublicListing(id: string): Promise<PublicListing | nu
   const listing = (data as unknown as PublicListing) ?? null;
   if (listing) await fillMissingCovers([listing]);
   return listing;
-}
+});
 
 export type PublicSeller = {
   id: string;
@@ -84,7 +86,7 @@ export type PublicSeller = {
  * Profil public d'un vendeur et ses decks en vente ou réservés.
  * Null si le profil n'existe pas ou n'a aucun deck public : un membre sans annonce n'a pas de page.
  */
-export async function fetchPublicSeller(
+export const fetchPublicSeller = cache(async function fetchPublicSeller(
   id: string,
 ): Promise<{ seller: PublicSeller; listings: PublicListing[] } | null> {
   await connection();
@@ -110,7 +112,7 @@ export async function fetchPublicSeller(
   if (!profile.data || rows.length === 0) return null;
   await fillMissingCovers(rows);
   return { seller: profile.data as PublicSeller, listings: rows };
-}
+});
 
 /** Recalcule l'estimation d'une decklist avec les prix du jour. */
 export async function estimateDecklistNow(
