@@ -1,9 +1,10 @@
+import Link from "next/link";
 import { formatEur } from "@/lib/pricing";
 import { CONDITIONS, STATUSES, type Listing } from "@/lib/listings";
 import { Avatar } from "./avatar";
 import { LanguageBar } from "./language-bar";
 
-type Seller = { display_name: string; avatar_url: string | null; moxfield_url: string | null; archidekt_url: string | null };
+type Seller = { id?: string; display_name: string; avatar_url: string | null; moxfield_url: string | null; archidekt_url: string | null };
 
 const date = (iso: string) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 
@@ -63,7 +64,13 @@ export function ListingAside({
           <p className="text-sm text-muted">Vendeur</p>
           <p className="mt-2 flex items-center gap-3 font-semibold">
             <Avatar name={seller.display_name} url={seller.avatar_url} size={36} />
-            {seller.display_name}
+            {seller.id ? (
+              <Link href={`/vendeurs/${seller.id}`} className="hover:text-link hover:underline">
+                {seller.display_name}
+              </Link>
+            ) : (
+              seller.display_name
+            )}
           </p>
           {(seller.moxfield_url || seller.archidekt_url) && (
             <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -78,6 +85,14 @@ export function ListingAside({
                 </a>
               )}
             </p>
+          )}
+          {seller.id && (
+            <Link
+              href={`/vendeurs/${seller.id}`}
+              className="mt-4 flex h-9 items-center justify-center rounded-lg border border-line text-sm font-medium transition hover:border-link/50 hover:text-link"
+            >
+              Voir ses decks en vente
+            </Link>
           )}
         </div>
       )}

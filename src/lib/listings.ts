@@ -62,6 +62,7 @@ export const PUBLIC_STATUSES = ["active", "reserved"] as const;
 /** Annonce telle qu'affichée publiquement (avec le profil du vendeur). */
 export type PublicListing = Omit<Listing, "sold_cents" | "sold_at"> & {
   seller: {
+    id: string;
     display_name: string;
     avatar_url: string | null;
     moxfield_url: string | null;

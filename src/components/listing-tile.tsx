@@ -2,12 +2,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatEur } from "@/lib/pricing";
 import { CONDITIONS, artCrop, type PublicListing } from "@/lib/listings";
+import type { CardHit } from "@/lib/deck-index";
 import { Avatar } from "./avatar";
 import { LanguageBar } from "./language-bar";
 import { ManaColors } from "./mana";
 
-/** Une annonce dans l'index public : illustration de la carte phare, prix, langue, vendeur. */
-export function ListingTile({ listing: l }: { listing: PublicListing }) {
+/**
+ * Une annonce dans l'index public : illustration de la carte phare, prix, langue, vendeur.
+ * `hits` : cartes trouvées par la recherche ; `showSeller` à false sur le profil du vendeur.
+ */
+export function ListingTile({
+  listing: l,
+  hits = [],
+  showSeller = true,
+}: {
+  listing: PublicListing;
+  hits?: CardHit[];
+  showSeller?: boolean;
+}) {
   const art = artCrop(l.cover_image_url);
   const diff = l.estimated_cents > 0 ? Math.round(((l.asking_cents - l.estimated_cents) / l.estimated_cents) * 100) : null;
   return (
@@ -70,9 +82,22 @@ export function ListingTile({ listing: l }: { listing: PublicListing }) {
             </p>
           </div>
 
+          {hits.length > 0 && (
+            <p className="rounded-lg bg-brand-soft px-2.5 py-1.5 text-xs text-link">
+              Contient{" "}
+              {hits.slice(0, 2).map((h, i) => (
+                <span key={h.name}>
+                  {i > 0 && ", "}
+                  <strong className="font-semibold tabular-nums">{h.quantity}×</strong> {h.name}
+                </span>
+              ))}
+              {hits.length > 2 && ` et ${hits.length - 2} autre${hits.length > 3 ? "s" : ""}`}
+            </p>
+          )}
+
           <LanguageBar frenchPercent={l.french_percent} />
 
-          {l.seller && (
+          {showSeller && l.seller && (
             <p className="mt-auto flex items-center gap-2 border-t border-line pt-3 text-sm text-muted">
               <Avatar name={l.seller.display_name} url={l.seller.avatar_url} size={22} />
               <span className="truncate">{l.seller.display_name}</span>

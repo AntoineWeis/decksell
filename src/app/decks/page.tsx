@@ -4,25 +4,10 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { fetchPublicListings } from "@/lib/public-listings";
 import { ListingTile } from "@/components/listing-tile";
-import { DeckFilters, type DeckFilter } from "@/components/deck-filters";
-import { normalizeColors, type PublicListing } from "@/lib/listings";
+import { DeckFilters } from "@/components/deck-filters";
+import { filterListings, readDeckQuery, sortListings } from "@/lib/deck-index";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
-
-/** Lit les filtres de l'adresse : ?c=UR (couleurs) & a=burn (archétype). */
-function readFilter(sp: Record<string, string | string[] | undefined>): DeckFilter {
-  const c = typeof sp.c === "string" ? sp.c.toUpperCase().split("") : [];
-  const a = typeof sp.a === "string" && /^[a-z0-9-]{1,60}$/.test(sp.a) ? sp.a : null;
-  return { colors: normalizeColors(c), archetype: a };
-}
-
-/** Un deck correspond s'il contient toutes les couleurs choisies, et l'archétype choisi s'il y en a un. */
-function matches(l: PublicListing, f: DeckFilter): boolean {
-  const colors = l.colors ?? [];
-  if (!f.colors.every((c) => colors.includes(c))) return false;
-  if (f.archetype && l.archetype?.slug !== f.archetype) return false;
-  return true;
-}
 
 export const metadata: Metadata = {
   title: "Decks en vente",
@@ -60,7 +45,7 @@ export default function DecksPage({ searchParams }: { searchParams: SearchParams
 }
 
 async function ListingGrid({ searchParams }: { searchParams: SearchParams }) {
-  const filter = readFilter(await searchParams);
+  const query = readDeckQuery(await searchParams);
   // Hors du try : ce signal de Next (lecture au moment de la requête) ne doit pas être intercepté.
   await connection();
   let listings;
@@ -87,33 +72,36 @@ async function ListingGrid({ searchParams }: { searchParams: SearchParams }) {
     );
   }
 
-  // Archétypes présents parmi les decks qui correspondent aux couleurs choisies, avec leur nombre.
-  const byColor = listings.filter((l) => matches(l, { ...filter, archetype: null }));
+  // Archétypes présents parmi les decks qui correspondent aux autres filtres, avec leur nombre.
   const counts = new Map<string, { slug: string; name: string; count: number }>();
-  for (const l of byColor) {
+  for (const { listing: l } of filterListings(listings, { ...query, archetype: null })) {
     if (!l.archetype) continue;
     const entry = counts.get(l.archetype.slug) ?? { slug: l.archetype.slug, name: l.archetype.name, count: 0 };
     entry.count++;
     counts.set(entry.slug, entry);
   }
   const archetypeCounts = [...counts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "fr"));
-  const shown = listings.filter((l) => matches(l, filter));
+  const shown = sortListings(filterListings(listings, query), query.sort);
 
   return (
     <div className="space-y-6">
-      <DeckFilters filter={filter} archetypeCounts={archetypeCounts} resultCount={shown.length} />
+      <DeckFilters query={query} archetypeCounts={archetypeCounts} resultCount={shown.length} />
       {shown.length === 0 ? (
         <div className="rounded-xl border border-dashed border-line px-6 py-14 text-center">
           <p className="font-semibold">Aucun deck ne correspond à ces filtres</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-muted">Retire une couleur ou change d&apos;archétype pour voir plus de decks.</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
+            {query.card
+              ? "Vérifie l'orthographe de la carte (en anglais), ou retire un filtre pour voir plus de decks."
+              : "Retire une couleur ou change d'archétype pour voir plus de decks."}
+          </p>
           <Link href="/decks" className="mt-5 inline-flex font-semibold text-link hover:underline">
             Voir tous les decks →
           </Link>
         </div>
       ) : (
         <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {shown.map((l) => (
-            <ListingTile key={l.id} listing={l} />
+          {shown.map(({ listing, hits }) => (
+            <ListingTile key={listing.id} listing={listing} hits={hits} />
           ))}
         </ul>
       )}
