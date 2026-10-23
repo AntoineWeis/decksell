@@ -4,6 +4,7 @@ import { CONDITIONS, smallImage } from "@/lib/listings";
 import { CONDITION_SHORT, CONDITION_TONE, LANGUAGES, detailKey, type CardDetail } from "@/lib/card-details";
 import { TYPE_GROUPS, typeGroup } from "@/lib/deck-stats";
 import { groupAnchor } from "./card-types";
+import { CardModal, type CardModalItem } from "./card-modal";
 
 const RARITY_LABEL: Record<string, string> = {
   common: "Commune",
@@ -51,6 +52,27 @@ export function CardList({
     : [{ key: "all", label: null, lines: sorted }];
   // Ordre d'apparition des lignes : de la moins chère à la plus chère, sur toute la liste.
   const rank = new Map(sorted.map((l, i) => [l, sorted.length - 1 - i]));
+  // Cartes de la fenêtre « carte en grand », dans l'ordre d'affichage (flèches ← →).
+  const shown = groups.flatMap((g) => g.lines).filter((l) => l.card);
+  const modalIndex = new Map(shown.map((l, i) => [l, i]));
+  const items: CardModalItem[] = shown.map((l) => {
+    const d = details?.get(detailKey(l.board, l.name));
+    return {
+      name: l.card!.name,
+      quantity: l.quantity,
+      imageUrl: l.card!.imageUrl,
+      typeLine: l.card!.typeLine ?? null,
+      setCode: l.card!.setCode,
+      collectorNumber: l.card!.collectorNumber,
+      artist: l.card!.artist,
+      rarity: l.card!.rarity ? (RARITY_LABEL[l.card!.rarity] ?? l.card!.rarity) : null,
+      unitCents: l.unitCents,
+      lineCents: l.lineCents,
+      manual: l.status === "manual",
+      condition: d ? CONDITIONS[d.condition] : null,
+      lang: d ? LANGUAGES[d.lang].label : null,
+    };
+  });
   const row = (l: PricedLine) => (
     <CardRow
       key={`${l.board}-${l.name}`}
@@ -58,10 +80,13 @@ export function CardList({
       delayMs={Math.min(rank.get(l)! * 20, 500)}
       previewSide={previewSide}
       detail={details?.get(detailKey(l.board, l.name))}
+      modalIndex={modalIndex.get(l)}
     />
   );
   return (
     <section id={id} className="scroll-mt-20 rounded-xl border border-line bg-surface">
+      {/* Clic sur une carte : fenêtre avec la carte en grand. */}
+      <CardModal items={items} />
       <header className="flex items-baseline justify-between gap-4 px-4 pb-3 pt-4 sm:px-5">
         <h2 className="text-lg font-semibold">
           {title} <span className="ml-1 text-sm font-normal text-muted">{count} cartes</span>
@@ -100,18 +125,21 @@ function CardRow({
   delayMs,
   previewSide,
   detail,
+  modalIndex,
 }: {
   line: PricedLine;
   delayMs: number;
   previewSide: "left" | "right";
   detail?: CardDetail;
+  /** Position dans la fenêtre « carte en grand » ; absente pour une carte introuvable. */
+  modalIndex?: number;
 }) {
   const { card } = line;
   const missing = line.unitCents == null;
   const rarity = card?.rarity ?? null;
   return (
     <li
-      className={`slide-out group relative flex items-center gap-3 px-4 py-2 transition-colors hover:z-20 hover:bg-sunken sm:px-5 ${missing ? "hatch" : ""}`}
+      className={`slide-out group relative flex items-center gap-3 px-4 py-2 transition-colors hover:z-20 hover:bg-sunken sm:px-5 ${missing ? "hatch" : ""} ${modalIndex != null ? "cursor-pointer" : ""}`}
       style={{ animationDelay: `${delayMs}ms` }}
     >
       <span className="w-6 shrink-0 text-right text-sm font-medium tabular-nums text-muted">{line.quantity}</span>
@@ -143,7 +171,18 @@ function CardRow({
                 <span className="sr-only">{RARITY_LABEL[rarity] ?? rarity}</span>
               </span>
             )}
-            {line.name}
+            {modalIndex != null ? (
+              // Bouton étiré sur toute la ligne (after:inset-0) : un clic n'importe où ouvre la carte.
+              <button
+                type="button"
+                data-card-index={modalIndex}
+                className="text-left after:absolute after:inset-0 after:content-[''] hover:text-link focus-visible:outline-none focus-visible:after:rounded-md focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-link"
+              >
+                {line.name}
+              </button>
+            ) : (
+              line.name
+            )}
           </span>
           {detail && (
             <span className="flex shrink-0 items-center gap-1 text-[11px] font-semibold tabular-nums">
