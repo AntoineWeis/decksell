@@ -97,9 +97,23 @@ function FavoriteList({ items }: { items: Favorite[] }) {
         const cover = artCrop(f.cover_image_url);
         return (
           <li key={f.listing_id} className="flex items-center gap-3 px-4 py-3.5 sm:gap-4 sm:px-5">
-            <span className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-md bg-banner ${available ? "" : "opacity-50 grayscale"}`}>
-              {cover && <Image src={cover} alt="" fill sizes="80px" unoptimized className="object-cover" />}
-            </span>
+            {available ? (
+              <Link
+                href={`/decks/${f.listing_id}`}
+                tabIndex={-1}
+                aria-hidden
+                className="group relative h-14 w-20 shrink-0 overflow-hidden rounded-md bg-banner"
+              >
+                {cover && (
+                  <Image src={cover} alt="" fill sizes="80px" unoptimized className="object-cover transition duration-300 group-hover:scale-105" />
+                )}
+              </Link>
+            ) : (
+              // Annonce vendue ou retirée : plus de page publique, la vignette n'est pas un lien.
+              <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded-md bg-banner opacity-50 grayscale">
+                {cover && <Image src={cover} alt="" fill sizes="80px" unoptimized className="object-cover" />}
+              </span>
+            )}
             <div className="min-w-0 flex-1">
               <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 {available ? (

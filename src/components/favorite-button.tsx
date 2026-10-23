@@ -62,8 +62,9 @@ export function FavoriteButton({
   const [pending, start] = useTransition();
 
   const label = saved ? "Retirer des favoris" : "Ajouter aux favoris";
-  const overlayClass = `absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/45 backdrop-blur-sm transition hover:bg-black/65 ${
-    saved ? "text-gem-rare" : "text-white"
+  // Petite étoile blanche, translucide, sans fond ; pleine une fois l'annonce enregistrée.
+  const overlayClass = `absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)] transition hover:scale-110 hover:text-white focus-visible:outline-2 focus-visible:outline-white ${
+    saved ? "text-white" : "text-white/70"
   }`;
   const fullClass = `mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border text-sm font-medium transition ${
     saved ? "border-gem-rare/50 text-foreground hover:bg-sunken" : "border-line hover:border-link/50 hover:text-link"
