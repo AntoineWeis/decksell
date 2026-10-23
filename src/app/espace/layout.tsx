@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { EspaceTabs } from "@/components/espace-tabs";
 import { signOut } from "@/app/auth-actions";
 import { getUnreadCount } from "@/lib/messaging";
+import { isAdmin, openReportCount } from "@/lib/moderation";
 
 export default function EspaceLayout({ children }: LayoutProps<"/espace">) {
   return (
@@ -27,5 +28,6 @@ export default function EspaceLayout({ children }: LayoutProps<"/espace">) {
 }
 
 async function TabsWithUnread() {
-  return <EspaceTabs unread={await getUnreadCount()} />;
+  const [unread, admin] = await Promise.all([getUnreadCount(), isAdmin()]);
+  return <EspaceTabs unread={unread} moderation={admin ? { open: await openReportCount() } : undefined} />;
 }

@@ -29,7 +29,33 @@ export type ConversationSummary = {
   blocked_me: boolean;
 };
 
-export type Message = { id: number; sender_id: string; body: string; created_at: string };
+export type MessageKind = "text" | "offer" | "offer_accepted" | "offer_declined" | "offer_withdrawn";
+
+export type Message = {
+  id: number;
+  sender_id: string;
+  body: string;
+  created_at: string;
+  kind: MessageKind;
+  offer_id: number | null;
+};
+
+export type OfferStatus = "pending" | "accepted" | "declined" | "withdrawn";
+export type Offer = { id: number; buyer_id: string; amount_cents: number; status: OfferStatus; created_at: string };
+
+/** Offres de prix d'une conversation, indexées par identifiant. */
+export async function getOffers(conversationId: string): Promise<Map<number, Offer>> {
+  const supabase = await createSupabaseServer();
+  const { data, error } = await supabase
+    .from("offers")
+    .select("id, buyer_id, amount_cents, status, created_at")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true })
+    .limit(500);
+  // Base pas encore migrée : la conversation s'affiche quand même, sans offres.
+  if (error) console.error("Messagerie : lecture des offres impossible", error.message);
+  return new Map(((data ?? []) as Offer[]).map((o) => [o.id, o]));
+}
 
 /** Boîte de réception, la plus récente d'abord. Null si la lecture échoue. */
 export async function listConversations(): Promise<ConversationSummary[] | null> {
@@ -59,7 +85,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
   const supabase = await createSupabaseServer();
   const { data, error } = await supabase
     .from("messages")
-    .select("id, sender_id, body, created_at")
+    .select("id, sender_id, body, created_at, kind, offer_id")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })

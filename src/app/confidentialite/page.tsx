@@ -72,8 +72,8 @@ export default function PrivacyPage() {
             fois le deck vendu, le prix et la date de la vente ;
           </li>
           <li>
-            tes messages avec les autres membres, liés à une annonce, ainsi que les membres que tu bloques et les
-            conversations que tu signales ;
+            tes messages avec les autres membres, liés à une annonce, les offres de prix faites et leurs réponses, ainsi
+            que les membres que tu bloques et les conversations que tu signales ;
           </li>
           <li>les annonces que tu mets en favori, que toi seul peux voir ;</li>
           <li>
@@ -96,7 +96,8 @@ export default function PrivacyPage() {
           <li>
             <strong>Mettre en relation acheteurs et vendeurs</strong> par la messagerie, liée à une annonce :
             exécution du contrat. Les messages ne sont lus que par les deux participants. decksell n&apos;y accède
-            qu&apos;en cas de signalement, pour traiter le problème signalé.
+            qu&apos;en cas de signalement : seuls les modérateurs lisent alors la conversation signalée, pour traiter
+            le problème, et peuvent retirer l&apos;annonce concernée.
           </li>
           <li>
             <strong>T&apos;envoyer les emails du service</strong> (confirmation d&apos;inscription, lien de nouveau mot

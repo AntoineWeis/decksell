@@ -6,6 +6,10 @@ const dayKey = (d: Date) => d.toLocaleDateString("fr-FR", { timeZone: TZ });
 export const timeOf = (iso: string) =>
   new Date(iso).toLocaleTimeString("fr-FR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
 
+/** « 23 octobre 2026 à 14:32 ». */
+export const dateTimeOf = (iso: string) =>
+  `${new Date(iso).toLocaleDateString("fr-FR", { timeZone: TZ, day: "numeric", month: "long", year: "numeric" })} à ${timeOf(iso)}`;
+
 /** « 14:32 » aujourd'hui, « hier », sinon « 23 oct. ». */
 export function shortDate(iso: string, now = new Date()): string {
   const d = new Date(iso);

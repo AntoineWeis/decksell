@@ -341,6 +341,11 @@ create table if not exists public.messages (
   created_at      timestamptz not null default now()
 );
 
+-- Type de message : texte, ou étape d'une offre de prix (l'offre elle-même est dans offers).
+alter table public.messages
+  add column if not exists kind text not null default 'text'
+    check (kind in ('text', 'offer', 'offer_accepted', 'offer_declined', 'offer_withdrawn'));
+
 create index if not exists messages_conv_idx   on public.messages (conversation_id, created_at);
 create index if not exists messages_sender_idx on public.messages (sender_id, created_at);
 create index if not exists conv_buyer_idx      on public.conversations (buyer_id, last_message_at desc);
@@ -425,9 +430,17 @@ $$;
 
 revoke execute on function public._is_blocked(uuid, uuid) from public, anon, authenticated;
 
--- Écrit un message et met la conversation à jour. Interne : appelée par les deux fonctions
+-- Écrit un message et met la conversation à jour. Interne : appelée par les fonctions
 -- suivantes, jamais directement. Renvoie le destinataire à prévenir par email, ou null.
-create or replace function public._post_message(p_conversation_id uuid, p_sender uuid, p_body text)
+-- p_kind et p_offer_id servent aux offres de prix (section 14).
+drop function if exists public._post_message(uuid, uuid, text);
+create or replace function public._post_message(
+  p_conversation_id uuid,
+  p_sender uuid,
+  p_body text,
+  p_kind text default 'text',
+  p_offer_id bigint default null
+)
 returns uuid
 language plpgsql security definer set search_path = ''
 as $$
@@ -454,7 +467,8 @@ begin
 
   select * into v_conv from public.conversations c where c.id = p_conversation_id for update;
 
-  insert into public.messages (conversation_id, sender_id, body) values (p_conversation_id, p_sender, p_body);
+  insert into public.messages (conversation_id, sender_id, body, kind, offer_id)
+  values (p_conversation_id, p_sender, p_body, p_kind, p_offer_id);
 
   if v_conv.buyer_id = p_sender then
     v_recipient := v_conv.seller_id; v_read_at := v_conv.seller_last_read_at; v_notified := v_conv.seller_notified_at;
@@ -481,7 +495,7 @@ begin
 end;
 $$;
 
-revoke execute on function public._post_message(uuid, uuid, text) from public, anon, authenticated;
+revoke execute on function public._post_message(uuid, uuid, text, text, bigint) from public, anon, authenticated;
 
 -- Premier message d'un acheteur sur une annonce. Si la conversation existe déjà, le
 -- message s'y ajoute. Les erreurs ont un code court, traduit par le site.
@@ -728,3 +742,273 @@ revoke execute on function public.add_favorite(uuid) from public, anon;
 revoke execute on function public.list_favorites()   from public, anon;
 grant  execute on function public.add_favorite(uuid) to authenticated;
 grant  execute on function public.list_favorites()   to authenticated;
+
+-- 14. Offres de prix dans la messagerie (F09)
+-- L'acheteur propose un montant, le vendeur accepte ou refuse. Aucun paiement en ligne :
+-- une offre acceptée est un accord entre les deux membres, qui s'organisent ensuite.
+-- Chaque étape est aussi un message (kind), pour les non-lus, l'aperçu et les emails.
+create table if not exists public.offers (
+  id              bigint generated always as identity primary key,
+  conversation_id uuid not null references public.conversations (id) on delete cascade,
+  buyer_id        uuid not null references public.profiles (id) on delete cascade,
+  amount_cents    integer not null check (amount_cents > 0 and amount_cents <= 10000000),
+  status          text not null default 'pending' check (status in ('pending', 'accepted', 'declined', 'withdrawn')),
+  created_at      timestamptz not null default now(),
+  responded_at    timestamptz
+);
+
+create index if not exists offers_conv_idx on public.offers (conversation_id, created_at);
+-- Une seule offre en attente par conversation : une nouvelle offre remplace la précédente.
+create unique index if not exists offers_one_pending_idx on public.offers (conversation_id) where status = 'pending';
+
+alter table public.messages
+  add column if not exists offer_id bigint references public.offers (id) on delete set null;
+
+alter table public.offers enable row level security;
+
+drop policy if exists "offres : lecture par les participants" on public.offers;
+create policy "offres : lecture par les participants" on public.offers
+  for select to authenticated
+  using (exists (
+    select 1 from public.conversations c
+    where c.id = conversation_id and (select auth.uid()) in (c.buyer_id, c.seller_id)
+  ));
+-- Aucune écriture directe : make_offer, respond_offer et withdraw_offer.
+
+-- « 450 € », « 450,50 € » : montant lisible dans le texte des messages.
+create or replace function public._eur(cents integer)
+returns text
+language sql immutable set search_path = ''
+as $$
+  select case when cents % 100 = 0 then (cents / 100)::text
+              else replace(to_char(cents / 100.0, 'FM9999990.00'), '.', ',') end || ' €';
+$$;
+
+-- Offre de l'acheteur. Remplace son offre en attente s'il en avait une.
+create or replace function public.make_offer(p_conversation_id uuid, p_amount_cents integer)
+returns table (conversation_id uuid, notify_user uuid)
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_uid    uuid := auth.uid();
+  v_conv   public.conversations;
+  v_status text;
+  v_offer  bigint;
+begin
+  if v_uid is null then raise exception 'not_authenticated'; end if;
+  if p_amount_cents is null or p_amount_cents <= 0 or p_amount_cents > 10000000 then raise exception 'invalid_amount'; end if;
+
+  select * into v_conv from public.conversations c where c.id = p_conversation_id and v_uid in (c.buyer_id, c.seller_id);
+  if v_conv.id is null then raise exception 'not_found'; end if;
+  if v_conv.buyer_id <> v_uid then raise exception 'not_buyer'; end if;
+  if public._is_blocked(v_conv.buyer_id, v_conv.seller_id) then raise exception 'blocked'; end if;
+  select l.status into v_status from public.listings l where l.id = v_conv.listing_id;
+  if v_status not in ('active', 'reserved') then raise exception 'listing_unavailable'; end if;
+
+  update public.offers o set status = 'withdrawn', responded_at = now()
+  where o.conversation_id = v_conv.id and o.status = 'pending';
+
+  insert into public.offers (conversation_id, buyer_id, amount_cents)
+  values (v_conv.id, v_uid, p_amount_cents)
+  returning id into v_offer;
+
+  return query select v_conv.id, public._post_message(
+    v_conv.id, v_uid, 'Je te propose ' || public._eur(p_amount_cents) || ' pour ce deck.', 'offer', v_offer
+  );
+end;
+$$;
+
+-- Réponse du vendeur à une offre en attente.
+create or replace function public.respond_offer(p_offer_id bigint, p_accept boolean)
+returns table (conversation_id uuid, notify_user uuid)
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_uid   uuid := auth.uid();
+  v_offer public.offers;
+  v_conv  public.conversations;
+begin
+  if v_uid is null then raise exception 'not_authenticated'; end if;
+  select * into v_offer from public.offers o where o.id = p_offer_id for update;
+  select * into v_conv from public.conversations c where c.id = v_offer.conversation_id;
+  if v_offer.id is null or v_conv.seller_id is distinct from v_uid then raise exception 'not_found'; end if;
+  if v_offer.status <> 'pending' then raise exception 'offer_closed'; end if;
+  if public._is_blocked(v_conv.buyer_id, v_conv.seller_id) then raise exception 'blocked'; end if;
+
+  update public.offers o set status = case when p_accept then 'accepted' else 'declined' end, responded_at = now()
+  where o.id = v_offer.id;
+
+  return query select v_conv.id, public._post_message(
+    v_conv.id, v_uid,
+    case when p_accept then 'J''accepte ton offre de ' || public._eur(v_offer.amount_cents) || '.'
+         else 'Je refuse ton offre de ' || public._eur(v_offer.amount_cents) || '.' end,
+    case when p_accept then 'offer_accepted' else 'offer_declined' end,
+    v_offer.id
+  );
+end;
+$$;
+
+-- L'acheteur retire son offre tant que le vendeur n'a pas répondu.
+create or replace function public.withdraw_offer(p_offer_id bigint)
+returns table (conversation_id uuid, notify_user uuid)
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_uid   uuid := auth.uid();
+  v_offer public.offers;
+begin
+  if v_uid is null then raise exception 'not_authenticated'; end if;
+  select * into v_offer from public.offers o where o.id = p_offer_id for update;
+  if v_offer.id is null or v_offer.buyer_id <> v_uid then raise exception 'not_found'; end if;
+  if v_offer.status <> 'pending' then raise exception 'offer_closed'; end if;
+
+  update public.offers o set status = 'withdrawn', responded_at = now() where o.id = v_offer.id;
+
+  return query select v_offer.conversation_id, public._post_message(
+    v_offer.conversation_id, v_uid, 'Je retire mon offre de ' || public._eur(v_offer.amount_cents) || '.',
+    'offer_withdrawn', v_offer.id
+  );
+end;
+$$;
+
+revoke execute on function public.make_offer(uuid, integer)        from public, anon;
+revoke execute on function public.respond_offer(bigint, boolean)   from public, anon;
+revoke execute on function public.withdraw_offer(bigint)           from public, anon;
+grant  execute on function public.make_offer(uuid, integer)        to authenticated;
+grant  execute on function public.respond_offer(bigint, boolean)   to authenticated;
+grant  execute on function public.withdraw_offer(bigint)           to authenticated;
+
+-- 15. Modération minimale (F05)
+-- Les admins sont listés ici, à la main. Pour te nommer admin, exécute une fois :
+--   insert into public.admins (user_id)
+--   select id from auth.users where email = 'ton-email@exemple.fr'
+--   on conflict do nothing;
+create table if not exists public.admins (
+  user_id    uuid primary key references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.admins enable row level security;
+-- Aucune politique : la liste des admins n'est lisible que par les fonctions ci-dessous.
+
+alter table public.reports
+  add column if not exists status     text not null default 'open' check (status in ('open', 'resolved', 'dismissed')),
+  add column if not exists handled_at timestamptz,
+  add column if not exists handled_by uuid references public.profiles (id) on delete set null,
+  add column if not exists admin_note text check (char_length(admin_note) <= 1000);
+
+create index if not exists reports_status_idx on public.reports (status, created_at desc);
+
+-- Vrai si le membre connecté est admin.
+create or replace function public.is_admin()
+returns boolean
+language sql stable security definer set search_path = ''
+as $$
+  select exists (select 1 from public.admins a where a.user_id = auth.uid());
+$$;
+
+-- Signalements, du plus récent au plus ancien (filtrés par statut, ou un seul avec p_id).
+-- Réservé aux admins : la conversation signalée devient lisible, comme l'annonce la page Confidentialité.
+create or replace function public.admin_list_reports(p_status text default null, p_id bigint default null)
+returns table (
+  id              bigint,
+  reason          text,
+  status          text,
+  created_at      timestamptz,
+  handled_at      timestamptz,
+  handler_name    text,
+  admin_note      text,
+  conversation_id uuid,
+  listing_id      uuid,
+  listing_title   text,
+  listing_status  text,
+  reporter_id     uuid,
+  reporter_name   text,
+  reported_id     uuid,
+  reported_name   text,
+  reported_role   text,
+  message_count   integer
+)
+language plpgsql stable security definer set search_path = ''
+as $$
+begin
+  if not public.is_admin() then raise exception 'forbidden'; end if;
+  return query
+  select
+    r.id, r.reason, r.status, r.created_at, r.handled_at, h.display_name, r.admin_note,
+    c.id, l.id, l.title, l.status,
+    rp.id, rp.display_name,
+    o.id, o.display_name,
+    case when o.id = c.seller_id then 'seller' else 'buyer' end,
+    (select count(*)::integer from public.messages m where m.conversation_id = c.id)
+  from public.reports r
+  join public.conversations c on c.id = r.conversation_id
+  join public.listings l on l.id = c.listing_id
+  join public.profiles rp on rp.id = r.reporter_id
+  join public.profiles o on o.id = case when r.reporter_id = c.buyer_id then c.seller_id else c.buyer_id end
+  left join public.profiles h on h.id = r.handled_by
+  where (p_status is null or r.status = p_status)
+    and (p_id is null or r.id = p_id)
+  order by r.created_at desc
+  limit 200;
+end;
+$$;
+
+-- Messages de la conversation d'un signalement (et seulement d'une conversation signalée).
+create or replace function public.admin_report_messages(p_report_id bigint)
+returns table (id bigint, sender_id uuid, sender_name text, body text, kind text, created_at timestamptz)
+language plpgsql stable security definer set search_path = ''
+as $$
+begin
+  if not public.is_admin() then raise exception 'forbidden'; end if;
+  return query
+  select m.id, m.sender_id, p.display_name, m.body, m.kind, m.created_at
+  from public.reports r
+  join public.messages m on m.conversation_id = r.conversation_id
+  join public.profiles p on p.id = m.sender_id
+  where r.id = p_report_id
+  order by m.created_at, m.id
+  limit 1000;
+end;
+$$;
+
+-- Traite un signalement : classé (résolu ou sans suite), avec une note et, au besoin,
+-- le retrait de l'annonce concernée (les CGU le prévoient).
+create or replace function public.admin_handle_report(
+  p_report_id bigint,
+  p_status text,
+  p_note text default null,
+  p_withdraw_listing boolean default false
+)
+returns void
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_listing uuid;
+begin
+  if not public.is_admin() then raise exception 'forbidden'; end if;
+  if p_status not in ('open', 'resolved', 'dismissed') then raise exception 'invalid_status'; end if;
+
+  update public.reports r set
+    status     = p_status,
+    handled_at = case when p_status = 'open' then null else now() end,
+    handled_by = case when p_status = 'open' then null else auth.uid() end,
+    admin_note = nullif(left(btrim(coalesce(p_note, '')), 1000), '')
+  where r.id = p_report_id
+  returning (select c.listing_id from public.conversations c where c.id = r.conversation_id) into v_listing;
+  if v_listing is null then raise exception 'not_found'; end if;
+
+  if p_withdraw_listing then
+    update public.listings l set status = 'withdrawn', updated_at = now()
+    where l.id = v_listing and l.status in ('active', 'reserved');
+  end if;
+end;
+$$;
+
+revoke execute on function public.is_admin()                                    from public, anon;
+revoke execute on function public.admin_list_reports(text, bigint)              from public, anon;
+revoke execute on function public.admin_report_messages(bigint)                 from public, anon;
+revoke execute on function public.admin_handle_report(bigint, text, text, boolean) from public, anon;
+grant  execute on function public.is_admin()                                    to authenticated;
+grant  execute on function public.admin_list_reports(text, bigint)              to authenticated;
+grant  execute on function public.admin_report_messages(bigint)                 to authenticated;
+grant  execute on function public.admin_handle_report(bigint, text, text, boolean) to authenticated;

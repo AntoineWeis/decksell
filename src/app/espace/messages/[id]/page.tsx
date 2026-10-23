@@ -4,7 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
-import { getConversation, getMessages } from "@/lib/messaging";
+import { getConversation, getMessages, getOffers } from "@/lib/messaging";
+import { OfferCard, OfferForm } from "@/components/offer-ui";
 import { dayLabel, sameDay, timeOf } from "@/lib/message-dates";
 import { formatEur } from "@/lib/pricing";
 import { PUBLIC_STATUSES, STATUSES, artCrop } from "@/lib/listings";
@@ -15,6 +16,8 @@ import { ConversationTools } from "@/components/conversation-tools";
 import { AutoRefresh, MarkRead, ThreadScroller } from "@/components/conversation-live";
 
 type Props = { params: Promise<{ id: string }> };
+
+const OFFER_EVENT = { offer_accepted: "accepté", offer_declined: "refusé", offer_withdrawn: "retiré" } as const;
 
 export const metadata: Metadata = { title: "Conversation" };
 
@@ -31,7 +34,8 @@ async function Conversation({ params }: Props) {
   const user = await requireUser(`/espace/messages/${id}`);
   const c = await getConversation(id);
   if (!c) notFound();
-  const messages = await getMessages(c.id);
+  const [messages, offers] = await Promise.all([getMessages(c.id), getOffers(c.id)]);
+  const accepted = [...offers.values()].filter((o) => o.status === "accepted").at(-1);
 
   const isPublic = (PUBLIC_STATUSES as readonly string[]).includes(c.listing_status);
   const listingHref = c.role === "seller" ? `/espace/annonces/${c.listing_id}` : isPublic ? `/decks/${c.listing_id}` : null;
@@ -88,6 +92,23 @@ async function Conversation({ params }: Props) {
         </div>
       </section>
 
+      {accepted && (
+        <p className="rounded-lg border border-ok/30 bg-ok-soft px-4 py-3 text-sm text-ok">
+          <strong className="font-semibold">Offre acceptée : {formatEur(accepted.amount_cents)}.</strong>{" "}
+          {c.role === "seller" ? (
+            <>
+              Convenez de la remise et du paiement ici. Pense à passer l&apos;annonce en « Réservé » depuis{" "}
+              <Link href="/espace" className="font-semibold underline">
+                Mes annonces
+              </Link>
+              .
+            </>
+          ) : (
+            "Convenez avec le vendeur de la remise et du paiement ici. Le paiement en ligne n'est pas encore proposé sur decksell."
+          )}
+        </p>
+      )}
+
       {/* Rappel anti-arnaque, toujours visible */}
       <p className="rounded-lg bg-brand-soft px-4 py-3 text-sm text-link">
         <strong className="font-semibold">Pour une vente sereine :</strong> préfère la remise en main propre ou un
@@ -109,6 +130,16 @@ async function Conversation({ params }: Props) {
                     {newDay && (
                       <p className="py-2 text-center text-xs font-medium first-letter:uppercase text-muted">{dayLabel(m.created_at)}</p>
                     )}
+                    {m.kind === "offer" && m.offer_id != null && offers.has(m.offer_id) ? (
+                      <OfferCard offer={offers.get(m.offer_id)!} viewer={c.role} askingCents={c.listing_asking_cents} mine={mine} />
+                    ) : m.kind !== "text" && m.kind !== "offer" ? (
+                      <p className="py-1 text-center text-xs text-muted">
+                        <span className="font-medium text-foreground">{mine ? "Tu as" : `${c.other_name} a`}</span>{" "}
+                        {OFFER_EVENT[m.kind]} l&apos;offre
+                        {m.offer_id != null && offers.has(m.offer_id) && ` de ${formatEur(offers.get(m.offer_id)!.amount_cents)}`} ·{" "}
+                        {timeOf(m.created_at)}
+                      </p>
+                    ) : (
                     <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div
                         className={`max-w-[85%] rounded-2xl px-3.5 py-2 sm:max-w-[70%] ${
@@ -122,6 +153,7 @@ async function Conversation({ params }: Props) {
                         </p>
                       </div>
                     </div>
+                    )}
                   </li>
                 );
               })}
@@ -131,7 +163,10 @@ async function Conversation({ params }: Props) {
 
         <div className="border-t border-line p-4 sm:p-5">
           {canReply ? (
-            <MessageComposer action={sendMessage.bind(null, c.id)} label={`Ta réponse à ${c.other_name}`} placeholder="Ta réponse…" />
+            <>
+              <MessageComposer action={sendMessage.bind(null, c.id)} label={`Ta réponse à ${c.other_name}`} placeholder="Ta réponse…" />
+              {c.role === "buyer" && isPublic && <OfferForm conversationId={c.id} askingCents={c.listing_asking_cents} />}
+            </>
           ) : (
             <p className="text-sm text-muted">
               {c.blocked_by_me

@@ -7,6 +7,7 @@ import { createSupabaseServer } from "@/lib/supabase-auth";
 import { parseDecklist } from "@/lib/decklist";
 import { buildEstimate, parseEur, starCard, type ManualPrices } from "@/lib/pricing";
 import { lookupDeckPrices } from "@/lib/estimate";
+import { checkDeckQuality } from "@/lib/quality";
 import { CONDITIONS, normalizeColors, type Condition } from "@/lib/listings";
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
 
@@ -79,6 +80,10 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
     console.error("Mise en vente : estimation impossible", e);
     return { status: "error", message: "Les prix sont momentanément indisponibles. Réessaie dans un instant." };
   }
+
+  // Contrôle qualité : 60 cartes minimum, réserve de 15 au plus, cartes légales en Modern.
+  const quality = checkDeckQuality(estimate);
+  if (quality.blocking.length > 0) return { status: "error", message: quality.blocking.join(" ") };
 
   // Carte phare : la plus chère à l'unité, montrée en vignette dans l'index.
   const star = starCard(estimate);

@@ -5,6 +5,7 @@ import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { buildEstimate, parseEur, starCard } from "@/lib/pricing";
 import { lookupDeckPrices } from "@/lib/estimate";
+import { checkDeckQuality } from "@/lib/quality";
 import { CONDITIONS, STATUSES, normalizeColors, parsePercent, type Condition, type ListingStatus } from "@/lib/listings";
 import { parseDecklist } from "@/lib/decklist";
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
@@ -178,6 +179,9 @@ export async function updateDecklist(id: string, _prev: DecklistState, formData:
     console.error("Liste : estimation impossible", e);
     return { status: "error", message: "Les prix sont momentanément indisponibles. Réessaie dans un instant." };
   }
+  // Mêmes règles qu'à la mise en vente : la liste modifiée doit rester jouable en Modern.
+  const quality = checkDeckQuality(estimate);
+  if (quality.blocking.length > 0) return { status: "error", message: quality.blocking.join(" ") };
 
   const fallback: Condition = current.condition in CONDITIONS ? (current.condition as Condition) : "near_mint";
   const details = buildDetails(deck, current.card_details ?? [], { condition: fallback, lang: "en" });

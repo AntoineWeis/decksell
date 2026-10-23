@@ -2,9 +2,10 @@
 
 import { submitWithoutReset } from "@/lib/form";
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { createListing, type SellState } from "@/app/listing-actions";
-import { formatEur, type Estimate, type ManualPrices } from "@/lib/pricing";
+import { formatEur, parseEur, type Estimate, type ManualPrices } from "@/lib/pricing";
+import { checkDeckQuality, priceGap } from "@/lib/quality";
 import type { Archetype } from "@/lib/listings";
 import { ArchetypeSelect, ColorPicker } from "./deck-tags-fields";
 import { CardDetailsEditor } from "./card-details-editor";
@@ -29,6 +30,10 @@ export function SellPanel({
   const [state, action, pending] = useActionState<SellState, FormData>(createListing, { status: "idle" });
   useActionToast(state, {});
   const suggested = (Math.round(estimate.totalCents / 100) || 1).toString();
+  const [asking, setAsking] = useState(suggested);
+  const quality = useMemo(() => checkDeckQuality(estimate), [estimate]);
+  const gap = priceGap(parseEur(asking), estimate.totalCents);
+  const blocked = quality.blocking.length > 0;
 
   if (!open) {
     return (
@@ -56,6 +61,23 @@ export function SellPanel({
         {!estimate.complete && " (incomplète)"}. Tu restes libre de ton prix.
       </p>
 
+      {blocked && (
+        <div role="alert" className="mt-3 rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger">
+          <p className="font-semibold">Ce deck ne peut pas être publié en l&apos;état :</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5">
+            {quality.blocking.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+          <p className="mt-1">Corrige la liste à gauche, puis relance l&apos;estimation.</p>
+        </div>
+      )}
+      {quality.warnings.map((m) => (
+        <p key={m} className="mt-3 rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">
+          {m}
+        </p>
+      ))}
+
       <input type="hidden" name="decklist" value={decklist} />
       <input type="hidden" name="manual" value={JSON.stringify(manual)} />
 
@@ -78,12 +100,19 @@ export function SellPanel({
               name="asking_price"
               required
               inputMode="decimal"
-              defaultValue={suggested}
-              className={`${inputClass} pr-8 tabular-nums`}
+              value={asking}
+              onChange={(e) => setAsking(e.target.value)}
+              aria-describedby={gap.message ? "price-gap" : undefined}
+              className={`${inputClass} pr-8 tabular-nums ${gap.level !== "ok" ? "border-warn" : ""}`}
             />
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted">€</span>
           </span>
         </label>
+        {gap.message && (
+          <p id="price-gap" className="rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn sm:col-span-3">
+            {gap.message}
+          </p>
+        )}
         <div className="sm:col-span-3">
           <CardDetailsEditor lines={estimate.lines.map(({ board, name, quantity }) => ({ board, name, quantity }))} />
         </div>
@@ -119,7 +148,7 @@ export function SellPanel({
       <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || blocked}
           className="h-10 rounded-xl bg-accent px-4 font-semibold text-on-accent transition hover:brightness-110 disabled:opacity-50"
         >
           {pending ? "Publication…" : "Publier l'annonce"}

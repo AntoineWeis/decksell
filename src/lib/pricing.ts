@@ -23,6 +23,7 @@ export type CardPrice = {
   minPriceEurFoil: number | null; // pour info quand la carte n'existe qu'en foil
   cmc?: number | null; // valeur de mana (coût converti) ; absente avant la migration de la base
   typeLine?: string | null; // ex. "Creature — Human Wizard", "Instant // Land"
+  legalModern?: boolean | null; // légale en Modern (ni interdite, ni hors format) ; absente = inconnue
 };
 
 export type LineStatus =

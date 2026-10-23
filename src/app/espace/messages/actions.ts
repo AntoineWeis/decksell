@@ -9,6 +9,7 @@ import { getConversation, getUnreadCount } from "@/lib/messaging";
 import { MESSAGE_MAX, REPORT_MAX, isUuid } from "@/lib/messaging-shared";
 import { notifyNewMessage } from "@/lib/email";
 import { setFlash } from "@/lib/flash";
+import { parseEur } from "@/lib/pricing";
 
 // Chaque action revérifie le membre ; les fonctions SQL revérifient tout le reste
 // (participant, blocage, quotas, email confirmé).
@@ -29,6 +30,9 @@ const SQL_ERRORS: Record<string, string> = {
   quota_conversations: "Tu as contacté beaucoup de vendeurs aujourd'hui. Réessaie demain.",
   quota_messages: "Tu as envoyé beaucoup de messages en peu de temps. Patiente un peu avant de réessayer.",
   not_found: "Conversation introuvable.",
+  not_buyer: "Seul l'acheteur peut faire une offre.",
+  invalid_amount: "Indique un montant valide.",
+  offer_closed: "Cette offre a déjà reçu une réponse ou a été retirée.",
 };
 
 function failure(context: string, error: { message: string }): MessageResult {
@@ -94,6 +98,40 @@ export async function sendMessage(conversationId: string, formData: FormData): P
   await scheduleNotification(conversationId, data.notify_user);
   refresh();
   return { status: "sent" };
+}
+
+type PostResult = { conversation_id: string; notify_user: string | null };
+
+/** Appelle une fonction SQL d'offre, puis prévient l'autre membre et recharge la page. */
+async function runOffer(context: string, fn: string, args: Record<string, unknown>): Promise<MessageResult> {
+  const user = await getUser();
+  if (!user) return NOT_LOGGED;
+  const supabase = await createSupabaseServer();
+  const { data, error } = await supabase.rpc(fn, args).single<PostResult>();
+  if (error || !data) return failure(context, error ?? { message: "" });
+  await scheduleNotification(data.conversation_id, data.notify_user);
+  refresh();
+  return { status: "sent" };
+}
+
+/** Offre de prix de l'acheteur (montant en euros, « 450 » ou « 450,50 »). */
+export async function makeOffer(conversationId: string, formData: FormData): Promise<MessageResult> {
+  if (!isUuid(conversationId)) return { status: "error", message: SQL_ERRORS.not_found };
+  const cents = parseEur(str(formData.get("amount")));
+  if (cents == null || cents <= 0 || cents > 10_000_000) return { status: "error", message: SQL_ERRORS.invalid_amount };
+  return runOffer("offre impossible", "make_offer", { p_conversation_id: conversationId, p_amount_cents: cents });
+}
+
+/** Le vendeur accepte ou refuse une offre. */
+export async function respondOffer(offerId: number, accept: boolean): Promise<MessageResult> {
+  if (!Number.isSafeInteger(offerId) || offerId <= 0) return { status: "error", message: SQL_ERRORS.not_found };
+  return runOffer("réponse à l'offre impossible", "respond_offer", { p_offer_id: offerId, p_accept: accept });
+}
+
+/** L'acheteur retire son offre en attente. */
+export async function withdrawOffer(offerId: number): Promise<MessageResult> {
+  if (!Number.isSafeInteger(offerId) || offerId <= 0) return { status: "error", message: SQL_ERRORS.not_found };
+  return runOffer("retrait de l'offre impossible", "withdraw_offer", { p_offer_id: offerId });
 }
 
 /** Nombre de messages non lus, relu régulièrement par la bulle de l'en-tête. */

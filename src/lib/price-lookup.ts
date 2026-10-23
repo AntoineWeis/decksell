@@ -30,11 +30,18 @@ export async function fetchCardPrices(client: SupabaseClient, names: string[]): 
   const rows = (data ?? []) as LookupRow[];
 
   // Rareté (gemme devant chaque carte), valeur de mana et type (courbe de mana) de l'impression retenue.
-  type Extra = { id: string; rarity: string | null; cmc?: number | string | null; type_line?: string | null };
+  // Et légalité en Modern, pour le contrôle qualité à la mise en vente.
+  type Extra = {
+    id: string;
+    rarity: string | null;
+    cmc?: number | string | null;
+    type_line?: string | null;
+    legal_modern?: boolean | null;
+  };
   const extraById = new Map<string, Extra>();
   const ids = rows.map((r) => r.print_id);
   if (ids.length > 0) {
-    const full = await client.from("cards").select("id, rarity, cmc, type_line").in("id", ids);
+    const full = await client.from("cards").select("id, rarity, cmc, type_line, legal_modern").in("id", ids);
     // Base pas encore migrée (colonnes cmc et type_line absentes) : on garde au moins la rareté.
     const data = full.error ? (await client.from("cards").select("id, rarity").in("id", ids)).data : full.data;
     for (const r of (data ?? []) as Extra[]) extraById.set(r.id, r);
@@ -51,6 +58,7 @@ export async function fetchCardPrices(client: SupabaseClient, names: string[]): 
     rarity: extraById.get(r.print_id)?.rarity ?? null,
     cmc: num(extraById.get(r.print_id)?.cmc ?? null),
     typeLine: extraById.get(r.print_id)?.type_line ?? null,
+    legalModern: extraById.get(r.print_id)?.legal_modern ?? null,
     priceEur: num(r.price_eur),
     minPriceEurFoil: num(r.min_price_eur_foil),
   }));
