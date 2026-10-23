@@ -613,14 +613,19 @@ as $$
   limit 200;
 $$;
 
--- Nombre de conversations avec un message non lu (compteur de l'en-tête).
+-- Nombre de messages reçus et pas encore lus (badge de l'en-tête).
 create or replace function public.unread_count()
 returns integer
 language sql stable security definer set search_path = ''
 as $$
-  select count(*)::integer from public.conversations c
-  where (c.buyer_id = auth.uid() and c.last_message_at > coalesce(c.buyer_last_read_at, '-infinity'::timestamptz))
-     or (c.seller_id = auth.uid() and c.last_message_at > coalesce(c.seller_last_read_at, '-infinity'::timestamptz));
+  select count(*)::integer
+  from public.messages m
+  join public.conversations c on c.id = m.conversation_id
+  where m.sender_id <> auth.uid()
+    and (
+      (c.buyer_id = auth.uid() and m.created_at > coalesce(c.buyer_last_read_at, '-infinity'::timestamptz))
+      or (c.seller_id = auth.uid() and m.created_at > coalesce(c.seller_last_read_at, '-infinity'::timestamptz))
+    );
 $$;
 
 -- Réservées aux membres connectés.

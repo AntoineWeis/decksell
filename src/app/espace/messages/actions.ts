@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { getProfile, getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
-import { getConversation } from "@/lib/messaging";
+import { getConversation, getUnreadCount } from "@/lib/messaging";
 import { MESSAGE_MAX, REPORT_MAX, isUuid } from "@/lib/messaging-shared";
 import { notifyNewMessage } from "@/lib/email";
 import { setFlash } from "@/lib/flash";
@@ -94,6 +94,11 @@ export async function sendMessage(conversationId: string, formData: FormData): P
   await scheduleNotification(conversationId, data.notify_user);
   refresh();
   return { status: "sent" };
+}
+
+/** Nombre de messages non lus, relu régulièrement par la bulle de l'en-tête. */
+export async function unreadMessageCount(): Promise<number> {
+  return getUnreadCount();
 }
 
 /** Marque la conversation comme lue pour le membre connecté. */

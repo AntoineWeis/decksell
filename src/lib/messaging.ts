@@ -68,7 +68,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
   return ((data ?? []) as Message[]).reverse();
 }
 
-/** Nombre de conversations non lues du membre connecté (0 si déconnecté ou en cas d'erreur). */
+/** Nombre de messages reçus non lus du membre connecté (0 si déconnecté ou en cas d'erreur). */
 export const getUnreadCount = cache(async (): Promise<number> => {
   const user = await getUser();
   if (!user) return 0;
