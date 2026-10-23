@@ -6,6 +6,7 @@ import { fetchPublicSeller } from "@/lib/public-listings";
 import { formatEur } from "@/lib/pricing";
 import { Avatar } from "@/components/avatar";
 import { ListingTile } from "@/components/listing-tile";
+import { favoriteStateOf, getFavoriteIds } from "@/lib/favorites";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -42,6 +43,7 @@ async function SellerContent({ params }: { params: Promise<{ id: string }> }) {
   const data = await fetchPublicSeller(id);
   if (!data) notFound();
   const { seller, listings } = data;
+  const favorites = await getFavoriteIds();
 
   const active = listings.filter((l) => l.status === "active");
   const totalAsking = active.reduce((sum, l) => sum + l.asking_cents, 0);
@@ -96,7 +98,7 @@ async function SellerContent({ params }: { params: Promise<{ id: string }> }) {
         </h2>
         <ul className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {listings.map((l) => (
-            <ListingTile key={l.id} listing={l} showSeller={false} />
+            <ListingTile key={l.id} listing={l} showSeller={false} favorite={favoriteStateOf(favorites, l)} />
           ))}
         </ul>
       </div>

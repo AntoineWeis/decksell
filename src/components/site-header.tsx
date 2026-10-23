@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { getProfile } from "@/lib/auth";
 import { getUnreadCount } from "@/lib/messaging";
 import { MessagesLink } from "./messages-link";
+import { StarIcon } from "./favorite-button";
 import { Avatar } from "./avatar";
 
 // Barre de navigation façon outil de deck : bleu nuit dans les deux thèmes.
@@ -65,10 +66,22 @@ async function UserMenu() {
       >
         Mes annonces
       </Link>
+      <Link
+        href="/espace/favoris"
+        aria-label="Mes favoris"
+        title="Mes favoris"
+        className="flex h-9 w-9 items-center justify-center rounded-md text-banner-muted hover:bg-white/10 hover:text-banner-ink"
+      >
+        <StarIcon className="h-[22px] w-[22px]" />
+      </Link>
       <MessagesLink initialUnread={unread} />
-      <Link href="/espace/profil" className="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 font-medium hover:bg-white/10">
+      <Link
+        href="/espace/profil"
+        aria-label={`Mon profil (${profile.displayName})`}
+        className="flex items-center gap-2 rounded-full p-1 font-medium hover:bg-white/10 sm:pr-3"
+      >
         <Avatar name={profile.displayName} url={profile.avatarUrl} size={28} />
-        <span className="max-w-32 truncate">{profile.displayName}</span>
+        <span className="hidden max-w-32 truncate sm:inline">{profile.displayName}</span>
       </Link>
     </>
   );

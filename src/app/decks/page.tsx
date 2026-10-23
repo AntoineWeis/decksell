@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { fetchPublicListings } from "@/lib/public-listings";
 import { ListingTile } from "@/components/listing-tile";
+import { favoriteStateOf, getFavoriteIds } from "@/lib/favorites";
 import { DeckFilters } from "@/components/deck-filters";
 import { filterListings, readDeckQuery, sortListings } from "@/lib/deck-index";
 
@@ -82,6 +83,7 @@ async function ListingGrid({ searchParams }: { searchParams: SearchParams }) {
   }
   const archetypeCounts = [...counts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "fr"));
   const shown = sortListings(filterListings(listings, query), query.sort);
+  const favorites = await getFavoriteIds();
 
   return (
     <div className="space-y-6">
@@ -101,7 +103,7 @@ async function ListingGrid({ searchParams }: { searchParams: SearchParams }) {
       ) : (
         <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map(({ listing, hits }) => (
-            <ListingTile key={listing.id} listing={listing} hits={hits} />
+            <ListingTile key={listing.id} listing={listing} hits={hits} favorite={favoriteStateOf(favorites, listing)} />
           ))}
         </ul>
       )}

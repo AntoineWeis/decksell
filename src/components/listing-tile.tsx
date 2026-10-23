@@ -7,6 +7,8 @@ import { Avatar } from "./avatar";
 import { LanguageBar } from "./language-bar";
 import { hasMixedConditions } from "@/lib/card-details";
 import { ManaColors } from "./mana";
+import { FavoriteButton } from "./favorite-button";
+import type { FavoriteState } from "@/lib/favorites";
 
 /**
  * Une annonce dans l'index public : illustration de la carte phare, prix, langue, vendeur.
@@ -16,15 +18,20 @@ export function ListingTile({
   listing: l,
   hits = [],
   showSeller = true,
+  favorite,
 }: {
   listing: PublicListing;
   hits?: CardHit[];
   showSeller?: boolean;
+  /** Étoile des favoris en haut à droite ; absente sur ses propres annonces. */
+  favorite?: FavoriteState;
 }) {
   const art = artCrop(l.cover_image_url);
   const diff = l.estimated_cents > 0 ? Math.round(((l.asking_cents - l.estimated_cents) / l.estimated_cents) * 100) : null;
   return (
-    <li>
+    <li className="relative">
+      {/* Hors du lien : un bouton ne peut pas être dans un lien. */}
+      {favorite && <FavoriteButton listingId={l.id} state={favorite} />}
       <Link
         href={`/decks/${l.id}`}
         className="group flex h-full flex-col overflow-hidden rounded-xl border border-line bg-surface transition hover:border-link/50 hover:shadow-md"

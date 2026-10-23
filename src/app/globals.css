@@ -99,6 +99,7 @@
   --color-accent-hover: var(--accent-hover);
   --color-on-accent: var(--on-accent);
   --color-reveal: var(--reveal);
+  --color-gem-rare: var(--gem-rare); /* étoile des favoris */
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
   --color-warn: var(--warn);

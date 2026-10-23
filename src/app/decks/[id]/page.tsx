@@ -9,6 +9,7 @@ import { ManaCurveCard } from "@/components/mana-curve";
 import { manaCurve } from "@/lib/deck-stats";
 import { DeckTags } from "@/components/deck-tags";
 import { ContactSeller } from "@/components/contact-seller";
+import { DeckFavorite } from "@/components/deck-favorite";
 
 import { CONDITIONS } from "@/lib/listings";
 import { formatEur } from "@/lib/pricing";
@@ -76,6 +77,9 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
             {/* Lit la session : à part, pour ne pas retarder le reste de l'annonce. */}
             <Suspense fallback={<div className="mt-4 h-11 animate-pulse rounded-xl bg-sunken" />}>
               <ContactSeller listingId={listing.id} sellerId={listing.seller?.id ?? null} title={listing.title} />
+            </Suspense>
+            <Suspense fallback={<div className="mt-2 h-10 animate-pulse rounded-xl bg-sunken" />}>
+              <DeckFavorite listingId={listing.id} sellerId={listing.seller?.id ?? null} />
             </Suspense>
           </ListingAside>
         </div>

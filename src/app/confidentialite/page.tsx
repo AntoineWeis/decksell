@@ -75,6 +75,7 @@ export default function PrivacyPage() {
             tes messages avec les autres membres, liés à une annonce, ainsi que les membres que tu bloques et les
             conversations que tu signales ;
           </li>
+          <li>les annonces que tu mets en favori, que toi seul peux voir ;</li>
           <li>
             des données techniques de connexion (date de création du compte, dernière connexion, adresse IP) conservées
             par le prestataire d&apos;authentification pour sécuriser les comptes.

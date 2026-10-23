@@ -639,3 +639,92 @@ grant  execute on function public.send_message(uuid, text)       to authenticate
 grant  execute on function public.mark_read(uuid)                to authenticated;
 grant  execute on function public.list_conversations(uuid)       to authenticated;
 grant  execute on function public.unread_count()                 to authenticated;
+
+-- 13. Favoris : les annonces suivies par un membre, visibles par lui seul.
+-- On ajoute une annonce en vente ou réservée ; elle reste ensuite dans les favoris
+-- même vendue ou retirée (avec son statut), et disparaît si le vendeur la supprime.
+create table if not exists public.favorites (
+  user_id    uuid not null references public.profiles (id) on delete cascade,
+  listing_id uuid not null references public.listings (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, listing_id)
+);
+
+create index if not exists favorites_user_idx on public.favorites (user_id, created_at desc);
+create index if not exists favorites_listing_idx on public.favorites (listing_id);
+
+alter table public.favorites enable row level security;
+
+drop policy if exists "favoris : lecture par le membre" on public.favorites;
+create policy "favoris : lecture par le membre" on public.favorites
+  for select to authenticated using ((select auth.uid()) = user_id);
+
+drop policy if exists "favoris : retrait par le membre" on public.favorites;
+create policy "favoris : retrait par le membre" on public.favorites
+  for delete to authenticated using ((select auth.uid()) = user_id);
+-- Pas de politique insert : l'ajout passe par add_favorite, qui vérifie l'annonce.
+
+-- Ajoute une annonce aux favoris du membre connecté (sans erreur si elle y est déjà).
+create or replace function public.add_favorite(p_listing_id uuid)
+returns void
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_uid    uuid := auth.uid();
+  v_seller uuid;
+  v_status text;
+  v_count  integer;
+begin
+  if v_uid is null then raise exception 'not_authenticated'; end if;
+
+  select l.seller_id, l.status into v_seller, v_status from public.listings l where l.id = p_listing_id;
+  if v_seller is null or v_status not in ('active', 'reserved') then raise exception 'listing_unavailable'; end if;
+  if v_seller = v_uid then raise exception 'own_listing'; end if;
+
+  select count(*) into v_count from public.favorites f where f.user_id = v_uid;
+  if v_count >= 500 then raise exception 'quota_favorites'; end if;
+
+  insert into public.favorites (user_id, listing_id) values (v_uid, p_listing_id)
+  on conflict do nothing;
+end;
+$$;
+
+-- Favoris du membre connecté avec l'état actuel de chaque annonce, le plus récent d'abord.
+-- Seules les colonnes publiques sont renvoyées (jamais le prix de vente final).
+create or replace function public.list_favorites()
+returns table (
+  listing_id        uuid,
+  title             text,
+  status            text,
+  asking_cents      integer,
+  estimated_cents   integer,
+  card_count        integer,
+  colors            text[],
+  cover_card_name   text,
+  cover_image_url   text,
+  archetype_name    text,
+  seller_id         uuid,
+  seller_name       text,
+  seller_avatar_url text,
+  favorited_at      timestamptz
+)
+language sql stable security definer set search_path = ''
+as $$
+  select
+    l.id, l.title, l.status, l.asking_cents, l.estimated_cents, l.card_count, l.colors,
+    l.cover_card_name, l.cover_image_url, a.name,
+    p.id, p.display_name, p.avatar_url,
+    f.created_at
+  from public.favorites f
+  join public.listings l on l.id = f.listing_id
+  join public.profiles p on p.id = l.seller_id
+  left join public.archetypes a on a.id = l.archetype_id
+  where f.user_id = auth.uid()
+  order by f.created_at desc
+  limit 500;
+$$;
+
+revoke execute on function public.add_favorite(uuid) from public, anon;
+revoke execute on function public.list_favorites()   from public, anon;
+grant  execute on function public.add_favorite(uuid) to authenticated;
+grant  execute on function public.list_favorites()   to authenticated;
