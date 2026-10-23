@@ -9,6 +9,21 @@ export const CONDITIONS = {
 } as const;
 export type Condition = keyof typeof CONDITIONS;
 
+/**
+ * Formats de jeu proposés. Modern seulement pour l'instant ; pour en ouvrir un autre,
+ * l'ajouter ici et dans la contrainte listings_format_check (supabase/schema.sql, section 16).
+ */
+export const FORMATS = {
+  modern: "Modern",
+} as const;
+export type DeckFormat = keyof typeof FORMATS;
+export const DEFAULT_FORMAT: DeckFormat = "modern";
+
+/** Format connu, sinon le format par défaut. */
+export function normalizeFormat(value: unknown): DeckFormat {
+  return typeof value === "string" && value in FORMATS ? (value as DeckFormat) : DEFAULT_FORMAT;
+}
+
 export const STATUSES = {
   active: "En vente",
   reserved: "Réservé",
@@ -37,6 +52,7 @@ export type Listing = {
   colors: ManaColor[]; // couleurs du deck, déclarées par le vendeur ; vide = incolore
   archetype: Archetype | null; // archétype choisi dans la liste fixe
   card_details: CardDetail[]; // état et langue par ligne de carte ; vide pour les anciennes annonces
+  format: DeckFormat; // format de jeu du deck
 };
 
 /** Couleurs de Magic, dans l'ordre WUBRG. */
@@ -79,7 +95,7 @@ export function artCrop(imageUrl: string | null): string | null {
 
 /** Colonnes sélectionnées pour une annonce. */
 export const LISTING_COLUMNS =
-  "id, title, decklist, card_count, estimated_cents, estimate_complete, asking_cents, condition, description, status, created_at, french_percent, cover_card_name, cover_image_url, colors, card_details, archetype:archetypes(id, slug, name)";
+  "id, title, decklist, card_count, estimated_cents, estimate_complete, asking_cents, condition, description, status, created_at, french_percent, cover_card_name, cover_image_url, colors, card_details, format, archetype:archetypes(id, slug, name)";
 
 /** « 70 », « 70 % » -> 70 ; null si vide ou hors de 0 à 100. */
 export function parsePercent(raw: string): number | null {

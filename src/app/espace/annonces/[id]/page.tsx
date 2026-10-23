@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { getProfile, requireUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { estimateDecklistNow } from "@/lib/public-listings";
-import { LISTING_COLUMNS, PUBLIC_STATUSES, STATUSES, type Listing } from "@/lib/listings";
+import { LISTING_COLUMNS, PUBLIC_STATUSES, STATUSES, normalizeFormat, type Listing } from "@/lib/listings";
 import { DeckView } from "@/components/deck-view";
 import { ListingAside } from "@/components/listing-aside";
 import { ManaCurveCard } from "@/components/mana-curve";
@@ -14,6 +14,7 @@ import { DeckTags } from "@/components/deck-tags";
 import { CardDetailsForm } from "@/components/card-details-form";
 import { DecklistEditor } from "@/components/decklist-editor";
 import { ListingIdentityForm } from "@/components/listing-identity-form";
+import { FormatTag } from "@/components/format-tag";
 
 export const metadata: Metadata = { title: "Mon annonce" };
 
@@ -53,6 +54,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
       </Link>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <h2 className="display text-2xl sm:text-3xl">{listing.title}</h2>
+        <FormatTag format={listing.format} />
         <span className="rounded-md bg-sunken px-2 py-0.5 text-xs font-semibold text-muted">{STATUSES[listing.status]}</span>
       </div>
       <div className="mt-2">
@@ -70,16 +72,17 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
         ) : (
           "Cette annonce n'est pas visible publiquement."
         )}{" "}
-        Le nom, les couleurs, l&apos;état et la langue des cartes et la liste se modifient ci-dessous ; le statut, le
+        Le nom, le format, les couleurs, l&apos;état et la langue des cartes et la liste se modifient ci-dessous ; le statut, le
         prix et l&apos;archétype depuis « Mes annonces ».
       </p>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:items-start">
         <div className="min-w-0 space-y-6">
           <ListingIdentityForm
-            key={`${listing.title}|${(listing.colors ?? []).join("")}`}
+            key={`${listing.title}|${listing.format}|${(listing.colors ?? []).join("")}`}
             listingId={listing.id}
             title={listing.title}
+            format={normalizeFormat(listing.format)}
             colors={listing.colors ?? []}
           />
           <CardDetailsForm

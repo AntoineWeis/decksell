@@ -1,5 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
+import { LatestDecks } from "@/components/latest-decks";
+
+function LatestDecksSkeleton() {
+  return (
+    <div className="mx-auto max-w-6xl px-4 pt-12 sm:px-6 sm:pt-16" aria-busy>
+      <div className="h-9 w-72 animate-pulse rounded-lg bg-sunken" />
+      <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div className="h-96 animate-pulse rounded-2xl bg-sunken" />
+        <div className="hidden h-96 animate-pulse rounded-xl bg-sunken lg:block" />
+      </div>
+    </div>
+  );
+}
 
 // Bandeau : marais brumeux de Kamigawa, 1920 × 1120, © Wizards of the Coast.
 import heroArt from "../../public/hero-swamp.webp";
@@ -111,6 +125,11 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Derniers decks en vente : lus à part, le bandeau s'affiche sans les attendre. */}
+      <Suspense fallback={<LatestDecksSkeleton />}>
+        <LatestDecks />
+      </Suspense>
 
       {/* Ce que fait decksell */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">

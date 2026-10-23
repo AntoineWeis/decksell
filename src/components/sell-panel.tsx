@@ -8,6 +8,7 @@ import { formatEur, parseEur, type Estimate, type ManualPrices } from "@/lib/pri
 import { checkDeckQuality, priceGap } from "@/lib/quality";
 import type { Archetype } from "@/lib/listings";
 import { ArchetypeSelect, ColorPicker } from "./deck-tags-fields";
+import { FormatSelect } from "./format-select";
 import { CardDetailsEditor } from "./card-details-editor";
 import { useActionToast } from "./toaster";
 
@@ -92,6 +93,10 @@ export function SellPanel({
         <label>
           <span className="mb-1 block text-sm font-medium">Archétype</span>
           <ArchetypeSelect archetypes={archetypes} className={inputClass} />
+        </label>
+        <label>
+          <span className="mb-1 block text-sm font-medium">Format de jeu</span>
+          <FormatSelect className={inputClass} />
         </label>
         <label>
           <span className="mb-1 block text-sm font-medium">Prix demandé</span>

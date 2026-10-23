@@ -20,7 +20,10 @@ export type QualityReport = {
 const listNames = (names: string[], max = 5) =>
   names.length <= max ? names.join(", ") : `${names.slice(0, max).join(", ")} et ${names.length - max} autre${names.length - max > 1 ? "s" : ""}`;
 
-/** Règles Modern : 60 cartes minimum, 15 en réserve maximum, aucune carte interdite ou hors format. */
+/**
+ * Règles Modern : 60 cartes minimum, 15 en réserve maximum, aucune carte interdite ou hors format.
+ * Seul format ouvert pour l'instant : à l'ouverture d'un autre, ces règles dépendront du format.
+ */
 export function checkDeckQuality(estimate: Estimate): QualityReport {
   const blocking: string[] = [];
   const warnings: string[] = [];

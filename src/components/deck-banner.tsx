@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { artCrop } from "@/lib/listings";
+import { FormatTag } from "./format-tag";
 
 /** Bandeau de page de deck : illustration de la carte phare floutée sous un dégradé. */
 export function DeckBanner({
@@ -8,9 +9,12 @@ export function DeckBanner({
   coverImageUrl,
   coverCardName,
   back,
+  format,
   children,
 }: {
   title: string;
+  /** Format de jeu, affiché en tag à côté du nom. */
+  format?: unknown;
   coverImageUrl: string | null;
   coverCardName: string | null;
   back: { href: string; label: string };
@@ -30,7 +34,10 @@ export function DeckBanner({
         <Link href={back.href} className="text-sm font-medium text-banner-muted hover:text-banner-ink">
           ← {back.label}
         </Link>
-        <h1 className="display mt-4 max-w-3xl text-3xl sm:text-5xl">{title}</h1>
+        <h1 className="display mt-4 max-w-3xl text-3xl sm:text-5xl">
+          {title}
+          {format !== undefined && <FormatTag format={format} onDark className="ml-3 -translate-y-1 sm:-translate-y-2 sm:text-xs" />}
+        </h1>
         {children}
         {coverCardName && <p className="mt-6 text-[11px] text-banner-muted/80">Illustration : {coverCardName}</p>}
       </div>

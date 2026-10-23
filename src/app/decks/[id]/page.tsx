@@ -11,7 +11,7 @@ import { DeckTags } from "@/components/deck-tags";
 import { ContactSeller } from "@/components/contact-seller";
 import { DeckFavorite } from "@/components/deck-favorite";
 
-import { CONDITIONS } from "@/lib/listings";
+import { CONDITIONS, FORMATS, normalizeFormat } from "@/lib/listings";
 import { formatEur } from "@/lib/pricing";
 
 type Props = { params: Promise<{ id: string }> };
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const listing = await fetchPublicListing(id);
   if (!listing) return { title: "Deck introuvable" };
   const parts = [
-    listing.archetype ? `Deck Modern ${listing.archetype.name}` : "Deck Modern",
+    `Deck ${FORMATS[normalizeFormat(listing.format)]}${listing.archetype ? ` ${listing.archetype.name}` : ""}`,
     `${listing.card_count} cartes`,
     `état ${CONDITIONS[listing.condition].toLowerCase()}`,
     `valeur estimée ${formatEur(listing.estimated_cents)}`,
@@ -61,6 +61,7 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
         title={listing.title}
         coverImageUrl={listing.cover_image_url}
         coverCardName={listing.cover_card_name}
+        format={listing.format}
         back={{ href: "/decks", label: "Tous les decks en vente" }}
       >
         <div className="mt-4">

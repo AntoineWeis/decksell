@@ -8,6 +8,7 @@ import { LanguageBar } from "./language-bar";
 import { hasMixedConditions } from "@/lib/card-details";
 import { ManaColors } from "./mana";
 import { FavoriteButton } from "./favorite-button";
+import { FormatTag } from "./format-tag";
 import type { FavoriteState } from "@/lib/favorites";
 
 /**
@@ -68,7 +69,10 @@ export function ListingTile({
 
         <div className="flex flex-1 flex-col gap-3 p-4">
           <div>
-            <h2 className="line-clamp-2 font-semibold group-hover:text-link">{l.title}</h2>
+            <h2 className="line-clamp-2 font-semibold group-hover:text-link">
+              <FormatTag format={l.format} className="mr-1.5 -translate-y-px" />
+              {l.title}
+            </h2>
             <p className="mt-0.5 text-xs text-muted">
               {l.card_count} cartes · {CONDITIONS[l.condition]}
               {hasMixedConditions(l.card_details ?? []) && " en majorité"}

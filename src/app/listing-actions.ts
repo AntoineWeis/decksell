@@ -8,7 +8,7 @@ import { parseDecklist } from "@/lib/decklist";
 import { buildEstimate, parseEur, starCard, type ManualPrices } from "@/lib/pricing";
 import { lookupDeckPrices } from "@/lib/estimate";
 import { checkDeckQuality } from "@/lib/quality";
-import { CONDITIONS, normalizeColors, type Condition } from "@/lib/listings";
+import { CONDITIONS, FORMATS, normalizeColors, normalizeFormat, type Condition } from "@/lib/listings";
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
 
 export type SellState = { status: "idle" } | { status: "error"; message: string } | { status: "auth" };
@@ -42,6 +42,9 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   const defaultCondition: Condition = conditionRaw in CONDITIONS ? (conditionRaw as Condition) : "near_mint";
   const description = str(formData.get("description"));
   const colors = normalizeColors(formData.getAll("colors"));
+  const rawFormat = str(formData.get("format"));
+  if (rawFormat !== "" && !(rawFormat in FORMATS)) return { status: "error", message: "Format de jeu inconnu." };
+  const format = normalizeFormat(rawFormat);
   const archetypeRaw = str(formData.get("archetype_id"));
   const archetypeId = archetypeRaw === "" ? null : Number(archetypeRaw);
 
@@ -102,6 +105,7 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
     french_percent: frenchPercent,
     card_details: cardDetails,
     colors,
+    format,
     archetype_id: archetypeId,
     cover_card_name: star?.name ?? null,
     cover_image_url: star?.imageUrl ?? null,

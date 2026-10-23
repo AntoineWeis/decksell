@@ -1012,3 +1012,12 @@ grant  execute on function public.is_admin()                                    
 grant  execute on function public.admin_list_reports(text, bigint)              to authenticated;
 grant  execute on function public.admin_report_messages(bigint)                 to authenticated;
 grant  execute on function public.admin_handle_report(bigint, text, text, boolean) to authenticated;
+
+-- 16. Format de jeu des decks. Modern seulement pour l'instant : pour en ouvrir un autre,
+-- ajoute-le à la liste de la contrainte ci-dessous (et dans FORMATS, src/lib/listings.ts).
+alter table public.listings
+  add column if not exists format text not null default 'modern';
+
+alter table public.listings drop constraint if exists listings_format_check;
+alter table public.listings
+  add constraint listings_format_check check (format in ('modern'));

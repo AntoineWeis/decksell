@@ -6,7 +6,16 @@ import { createSupabaseServer } from "@/lib/supabase-auth";
 import { buildEstimate, parseEur, starCard } from "@/lib/pricing";
 import { lookupDeckPrices } from "@/lib/estimate";
 import { checkDeckQuality } from "@/lib/quality";
-import { CONDITIONS, STATUSES, normalizeColors, parsePercent, type Condition, type ListingStatus } from "@/lib/listings";
+import {
+  CONDITIONS,
+  FORMATS,
+  STATUSES,
+  normalizeColors,
+  normalizeFormat,
+  parsePercent,
+  type Condition,
+  type ListingStatus,
+} from "@/lib/listings";
 import { parseDecklist } from "@/lib/decklist";
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
 
@@ -129,11 +138,14 @@ export async function updateListingIdentity(id: string, _prev: FormState, formDa
   if (title.length < 3 || title.length > 80) return { status: "error", message: "Le nom doit faire entre 3 et 80 caractères." };
   const colors = normalizeColors(formData.getAll("colors"));
   if (colors.length === 0) return { status: "error", message: "Coche au moins une couleur du deck." };
+  const rawFormat = str(formData.get("format"));
+  if (rawFormat !== "" && !(rawFormat in FORMATS)) return { status: "error", message: "Format de jeu inconnu." };
+  const format = normalizeFormat(rawFormat);
 
   const supabase = await createSupabaseServer();
   const { data, error } = await supabase
     .from("listings")
-    .update({ title, colors, updated_at: new Date().toISOString() })
+    .update({ title, format, colors, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("seller_id", user.id)
     .select("id");
