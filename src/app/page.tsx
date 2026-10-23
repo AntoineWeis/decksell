@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { LatestDecks } from "@/components/latest-decks";
+import { DeckPreview, DeckPreviewSkeleton } from "@/components/deck-preview";
 
 function LatestDecksSkeleton() {
   return (
@@ -27,39 +28,26 @@ function Icon({ children }: { children: React.ReactNode }) {
   );
 }
 
-const FEATURES = [
+/** Les deux parcours, en trois étapes chacun. */
+const PATHS = [
   {
-    title: "Estimation instantanée",
-    text: "Colle ta liste depuis MTGO, Arena, Moxfield ou MTGGoldfish : le total tombe en quelques secondes, sans créer de compte.",
-    icon: <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z" />,
+    title: "Tu vends ton deck",
+    steps: [
+      ["Colle ta liste", "Depuis MTGO, Arena, Moxfield ou MTGGoldfish, réserve comprise. La valeur tombe en quelques secondes, sans compte."],
+      ["Fixe ton prix", "Tu vois ce que vaut chaque carte. Une carte sans prix ? Indique le tien. Précise l'état et la langue de tes cartes."],
+      ["Publie et réponds", "Les acheteurs t'écrivent et te font des offres depuis l'annonce ; tu es prévenu par e-mail. Passe-la en réservé, puis en vendu."],
+    ],
+    cta: { href: "/estimer", label: "Estimer mon deck →" },
   },
   {
-    title: "Détail carte par carte",
-    text: "Chaque carte avec son édition, sa rareté et son prix, triée par valeur. Tu vois tout de suite où est l'argent.",
-    icon: (
-      <>
-        <rect x="3" y="4" width="18" height="16" rx="2" />
-        <path d="M3 9h18M8 4v16" />
-      </>
-    ),
+    title: "Tu cherches un deck",
+    steps: [
+      ["Parcours les decks", "Filtre par couleur, archétype ou carte présente dans la liste, et trie par prix ou par meilleure affaire."],
+      ["Examine la fiche", "Prix demandé face à la valeur du jour, état et langue carte par carte, liste rangée par type, courbe de mana."],
+      ["Écris au vendeur", "Pose tes questions ou fais une offre depuis l'annonce. Garde les decks qui te tentent dans tes favoris."],
+    ],
+    cta: { href: "/decks", label: "Voir les decks en vente →" },
   },
-  {
-    title: "Mise en vente et suivi",
-    text: "Publie ton deck au prix de ton choix, puis suis-le depuis ton espace : en vente, réservé, vendu.",
-    icon: (
-      <>
-        <path d="M3 12V5a2 2 0 0 1 2-2h7l9 9-9 9-9-9Z" />
-        <circle cx="8" cy="8" r="1.5" />
-      </>
-    ),
-  },
-];
-
-const STEPS = [
-  ["Colle ta liste", "Telle qu'exportée par ton outil habituel, réserve comprise."],
-  ["Lis le prix", "Le total, la carte phare et le détail de chaque carte."],
-  ["Complète si besoin", "Une carte sans prix ? Indique le tien, le total suit."],
-  ["Mets-le en vente", "Fixe ton prix et suis l'annonce depuis ton espace."],
 ];
 
 const TRUST = [
@@ -73,11 +61,19 @@ const TRUST = [
   },
   {
     title: "Rien n'est compté en silence",
-    text: "Une carte introuvable ou sans prix est signalée et laissée hors du total, jusqu'à ce que tu indiques le tien.",
+    text: "Une carte introuvable ou sans prix est signalée et laissée hors du total, jusqu'à ce que le vendeur indique le sien.",
   },
   {
-    title: "Tes annonces restent à toi",
-    text: "Seul ton compte peut voir, modifier ou supprimer tes annonces et ton profil.",
+    title: "Des decks vérifiés avant publication",
+    text: "60 cartes au moins, 15 en réserve au plus, aucune carte interdite en Modern : sinon, l'annonce n'est pas publiée.",
+  },
+  {
+    title: "L'état et la langue, carte par carte",
+    text: "Le vendeur les déclare pour chaque carte. Tu sais ce que tu achètes avant d'écrire.",
+  },
+  {
+    title: "Des échanges qui restent sur decksell",
+    text: "Messages et offres passent par la messagerie du site. Une conversation abusive se signale en un clic et l'équipe la modère.",
   },
 ];
 
@@ -104,10 +100,10 @@ export default function Home() {
           Kamigawa · © Wizards of the Coast
         </p>
         <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pb-24 sm:pt-24">
-          <h1 className="display max-w-3xl text-4xl sm:text-6xl">Combien vaut ton deck Modern&nbsp;?</h1>
+          <h1 className="display max-w-3xl text-4xl sm:text-6xl">Des decks Modern complets, au juste prix</h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-banner-muted">
-            decksell chiffre ta decklist carte par carte d&apos;après les prix Cardmarket, en euros. Ensuite, mets ton
-            deck en vente au juste prix et suis la vente depuis ton espace.
+            decksell estime chaque deck carte par carte d&apos;après les prix Cardmarket. Les vendeurs savent quoi
+            demander, les acheteurs comparent avant de faire une offre.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
@@ -117,12 +113,13 @@ export default function Home() {
               Estimer mon deck
             </Link>
             <Link
-              href="/inscription"
+              href="/decks"
               className="inline-flex h-11 items-center rounded-lg px-5 font-semibold text-banner-ink ring-1 ring-white/25 transition hover:bg-white/10"
             >
-              Créer un compte vendeur
+              Voir les decks en vente
             </Link>
           </div>
+          <p className="mt-4 text-sm text-banner-muted">Estimation gratuite et sans compte · Prix Cardmarket en euros</p>
         </div>
       </section>
 
@@ -131,98 +128,69 @@ export default function Home() {
         <LatestDecks />
       </Suspense>
 
-      {/* Ce que fait decksell */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-        <h2 className="display max-w-2xl text-3xl sm:text-4xl">Le prix de ton deck, puis sa vente, au même endroit</h2>
+      {/* Les deux parcours : vendre, acheter */}
+      <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6 sm:pt-20">
+        <h2 className="display max-w-2xl text-3xl sm:text-4xl">Vendre ou acheter, au même endroit</h2>
         <p className="mt-3 max-w-2xl leading-relaxed text-muted">
-          decksell est fait pour revendre et acheter des decks Modern complets entre joueurs, sans les découper carte
-          par carte. L&apos;estimation donne aux deux côtés le même point de départ.
+          decksell sert à revendre et acheter des decks Modern entiers entre joueurs, sans les découper carte par carte.
+          L&apos;estimation donne aux deux côtés le même point de départ.
         </p>
-        <ul className="mt-10 grid gap-x-10 gap-y-8 md:grid-cols-3">
-          {FEATURES.map((f) => (
-            <li key={f.title}>
-              <span className="flex size-10 items-center justify-center rounded-lg bg-brand-soft text-link">
-                <Icon>{f.icon}</Icon>
-              </span>
-              <h3 className="mt-4 font-semibold">{f.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">{f.text}</p>
-            </li>
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          {PATHS.map((path) => (
+            <div key={path.title} className="flex flex-col rounded-xl border border-line bg-surface p-6">
+              <h3 className="display text-2xl">{path.title}</h3>
+              <ol className="mt-6 space-y-5">
+                {path.steps.map(([title, text], i) => (
+                  <li key={title} className="relative pl-12">
+                    <span className="absolute left-0 top-0 flex size-8 items-center justify-center rounded-md bg-brand-soft text-sm font-semibold tabular-nums text-link">
+                      {i + 1}
+                    </span>
+                    <p className="font-semibold">{title}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-muted">{text}</p>
+                  </li>
+                ))}
+              </ol>
+              <Link href={path.cta.href} className="mt-auto inline-flex pt-6 font-semibold text-link hover:underline">
+                {path.cta.label}
+              </Link>
+            </div>
           ))}
-        </ul>
+        </div>
       </section>
 
-      {/* Comment ça marche */}
+      {/* Aperçu d'une vraie fiche deck : lu à part, comme les derniers decks. */}
+      <Suspense fallback={<DeckPreviewSkeleton />}>
+        <DeckPreview />
+      </Suspense>
+
+      {/* Confiance : les prix, les annonces, les échanges */}
       <section className="border-y border-line bg-surface">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-          <h2 className="display text-2xl sm:text-3xl">Comment ça marche</h2>
-          <ol className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map(([title, text], i) => (
-              <li key={title} className="relative pl-12">
-                <span className="absolute left-0 top-0 flex size-8 items-center justify-center rounded-md bg-accent text-sm font-semibold tabular-nums text-on-accent">
-                  {i + 1}
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+          <div>
+            <h2 className="display text-3xl">Des prix vérifiables, des annonces contrôlées</h2>
+            <p className="mt-3 leading-relaxed text-muted">
+              Une estimation n&apos;est utile que si on sait d&apos;où elle vient, et une annonce que si on peut s&apos;y
+              fier.
+            </p>
+            <p className="mt-4 text-sm text-muted">
+              Les prix sont indicatifs : ils servent de repère, ce ne sont pas des offres de rachat.
+            </p>
+          </div>
+          <ul className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
+            {TRUST.map((t) => (
+              <li key={t.title} className="flex gap-3">
+                <span className="mt-0.5 text-ok">
+                  <Icon>
+                    <path d="m5 12 4.5 4.5L19 7" />
+                  </Icon>
                 </span>
-                <p className="font-semibold">{title}</p>
-                <p className="mt-1 text-sm leading-relaxed text-muted">{text}</p>
+                <div>
+                  <p className="font-semibold">{t.title}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-muted">{t.text}</p>
+                </div>
               </li>
             ))}
-          </ol>
-        </div>
-      </section>
-
-      {/* Réassurance sur les prix */}
-      <section className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <div>
-          <h2 className="display text-3xl sm:text-4xl">Des prix que tu peux vérifier</h2>
-          <p className="mt-3 leading-relaxed text-muted">
-            Une estimation n&apos;est utile que si on sait d&apos;où elle vient. Voilà exactement comment decksell
-            calcule la valeur d&apos;un deck.
-          </p>
-          <p className="mt-4 text-sm text-muted">
-            Les prix sont indicatifs : ils servent de repère, ce ne sont pas des offres de rachat.
-          </p>
-        </div>
-        <ul className="divide-y divide-line rounded-xl border border-line bg-surface">
-          {TRUST.map((t) => (
-            <li key={t.title} className="flex gap-4 px-5 py-4">
-              <span className="mt-0.5 text-ok">
-                <Icon>
-                  <path d="m5 12 4.5 4.5L19 7" />
-                </Icon>
-              </span>
-              <div>
-                <p className="font-semibold">{t.title}</p>
-                <p className="mt-1 text-sm leading-relaxed text-muted">{t.text}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Vendeurs et acheteurs */}
-      <section className="border-t border-line bg-surface">
-        <div className="mx-auto grid max-w-6xl gap-6 px-4 py-16 sm:px-6 md:grid-cols-2">
-          <div className="rounded-xl border border-line bg-background p-6">
-            <h2 className="display text-2xl">Tu vends ton deck</h2>
-            <ul className="mt-4 space-y-2 text-sm leading-relaxed text-muted">
-              <li>Connais sa valeur avant de fixer ton prix.</li>
-              <li>Publie l&apos;annonce depuis l&apos;estimation, en un clic.</li>
-              <li>Suis chaque annonce : en vente, réservé, vendu, retiré.</li>
-            </ul>
-            <Link href="/estimer" className="mt-6 inline-flex font-semibold text-link hover:underline">
-              Estimer et mettre en vente →
-            </Link>
-          </div>
-          <div className="rounded-xl border border-line bg-background p-6">
-            <h2 className="display text-2xl">Tu cherches un deck</h2>
-            <ul className="mt-4 space-y-2 text-sm leading-relaxed text-muted">
-              <li>Parcours les decks complets mis en vente par les joueurs.</li>
-              <li>Compare le prix demandé à la valeur du jour, carte par carte.</li>
-              <li>Vois d&apos;un coup d&apos;œil la part de cartes en français et en anglais.</li>
-            </ul>
-            <Link href="/decks" className="mt-6 inline-flex font-semibold text-link hover:underline">
-              Voir les decks en vente →
-            </Link>
-          </div>
+          </ul>
         </div>
       </section>
 
@@ -231,14 +199,22 @@ export default function Home() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-6 px-4 py-14 sm:px-6">
           <div>
             <h2 className="display text-2xl sm:text-3xl">Prêt à connaître la valeur de ton deck&nbsp;?</h2>
-            <p className="mt-2 text-banner-muted">Sans compte, en quelques secondes.</p>
+            <p className="mt-2 text-banner-muted">Gratuit, sans compte, en quelques secondes.</p>
           </div>
-          <Link
-            href="/estimer"
-            className="inline-flex h-11 items-center rounded-lg bg-accent px-5 font-semibold text-on-accent transition hover:bg-accent-hover"
-          >
-            Estimer mon deck
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/estimer"
+              className="inline-flex h-11 items-center rounded-lg bg-accent px-5 font-semibold text-on-accent transition hover:bg-accent-hover"
+            >
+              Estimer mon deck
+            </Link>
+            <Link
+              href="/decks"
+              className="inline-flex h-11 items-center rounded-lg px-5 font-semibold text-banner-ink ring-1 ring-white/25 transition hover:bg-white/10"
+            >
+              Voir les decks
+            </Link>
+          </div>
         </div>
       </section>
     </main>

@@ -33,8 +33,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   openGraph: { siteName: "decksell", locale: "fr_FR", type: "website" },
-  title: { default: "decksell · Estime et vends ton deck Modern", template: "%s · decksell" },
-  description: "Colle ta decklist Magic : The Gathering et obtiens sa valeur carte par carte, d’après les prix Cardmarket.",
+  title: { default: "decksell · Achète et vends des decks Modern au juste prix", template: "%s · decksell" },
+  description:
+    "Estime ton deck Magic : The Gathering carte par carte d’après les prix Cardmarket, mets-le en vente ou trouve un deck Modern complet entre joueurs.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

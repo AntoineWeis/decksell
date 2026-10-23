@@ -45,7 +45,8 @@ async function fillMissingCovers(listings: PublicListing[]): Promise<void> {
   );
 }
 
-export async function fetchPublicListings(): Promise<PublicListing[]> {
+/** Annonces publiques, les plus récentes d'abord. Mises en cache le temps de la requête (l'accueil les lit deux fois). */
+export const fetchPublicListings = cache(async function fetchPublicListings(): Promise<PublicListing[]> {
   await connection(); // toujours à jour : lu à chaque requête
   const { data, error } = await getSupabaseAdmin()
     .from("listings")
@@ -57,7 +58,7 @@ export async function fetchPublicListings(): Promise<PublicListing[]> {
   const listings = (data ?? []) as unknown as PublicListing[];
   await fillMissingCovers(listings);
   return listings;
-}
+});
 
 /** Une annonce publique. Mise en cache le temps de la requête : le titre et la page la partagent. */
 export const fetchPublicListing = cache(async function fetchPublicListing(id: string): Promise<PublicListing | null> {
