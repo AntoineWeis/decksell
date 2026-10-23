@@ -9,7 +9,8 @@ import { LISTING_COLUMNS, PUBLIC_STATUSES, STATUSES, normalizeFormat, type Listi
 import { DeckView } from "@/components/deck-view";
 import { ListingAside } from "@/components/listing-aside";
 import { ManaCurveCard } from "@/components/mana-curve";
-import { manaCurve } from "@/lib/deck-stats";
+import { cardTypeCounts, manaCurve } from "@/lib/deck-stats";
+import { CardTypesCard } from "@/components/card-types";
 import { DeckTags } from "@/components/deck-tags";
 import { CardDetailsForm } from "@/components/card-details-form";
 import { DecklistEditor } from "@/components/decklist-editor";
@@ -108,7 +109,10 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
               : null
           }
           todayCents={estimate.totalCents}
-          stats={<ManaCurveCard curve={manaCurve(estimate)} />}
+          stats={<>
+            <CardTypesCard counts={cardTypeCounts(estimate)} />
+            <ManaCurveCard curve={manaCurve(estimate)} />
+          </>}
         />
       </div>
     </div>

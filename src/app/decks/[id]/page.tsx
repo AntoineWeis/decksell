@@ -6,10 +6,13 @@ import { DeckBanner } from "@/components/deck-banner";
 import { DeckView } from "@/components/deck-view";
 import { ListingAside } from "@/components/listing-aside";
 import { ManaCurveCard } from "@/components/mana-curve";
-import { manaCurve } from "@/lib/deck-stats";
+import { cardTypeCounts, manaCurve } from "@/lib/deck-stats";
+import { CardTypesCard } from "@/components/card-types";
 import { DeckTags } from "@/components/deck-tags";
 import { ContactSeller } from "@/components/contact-seller";
 import { DeckFavorite } from "@/components/deck-favorite";
+import { DeckShare } from "@/components/deck-share";
+import { formatDecklist, parseDecklist } from "@/lib/decklist";
 
 import { CONDITIONS, FORMATS, normalizeFormat } from "@/lib/listings";
 import { formatEur } from "@/lib/pricing";
@@ -74,7 +77,10 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
         </div>
         <div className="lg:order-2">
           <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents}
-          stats={<ManaCurveCard curve={manaCurve(estimate)} />}>
+          stats={<>
+            <CardTypesCard counts={cardTypeCounts(estimate)} />
+            <ManaCurveCard curve={manaCurve(estimate)} />
+          </>}>
             {/* Lit la session : à part, pour ne pas retarder le reste de l'annonce. */}
             <Suspense fallback={<div className="mt-4 h-11 animate-pulse rounded-xl bg-sunken" />}>
               <ContactSeller listingId={listing.id} sellerId={listing.seller?.id ?? null} title={listing.title} />
@@ -82,6 +88,7 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
             <Suspense fallback={<div className="mt-2 h-10 animate-pulse rounded-xl bg-sunken" />}>
               <DeckFavorite listingId={listing.id} sellerId={listing.seller?.id ?? null} />
             </Suspense>
+            <DeckShare listingId={listing.id} title={listing.title} decklistText={formatDecklist(parseDecklist(listing.decklist))} />
           </ListingAside>
         </div>
       </div>

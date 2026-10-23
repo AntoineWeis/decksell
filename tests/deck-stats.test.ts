@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isLand, manaCurve } from "../src/lib/deck-stats.ts";
+import { cardTypeCounts, isLand, manaCurve } from "../src/lib/deck-stats.ts";
 import type { Estimate, PricedLine } from "../src/lib/pricing.ts";
 
 function line(name: string, quantity: number, cmc: number | null, typeLine: string | null, board: "main" | "side" = "main"): PricedLine {
@@ -47,4 +47,26 @@ test("manaCurve compte le principal, hors terrains, avec 7+ et la moyenne", () =
 
 test("manaCurve renvoie null sans donnée", () => {
   assert.equal(manaCurve(est([line("X", 4, null, null)])), null);
+});
+
+test("cardTypeCounts compte chaque type du principal, face avant, sous-types ignorés", () => {
+  const counts = cardTypeCounts(
+    est([
+      line("Ornithopter", 4, 0, "Artifact Creature — Thopter"),
+      line("Bolt", 4, 1, "Instant"),
+      line("Valakut Awakening", 2, 3, "Instant // Land"),
+      line("Mountain", 18, 0, "Basic Land — Mountain"),
+      line("Saga", 2, 3, "Enchantment — Saga"),
+      line("Teferi, Time Raveler", 2, 3, "Legendary Planeswalker — Teferi"),
+      line("Blood Moon", 3, 3, "Enchantment", "side"),
+      line("Lurrus of the Dream-Den", 1, 3, "Legendary Creature — Cat Nightmare", "side"),
+      line("Yorion, Sky Nomad", 1, 5, "Legendary Creature — Bird Serpent"),
+      line("Inconnue", 2, null, null),
+    ]),
+  )!;
+  // Yorion au principal est une simple créature ; Lurrus en réserve est le compagnon.
+  assert.deepEqual(counts, {
+    Creature: 5, Planeswalker: 2, Sorcery: 0, Instant: 6, Artifact: 4, Enchantment: 2, Land: 18, Companion: 1,
+  });
+  assert.equal(cardTypeCounts(est([line("Inconnue", 2, null, null)])), null);
 });

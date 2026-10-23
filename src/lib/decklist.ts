@@ -14,7 +14,8 @@ export type ParsedDeck = {
 };
 
 const MAIN_HEADERS = new Set(["mainboard", "main", "maindeck", "main deck", "deck"]);
-const SIDE_HEADERS = new Set(["sideboard", "side", "side board", "sb"]);
+// La section « Companion » des exports Arena va dans la réserve, d'où se joue le compagnon.
+const SIDE_HEADERS = new Set(["sideboard", "side", "side board", "sb", "companion", "compagnon"]);
 
 // "4 Lightning Bolt", "4x Lightning Bolt", prefixe MTGO "SB: 2 Name"
 const LINE_RE = /^(?:sb:\s*)?(\d{1,3})\s*x?\s+(.+)$/i;
@@ -113,4 +114,11 @@ export function lookupKeys(name: string): string[] {
   const full = normalizeName(name);
   const front = full.split(" // ")[0];
   return front !== full ? [full, front] : [full];
+}
+
+/** Decklist propre au format MTGO (« 4 Nom », puis « Sideboard ») : importable partout. */
+export function formatDecklist(deck: Pick<ParsedDeck, "main" | "side">): string {
+  const lines = deck.main.map((e) => `${e.quantity} ${e.name}`);
+  if (deck.side.length > 0) lines.push("", "Sideboard", ...deck.side.map((e) => `${e.quantity} ${e.name}`));
+  return lines.join("\n") + "\n";
 }

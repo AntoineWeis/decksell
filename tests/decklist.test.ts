@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseDecklist, normalizeName, lookupKeys } from "../src/lib/decklist.ts";
+import { formatDecklist, parseDecklist, normalizeName, lookupKeys } from "../src/lib/decklist.ts";
 
 const ELDRAZI = `Mainboard
 4 Ancient Stirrings
@@ -110,4 +110,22 @@ test("cartes à deux faces : nom complet et première face", () => {
 
 test("normalisation : accents et apostrophes typographiques", () => {
   assert.equal(normalizeName("Lim-Dûl’s Vault"), "lim-dul's vault");
+});
+
+test("la section Companion des exports Arena va dans la réserve", () => {
+  const deck = parseDecklist("Companion\n1 Lurrus of the Dream-Den\n\nDeck\n4 Ragavan, Nimble Pilferer\n\nSideboard\n2 Blood Moon");
+  assert.deepEqual(deck.main, [{ name: "Ragavan, Nimble Pilferer", quantity: 4 }]);
+  assert.deepEqual(deck.side, [
+    { name: "Lurrus of the Dream-Den", quantity: 1 },
+    { name: "Blood Moon", quantity: 2 },
+  ]);
+  assert.equal(deck.errors.length, 0);
+});
+
+test("formatDecklist écrit le principal puis la réserve, relisible par parseDecklist", () => {
+  const deck = parseDecklist("SB: 2 Blood Moon\n4 Lightning Bolt (M10) 146\n4x Ragavan, Nimble Pilferer");
+  const text = formatDecklist(deck);
+  assert.equal(text, "4 Lightning Bolt\n4 Ragavan, Nimble Pilferer\n\nSideboard\n2 Blood Moon\n");
+  const again = parseDecklist(text);
+  assert.deepEqual([again.main, again.side], [deck.main, deck.side]);
 });
