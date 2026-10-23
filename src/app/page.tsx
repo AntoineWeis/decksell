@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { LatestDecks } from "@/components/latest-decks";
+import { ManaRise } from "@/components/mana-rise";
 import { DeckPreview, DeckPreviewSkeleton } from "@/components/deck-preview";
 
 function LatestDecksSkeleton() {
@@ -95,6 +96,9 @@ export default function Home() {
           {/* Dégradé à gauche : le texte reste lisible sur l'illustration */}
           <div className="absolute inset-0 bg-gradient-to-r from-banner/95 via-banner/70 to-banner/20" />
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-banner to-transparent" />
+          {/* Mana qui monte du bas du bandeau, derrière le texte : un voile bleu-violet très léger au sol, puis les particules. */}
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-[linear-gradient(90deg,rgba(80,110,220,0.05),rgba(110,90,230,0.07),rgba(80,110,220,0.05))] [mask-image:linear-gradient(to_top,black,transparent)]" />
+          <ManaRise className="absolute inset-0 h-full w-full" />
         </div>
         <p className="absolute right-4 top-3 z-10 text-[10px] text-white/70 [text-shadow:0_1px_2px_rgba(0,0,0,0.6)] sm:right-6">
           Kamigawa · © Wizards of the Coast
