@@ -34,9 +34,3 @@ export function formatLocation(department: string | null | undefined, city: stri
   if (department && isDepartment(department)) return `${c || DEPARTMENTS[department]} (${department})`;
   return c || null;
 }
-
-/** Modes de remise proposés, en clair : « Remise en main propre · Envoi possible ». */
-export function deliveryLabel(handDelivery: boolean | null | undefined, ships: boolean | null | undefined): string | null {
-  const parts = [handDelivery && "Remise en main propre", ships && "Envoi possible"].filter(Boolean);
-  return parts.length ? parts.join(" · ") : null;
-}

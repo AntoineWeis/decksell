@@ -24,10 +24,8 @@ export type DeckQuery = {
   max: number | null;
   /** Page affichée, à partir de 1. */
   page: number;
-  /** Département du vendeur (code INSEE), ou null. */
+  /** Département d'expédition du vendeur (code INSEE), ou null. */
   department: string | null;
-  /** Seulement les vendeurs qui acceptent l'envoi. */
-  ships: boolean;
 };
 
 export const EMPTY_QUERY: DeckQuery = {
@@ -39,7 +37,6 @@ export const EMPTY_QUERY: DeckQuery = {
   max: null,
   page: 1,
   department: null,
-  ships: false,
 };
 
 /** Decks affichés par page de l'index. */
@@ -82,7 +79,6 @@ export function readDeckQuery(sp: RawParams): DeckQuery {
     max,
     page: Number.isInteger(page) && page > 1 ? Math.min(page, 10_000) : 1,
     department: isDepartment(dep) ? dep : null,
-    ships: first(sp.envoi) === "1",
   };
 }
 
@@ -98,7 +94,6 @@ export function decksHref(q: Partial<DeckQuery>): string {
   if (q.min != null) params.set("min", String(q.min));
   if (q.max != null) params.set("max", String(q.max));
   if (q.department) params.set("dep", q.department);
-  if (q.ships) params.set("envoi", "1");
   if (q.sort && q.sort !== DEFAULT_SORT) params.set("tri", q.sort);
   if (q.page && q.page > 1) params.set("page", String(q.page));
   const s = params.toString();
@@ -148,7 +143,6 @@ export function filterListings(listings: PublicListing[], q: DeckQuery, aliases:
     if (q.min != null && l.asking_cents < q.min * 100) continue;
     if (q.max != null && l.asking_cents > q.max * 100) continue;
     if (q.department && l.seller?.department !== q.department) continue;
-    if (q.ships && !l.seller?.ships) continue;
     let hits: CardHit[] = [];
     // Recherche trop courte : ignorée (l'interface le signale) plutôt que de tout masquer.
     if (normalizeName(q.card).length >= MIN_CARD_QUERY) {

@@ -128,7 +128,7 @@ export default function TermsPage() {
             ventes</strong>. Le site n&apos;encaisse aucun paiement et n&apos;expédie aucune carte.
           </li>
           <li>
-            Les conditions de la vente (prix final, paiement, envoi ou remise en main propre) sont convenues
+            Les conditions de la vente (prix final, paiement, envoi) sont convenues
             directement entre le vendeur et l&apos;acheteur, sous leur responsabilité.
           </li>
           <li>

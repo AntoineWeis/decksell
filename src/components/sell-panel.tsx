@@ -129,7 +129,7 @@ export function SellPanel({
             name="description"
             rows={3}
             maxLength={2000}
-            placeholder="Sleeves, deck box, remise en main propre ou envoi…"
+            placeholder="Sleeves, deck box, conditions d'envoi…"
             className={`${inputClass} resize-y`}
           />
         </label>

@@ -103,19 +103,19 @@ async function Conversation({ params }: Props) {
           <strong className="font-semibold">Deal ! Offre acceptée à {formatEur(accepted.amount_cents)}.</strong>{" "}
           {c.role === "seller" ? (
             <>
-              Convenez de la remise et du paiement ici. Pense à réserver l&apos;annonce pour {c.other_name} (bouton
+              Convenez de l&apos;envoi et du paiement ici, sur decksell. Pense à réserver l&apos;annonce pour {c.other_name} (bouton
               ci-dessus).
             </>
           ) : (
-            "Convenez avec le vendeur de la remise et du paiement ici. Le paiement en ligne n'est pas encore proposé sur decksell."
+            "Convenez avec le vendeur de l'envoi et du paiement ici, sur decksell. Le paiement en ligne n'est pas encore proposé."
           )}
         </p>
       )}
 
       {/* Rappel anti-arnaque, toujours visible */}
       <p className="rounded-lg bg-brand-soft px-4 py-3 text-sm text-link">
-        <strong className="font-semibold">Pour une vente sereine :</strong> préfère la remise en main propre ou un
-        paiement protégé. Ne paie jamais en « PayPal entre proches » et méfie-toi des liens envoyés par message.
+        <strong className="font-semibold">Pour une vente sereine :</strong> garde vos échanges sur decksell et
+        demande un envoi suivi. Ne paie jamais en « PayPal entre proches » et méfie-toi des liens envoyés par message.
       </p>
 
       <section className="overflow-hidden rounded-xl border border-line bg-surface">

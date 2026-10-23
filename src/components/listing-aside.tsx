@@ -4,7 +4,7 @@ import { CONDITIONS, STATUSES, type Listing } from "@/lib/listings";
 import { Avatar } from "./avatar";
 import { LanguageBar } from "./language-bar";
 import { hasMixedConditions } from "@/lib/card-details";
-import { deliveryLabel, formatLocation } from "@/lib/departments";
+import { formatLocation } from "@/lib/departments";
 
 type Seller = {
   id?: string;
@@ -14,8 +14,6 @@ type Seller = {
   archidekt_url: string | null;
   department?: string | null;
   city?: string | null;
-  hand_delivery?: boolean | null;
-  ships?: boolean | null;
 };
 
 const date = (iso: string) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
@@ -101,18 +99,17 @@ export function ListingAside({
                 seller.display_name
               )}
             </p>
-            {(formatLocation(seller.department, seller.city) || deliveryLabel(seller.hand_delivery, seller.ships)) && (
+            {formatLocation(seller.department, seller.city) && (
             <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
               {formatLocation(seller.department, seller.city) && (
-                <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                <span className="inline-flex items-center gap-1">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-4 text-muted" aria-hidden>
                     <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z" />
                     <circle cx="12" cy="10" r="2.5" />
                   </svg>
-                  {formatLocation(seller.department, seller.city)}
+                  Expédié depuis <span className="font-medium text-foreground">{formatLocation(seller.department, seller.city)}</span>
                 </span>
               )}
-              {deliveryLabel(seller.hand_delivery, seller.ships) && <span>{deliveryLabel(seller.hand_delivery, seller.ships)}</span>}
             </p>
           )}
           {(seller.moxfield_url || seller.archidekt_url) && (

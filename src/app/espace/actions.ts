@@ -282,7 +282,7 @@ export async function updateProfile(_prev: FormState, formData: FormData): Promi
     return { status: "error", message: "Le lien Archidekt doit commencer par https://archidekt.com/" };
   }
 
-  // Localisation, remise et alertes : seulement quand le formulaire les affiche (base à jour).
+  // Lieu d'expédition et alertes : seulement quand le formulaire les affiche (base à jour).
   const extra: Record<string, unknown> = {};
   if (formData.has("department")) {
     const department = str(formData.get("department"));
@@ -291,8 +291,6 @@ export async function updateProfile(_prev: FormState, formData: FormData): Promi
     if (city.length > 60) return { status: "error", message: "Nom de ville trop long (60 caractères max)." };
     extra.department = department || null;
     extra.city = city || null;
-    extra.hand_delivery = formData.get("hand_delivery") === "on";
-    extra.ships = formData.get("ships") === "on";
     extra.price_alerts = formData.get("price_alerts") === "on";
   }
 

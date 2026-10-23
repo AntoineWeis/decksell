@@ -44,10 +44,9 @@ test("readDeckQuery lit et nettoie l'adresse", () => {
     max: null,
     page: 1,
     department: null,
-    ships: false,
   });
   assert.deepEqual(readDeckQuery({ a: "<script>", tri: "n'importe", min: "abc", page: "-2", dep: "99" }), EMPTY_QUERY);
-  assert.deepEqual([readDeckQuery({ dep: "2A", envoi: "1" }).department, readDeckQuery({ envoi: "1" }).ships], ["2A", true]);
+  assert.equal(readDeckQuery({ dep: "2A" }).department, "2A");
   // Bornes de prix remises dans l'ordre, centimes ignorés.
   const q = readDeckQuery({ min: "500", max: "99,90", page: "3" });
   assert.deepEqual([q.min, q.max, q.page], [99, 500, 3]);
@@ -118,15 +117,14 @@ test("findCards trouve aussi les traductions d'une recherche en français", () =
   assert.deepEqual(findCards(list, "foudre"), [], "sans traduction : rien");
 });
 
-test("filterListings filtre par département du vendeur et par envoi", () => {
-  const seller = (department: string | null, ships: boolean) =>
-    ({ id: "s", display_name: "x", avatar_url: null, moxfield_url: null, archidekt_url: null, department, ships }) as PublicListing["seller"];
-  const lyon = listing("lyon", { seller: seller("69", false) });
-  const paris = listing("paris", { seller: seller("75", true) });
+test("filterListings filtre par département d'expédition du vendeur", () => {
+  const seller = (department: string | null) =>
+    ({ id: "s", display_name: "x", avatar_url: null, moxfield_url: null, archidekt_url: null, department }) as PublicListing["seller"];
+  const lyon = listing("lyon", { seller: seller("69") });
+  const paris = listing("paris", { seller: seller("75") });
   const none = listing("none");
   const ids = (q: Partial<typeof EMPTY_QUERY>) => filterListings([lyon, paris, none], { ...EMPTY_QUERY, ...q }).map((x) => x.listing.id);
   assert.deepEqual(ids({ department: "69" }), ["lyon"]);
-  assert.deepEqual(ids({ ships: true }), ["paris"]);
   assert.deepEqual(ids({}), ["lyon", "paris", "none"]);
-  assert.equal(decksHref({ department: "69", ships: true }), "/decks?dep=69&envoi=1");
+  assert.equal(decksHref({ department: "69" }), "/decks?dep=69");
 });

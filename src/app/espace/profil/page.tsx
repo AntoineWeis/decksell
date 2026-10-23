@@ -25,7 +25,7 @@ async function ProfileSection() {
   const prefsQuery = (cols: string) => supabase.from("profiles").select(cols).eq("id", user.id).maybeSingle();
   const [{ count }, full] = await Promise.all([
     supabase.from("listings").select("id", { count: "exact", head: true }).eq("seller_id", user.id),
-    prefsQuery("email_notifications, department, city, hand_delivery, ships, price_alerts"),
+    prefsQuery("email_notifications, department, city, price_alerts"),
   ]);
   // Base pas encore migrée (sections 17 et 18 du schéma) : seulement la préférence d'emails.
   const migrated = !full.error;
@@ -34,8 +34,6 @@ async function ProfileSection() {
     email_notifications: raw?.email_notifications ?? true,
     department: raw?.department ?? null,
     city: raw?.city ?? null,
-    hand_delivery: raw?.hand_delivery ?? true,
-    ships: raw?.ships ?? false,
     price_alerts: raw?.price_alerts ?? true,
   };
   return (

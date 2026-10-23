@@ -12,8 +12,6 @@ export type ProfilePrefs = {
   email_notifications: boolean;
   department: string | null;
   city: string | null;
-  hand_delivery: boolean;
-  ships: boolean;
   price_alerts: boolean;
 };
 import { useActionToast } from "./toaster";
@@ -133,7 +131,7 @@ export function ProfileForm({
 
         {locationReady && (
           <fieldset className="space-y-4 border-t border-line pt-4">
-            <legend className="sr-only">Localisation et remise</legend>
+            <legend className="sr-only">Lieu d&apos;expédition</legend>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium">Département</span>
@@ -151,18 +149,8 @@ export function ProfileForm({
                 <input name="city" defaultValue={prefs.city ?? ""} maxLength={60} placeholder="Lyon" className={inputClass} />
               </label>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="hand_delivery" defaultChecked={prefs.hand_delivery} className="h-4 w-4 accent-[var(--accent)]" />
-                Remise en main propre
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="ships" defaultChecked={prefs.ships} className="h-4 w-4 accent-[var(--accent)]" />
-                Envoi possible
-              </label>
-            </div>
             <p className="text-xs text-muted">
-              Affichés sur tes annonces, pour que les acheteurs proches te trouvent. Jamais d&apos;adresse exacte.
+              Affiché sur tes annonces (« Expédié depuis Lyon (69) »). Jamais d&apos;adresse exacte.
             </p>
           </fieldset>
         )}
@@ -172,7 +160,7 @@ export function ProfileForm({
             type="checkbox"
             name="email_notifications"
             defaultChecked={prefs.email_notifications}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
+            className="mt-0.5"
           />
           <span>
             <span className="block text-sm font-medium">Recevoir les notifications de messages par email</span>
@@ -187,7 +175,7 @@ export function ProfileForm({
               type="checkbox"
               name="price_alerts"
               defaultChecked={prefs.price_alerts}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
+              className="mt-0.5"
             />
             <span>
               <span className="block text-sm font-medium">Être prévenu quand un deck de mes favoris baisse de prix</span>

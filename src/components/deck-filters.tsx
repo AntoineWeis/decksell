@@ -34,8 +34,7 @@ export function DeckFilters({
     (query.archetype ? 1 : 0) +
     (query.card ? 1 : 0) +
     (query.min != null || query.max != null ? 1 : 0) +
-    (query.department ? 1 : 0) +
-    (query.ships ? 1 : 0);
+    (query.department ? 1 : 0);
   const active = activeCount > 0;
   const summary = active ? `${activeCount} filtre${activeCount > 1 ? "s" : ""} · ${resultCount} deck${resultCount > 1 ? "s" : ""}` : `${resultCount} deck${resultCount > 1 ? "s" : ""}`;
   // Champs cachés qui gardent les autres filtres quand on envoie un des formulaires.
@@ -47,7 +46,6 @@ export function DeckFilters({
       {except !== "price" && query.min != null && <input type="hidden" name="min" value={query.min} />}
       {except !== "price" && query.max != null && <input type="hidden" name="max" value={query.max} />}
       {except !== "place" && query.department && <input type="hidden" name="dep" value={query.department} />}
-      {except !== "place" && query.ships && <input type="hidden" name="envoi" value="1" />}
       {query.sort !== "recent" && <input type="hidden" name="tri" value={query.sort} />}
     </>
   );
@@ -198,7 +196,7 @@ export function DeckFilters({
           </div>
         </form>
 
-        {/* Lieu : département du vendeur et envoi, formulaire GET qui garde les autres filtres */}
+        {/* Lieu : département d'expédition du vendeur, formulaire GET qui garde les autres filtres */}
         <form action="/decks" className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <label htmlFor="deck-dep" className="w-24 shrink-0 text-sm font-semibold">
             Lieu
@@ -218,10 +216,6 @@ export function DeckFilters({
                 </option>
               ))}
             </select>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name="envoi" value="1" defaultChecked={query.ships} className="h-4 w-4 accent-[var(--accent)]" />
-              Envoi possible
-            </label>
             <button
               type="submit"
               className="h-9 rounded-lg border border-line px-3 text-sm font-medium transition hover:border-link/50 hover:text-link"
@@ -262,8 +256,7 @@ export function DeckFilters({
             {query.min != null && query.max != null && ` entre ${query.min} et ${query.max} €`}
             {query.min != null && query.max == null && ` à partir de ${query.min} €`}
             {query.min == null && query.max != null && ` jusqu'à ${query.max} €`}
-          {query.department && ` · vendeurs du ${query.department} (${DEPARTMENTS[query.department]})`}
-          {query.ships && " · envoi possible"}
+          {query.department && ` · expédiés depuis le ${query.department} (${DEPARTMENTS[query.department]})`}
             {query.sort === "affaire" && " · du plus avantageux au moins avantageux par rapport à l'estimation"}
           </p>
           {active && (

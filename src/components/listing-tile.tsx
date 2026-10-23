@@ -119,7 +119,6 @@ export function ListingTile({
               {l.seller.department && (
                 <span className="ml-auto shrink-0 text-xs" title={formatLocation(l.seller.department, null) ?? undefined}>
                   {l.seller.department}
-                  {l.seller.ships && " · envoi"}
                 </span>
               )}
             </p>

@@ -78,7 +78,7 @@ export function ReportDecision({
           </span>
         </label>
         <label className="flex items-start gap-3 text-sm">
-          <input type="checkbox" name="warn" className="mt-0.5 h-4 w-4 accent-[var(--accent)]" />
+          <input type="checkbox" name="warn" className="mt-0.5" />
           <span>
             <span className="font-medium">Avertir {memberName} par email</span>
             <span className="block text-xs text-muted">Toujours envoyé en cas de suspension.</span>
@@ -93,7 +93,7 @@ export function ReportDecision({
       </div>
       {listingWithdrawable && (
         <label className="flex items-start gap-3 text-sm">
-          <input type="checkbox" name="withdraw_listing" className="mt-0.5 h-4 w-4 accent-[var(--danger)]" />
+          <input type="checkbox" name="withdraw_listing" className="checkbox-danger mt-0.5" />
           <span>
             <span className="font-medium">Retirer l&apos;annonce</span>
             <span className="block text-xs text-muted">Elle disparaît des decks en vente ; le vendeur la voit « Retirée » dans son espace.</span>
