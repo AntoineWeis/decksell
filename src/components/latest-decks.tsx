@@ -146,7 +146,7 @@ function FeaturedDeck({ listing: l, wide = false }: { listing: PublicListing; wi
   );
 }
 
-/** Petite carte horizontale, pour les decks qui suivent le plus récent. */
+/** Petite carte horizontale, pour les decks qui suivent le plus récent : l'essentiel de la grande carte, en plus court. */
 function CompactDeck({ listing: l }: { listing: PublicListing }) {
   const art = artCrop(l.cover_image_url);
   return (
@@ -154,9 +154,10 @@ function CompactDeck({ listing: l }: { listing: PublicListing }) {
       href={`/decks/${l.id}`}
       className="group flex h-full gap-3 overflow-hidden rounded-xl border border-line bg-surface p-3 transition hover:border-link/50 hover:shadow-md sm:flex-col lg:flex-row"
     >
-      <span className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-banner sm:h-auto sm:w-full sm:aspect-[16/9] lg:h-20 lg:w-28 lg:aspect-auto">
+      {/* Sur grand écran, l'illustration prend toute la hauteur de la carte. */}
+      <span className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-banner sm:h-auto sm:w-full sm:aspect-[16/9] lg:h-auto lg:min-h-20 lg:w-32 lg:aspect-auto lg:self-stretch">
         {art && (
-          <Image src={art} alt="" fill unoptimized sizes="(min-width: 1024px) 112px, (min-width: 640px) 33vw, 112px" className="object-cover transition duration-300 group-hover:scale-105" />
+          <Image src={art} alt="" fill unoptimized sizes="(min-width: 1024px) 128px, (min-width: 640px) 33vw, 112px" className="object-cover transition duration-300 group-hover:scale-105" />
         )}
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
@@ -164,15 +165,30 @@ function CompactDeck({ listing: l }: { listing: PublicListing }) {
           <FormatTag format={l.format} className="mr-1.5 -translate-y-px" />
           {l.title}
         </p>
-        <p className="mt-1">
+        <p className="mt-1.5 flex flex-wrap items-center gap-1.5">
           <ManaColors colors={l.colors ?? []} size={14} />
+          {l.archetype && (
+            <span className="truncate rounded bg-brand-soft px-1.5 py-px text-[11px] font-semibold text-link">{l.archetype.name}</span>
+          )}
         </p>
-        <p className="mt-auto pt-1 text-sm font-bold tabular-nums">
-          {formatEur(l.asking_cents)}
-          <span className="ml-1.5 text-xs font-normal text-muted">
-            estimé {formatEur(l.estimated_cents)}
-          </span>
+        <p className="mt-1 truncate text-xs text-muted">
+          {l.card_count} cartes · {CONDITIONS[l.condition]}
         </p>
+        <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+          <p className="min-w-0 text-sm font-bold tabular-nums">
+            {formatEur(l.asking_cents)}
+            <span className="block text-xs font-normal text-muted">
+              estimé {formatEur(l.estimated_cents)}
+              <Diff asking={l.asking_cents} estimated={l.estimated_cents} />
+            </span>
+          </p>
+          {l.seller && (
+            <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted">
+              <Avatar name={l.seller.display_name} url={l.seller.avatar_url} size={18} />
+              <span className="hidden max-w-24 truncate lg:inline">{l.seller.display_name}</span>
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );
