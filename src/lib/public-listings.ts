@@ -12,7 +12,7 @@ import { LISTING_COLUMNS, PUBLIC_STATUSES, type PublicListing } from "./listings
 
 // La clé étrangère est précisée : les favoris relient aussi annonces et profils, et sans
 // elle Supabase refuse la jointure (plusieurs chemins possibles, erreur PGRST201).
-const SELLER_BASE = "id, display_name, avatar_url, moxfield_url, archidekt_url";
+const SELLER_BASE = "id, display_name, avatar_url, moxfield_url, archidekt_url, created_at";
 // Localisation et suspension (sections 17 et 19 du schéma). Base pas encore migrée : on relit sans.
 const SELECT = `${LISTING_COLUMNS}, seller:profiles!listings_seller_id_fkey(${SELLER_BASE}, department, city, suspended_until)`;
 const LEGACY_SELECT = `${LISTING_COLUMNS}, seller:profiles!listings_seller_id_fkey(${SELLER_BASE})`;
@@ -155,4 +155,15 @@ export async function estimateDecklistNow(
   const deck = parseDecklist(decklist);
   const { prices, pricesAsOf } = await lookupDeckPricesCached(deck);
   return { deck, estimate: buildEstimate(deck, prices), pricesAsOf };
+}
+
+/** Nombre de decks en vente (statut « active ») d'un vendeur, pour son encadré sur une annonce. */
+export async function countSellerDecks(sellerId: string): Promise<number | null> {
+  if (!UUID.test(sellerId)) return null;
+  const { count, error } = await getSupabaseAdmin()
+    .from("listings")
+    .select("id", { count: "exact", head: true })
+    .eq("seller_id", sellerId)
+    .eq("status", "active");
+  return error ? null : count;
 }

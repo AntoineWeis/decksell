@@ -14,7 +14,11 @@ type Seller = {
   archidekt_url: string | null;
   department?: string | null;
   city?: string | null;
+  /** Date d'inscription, pour « Membre depuis … ». */
+  created_at?: string;
 };
+
+const monthYear = (iso: string) => new Date(iso).toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
 
 const date = (iso: string) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 
@@ -26,6 +30,7 @@ export function ListingAside({
   children,
   stats,
   priceFirstOnMobile = false,
+  sellerDeckCount = null,
 }: {
   listing: Pick<
     Listing,
@@ -41,6 +46,8 @@ export function ListingAside({
    * La page doit poser l'encadré dans une grille, via un parent en `contents lg:block`.
    */
   priceFirstOnMobile?: boolean;
+  /** Nombre de decks que le vendeur a en vente (affiché à droite de son nom). */
+  sellerDeckCount?: number | null;
 }) {
   const diff = todayCents > 0 ? Math.round(((l.asking_cents - todayCents) / todayCents) * 100) : null;
   return (
@@ -89,16 +96,27 @@ export function ListingAside({
         {seller && (
           <div className="rounded-xl border border-line bg-surface p-5">
             <p className="text-sm text-muted">Vendeur</p>
-            <p className="mt-2 flex items-center gap-3 font-semibold">
+            <div className="mt-2 flex items-center gap-3">
               <Avatar name={seller.display_name} url={seller.avatar_url} size={36} />
-              {seller.id ? (
-                <Link href={`/vendeurs/${seller.id}`} className="hover:text-link hover:underline">
-                  {seller.display_name}
-                </Link>
-              ) : (
-                seller.display_name
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold">
+                  {seller.id ? (
+                    <Link href={`/vendeurs/${seller.id}`} className="hover:text-link hover:underline">
+                      {seller.display_name}
+                    </Link>
+                  ) : (
+                    seller.display_name
+                  )}
+                </p>
+                {seller.created_at && <p className="text-xs text-muted">Membre depuis {monthYear(seller.created_at)}</p>}
+              </div>
+              {sellerDeckCount != null && sellerDeckCount > 0 && (
+                <p className="shrink-0 text-right leading-tight">
+                  <span className="block text-lg font-semibold tabular-nums">{sellerDeckCount}</span>
+                  <span className="text-xs text-muted">deck{sellerDeckCount > 1 ? "s" : ""} en vente</span>
+                </p>
               )}
-            </p>
+            </div>
             {formatLocation(seller.department, seller.city) && (
             <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
               {formatLocation(seller.department, seller.city) && (

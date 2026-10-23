@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { estimateDecklistNow, fetchPublicListing } from "@/lib/public-listings";
+import { countSellerDecks, estimateDecklistNow, fetchPublicListing } from "@/lib/public-listings";
 import { DeckBanner } from "@/components/deck-banner";
 import { DeckView } from "@/components/deck-view";
 import { ListingAside } from "@/components/listing-aside";
@@ -60,7 +60,10 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
   const listing = await fetchPublicListing(id);
   if (!listing) notFound();
 
-  const { estimate, pricesAsOf } = await estimateDecklistNow(listing.decklist);
+  const [{ estimate, pricesAsOf }, sellerDeckCount] = await Promise.all([
+    estimateDecklistNow(listing.decklist),
+    listing.seller ? countSellerDecks(listing.seller.id) : Promise.resolve(null),
+  ]);
 
   return (
     <>
@@ -92,7 +95,7 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
         </div>
         {/* Sur mobile, le prix et le contact passent avant la liste de cartes (voir ListingAside). */}
         <div className="contents lg:block">
-          <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents} priceFirstOnMobile
+          <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents} priceFirstOnMobile sellerDeckCount={sellerDeckCount}
           stats={<>
             <CardTypesCard counts={cardTypeCounts(estimate)} targets={anchorsFor(estimate)} />
             <ManaCurveCard curve={manaCurve(estimate)} />

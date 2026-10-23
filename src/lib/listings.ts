@@ -85,6 +85,7 @@ export type PublicListing = Omit<Listing, "sold_cents" | "sold_at"> & {
     avatar_url: string | null;
     moxfield_url: string | null;
     archidekt_url: string | null;
+    created_at?: string;
     /** Lieu d'expédition (absent tant que le schéma n'est pas à jour). */
     department?: string | null;
     city?: string | null;
