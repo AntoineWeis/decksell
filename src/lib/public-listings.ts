@@ -10,7 +10,9 @@ import { LISTING_COLUMNS, PUBLIC_STATUSES, type PublicListing } from "./listings
 // Lecture publique des annonces. On passe par la clé secrète côté serveur, mais on ne
 // renvoie que les annonces en vente ou réservées, et seulement les colonnes publiques.
 
-const SELECT = `${LISTING_COLUMNS}, seller:profiles(id, display_name, avatar_url, moxfield_url, archidekt_url)`;
+// La clé étrangère est précisée : les favoris relient aussi annonces et profils, et sans
+// elle Supabase refuse la jointure (plusieurs chemins possibles, erreur PGRST201).
+const SELECT = `${LISTING_COLUMNS}, seller:profiles!listings_seller_id_fkey(id, display_name, avatar_url, moxfield_url, archidekt_url)`;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
