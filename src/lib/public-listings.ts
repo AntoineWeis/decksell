@@ -3,7 +3,7 @@ import { cache } from "react";
 import { connection } from "next/server";
 import { parseDecklist, type ParsedDeck } from "./decklist.ts";
 import { buildEstimate, starCard, type Estimate } from "./pricing.ts";
-import { lookupDeckPrices } from "./estimate.ts";
+import { lookupDeckPrices, lookupDeckPricesCached } from "./estimate.ts";
 import { getSupabaseAdmin } from "./supabase-server.ts";
 import { LISTING_COLUMNS, PUBLIC_STATUSES, type PublicListing } from "./listings.ts";
 
@@ -12,7 +12,27 @@ import { LISTING_COLUMNS, PUBLIC_STATUSES, type PublicListing } from "./listings
 
 // La clé étrangère est précisée : les favoris relient aussi annonces et profils, et sans
 // elle Supabase refuse la jointure (plusieurs chemins possibles, erreur PGRST201).
-const SELECT = `${LISTING_COLUMNS}, seller:profiles!listings_seller_id_fkey(id, display_name, avatar_url, moxfield_url, archidekt_url)`;
+const SELLER_BASE = "id, display_name, avatar_url, moxfield_url, archidekt_url";
+// Localisation et suspension (sections 17 et 19 du schéma). Base pas encore migrée : on relit sans.
+const SELECT = `${LISTING_COLUMNS}, seller:profiles!listings_seller_id_fkey(${SELLER_BASE}, department, city, hand_delivery, ships, suspended_until)`;
+const LEGACY_SELECT = `${LISTING_COLUMNS}, seller:profiles!listings_seller_id_fkey(${SELLER_BASE})`;
+
+type Row = PublicListing & { seller: (PublicListing["seller"] & { suspended_until?: string | null }) | null };
+
+/** Vrai si l'erreur vient d'une colonne absente (schéma pas encore à jour). */
+const missingColumn = (e: { code?: string; message: string } | null) =>
+  !!e && (e.code === "42703" || e.code === "PGRST204" || /does not exist|could not find/i.test(e.message));
+
+/** Retire les annonces des vendeurs suspendus, et l'information de suspension elle-même. */
+function visible(rows: Row[]): PublicListing[] {
+  const now = Date.now();
+  return rows
+    .filter((l) => !(l.seller?.suspended_until && new Date(l.seller.suspended_until).getTime() > now))
+    .map((l) => {
+      if (l.seller) delete l.seller.suspended_until;
+      return l;
+    });
+}
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -48,14 +68,25 @@ async function fillMissingCovers(listings: PublicListing[]): Promise<void> {
 /** Annonces publiques, les plus récentes d'abord. Mises en cache le temps de la requête (l'accueil les lit deux fois). */
 export const fetchPublicListings = cache(async function fetchPublicListings(): Promise<PublicListing[]> {
   await connection(); // toujours à jour : lu à chaque requête
-  const { data, error } = await getSupabaseAdmin()
-    .from("listings")
-    .select(SELECT)
-    .in("status", [...PUBLIC_STATUSES])
-    .order("created_at", { ascending: false })
-    .limit(200);
-  if (error) throw new Error(`Lecture des annonces impossible : ${error.message}`);
-  const listings = (data ?? []) as unknown as PublicListing[];
+  // Toutes les annonces publiques, par paquets (Supabase en renvoie 1 000 au plus par requête).
+  const CHUNK = 1000;
+  const listings: PublicListing[] = [];
+  let select = SELECT;
+  for (let from = 0; from < 50 * CHUNK; from += CHUNK) {
+    const page = (cols: string) =>
+      getSupabaseAdmin()
+        .from("listings")
+        .select(cols)
+        .in("status", [...PUBLIC_STATUSES])
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(from, from + CHUNK - 1);
+    let { data, error } = await page(select);
+    if (missingColumn(error)) ({ data, error } = await page((select = LEGACY_SELECT)));
+    if (error) throw new Error(`Lecture des annonces impossible : ${error.message}`);
+    listings.push(...visible((data ?? []) as unknown as Row[]));
+    if (!data || data.length < CHUNK) break;
+  }
   await fillMissingCovers(listings);
   return listings;
 });
@@ -64,14 +95,12 @@ export const fetchPublicListings = cache(async function fetchPublicListings(): P
 export const fetchPublicListing = cache(async function fetchPublicListing(id: string): Promise<PublicListing | null> {
   await connection();
   if (!UUID.test(id)) return null;
-  const { data, error } = await getSupabaseAdmin()
-    .from("listings")
-    .select(SELECT)
-    .eq("id", id)
-    .in("status", [...PUBLIC_STATUSES])
-    .maybeSingle();
+  const one = (cols: string) =>
+    getSupabaseAdmin().from("listings").select(cols).eq("id", id).in("status", [...PUBLIC_STATUSES]).maybeSingle();
+  let { data, error } = await one(SELECT);
+  if (missingColumn(error)) ({ data, error } = await one(LEGACY_SELECT));
   if (error) throw new Error(`Lecture de l'annonce impossible : ${error.message}`);
-  const listing = (data as unknown as PublicListing) ?? null;
+  const listing = data ? (visible([data as unknown as Row])[0] ?? null) : null;
   if (listing) await fillMissingCovers([listing]);
   return listing;
 });
@@ -95,33 +124,36 @@ export const fetchPublicSeller = cache(async function fetchPublicSeller(
   await connection();
   if (!UUID.test(id)) return null;
   const admin = getSupabaseAdmin();
-  const [profile, listings] = await Promise.all([
+  const sellerListings = (cols: string) =>
+    admin
+      .from("listings")
+      .select(cols)
+      .eq("seller_id", id)
+      .in("status", [...PUBLIC_STATUSES])
+      .order("created_at", { ascending: false })
+      .limit(100);
+  const [profile, firstListings] = await Promise.all([
     admin
       .from("profiles")
       .select("id, display_name, avatar_url, moxfield_url, archidekt_url, created_at")
       .eq("id", id)
       .maybeSingle(),
-    admin
-      .from("listings")
-      .select(SELECT)
-      .eq("seller_id", id)
-      .in("status", [...PUBLIC_STATUSES])
-      .order("created_at", { ascending: false })
-      .limit(100),
+    sellerListings(SELECT),
   ]);
+  const listings = missingColumn(firstListings.error) ? await sellerListings(LEGACY_SELECT) : firstListings;
   if (profile.error) throw new Error(`Lecture du vendeur impossible : ${profile.error.message}`);
   if (listings.error) throw new Error(`Lecture des annonces impossible : ${listings.error.message}`);
-  const rows = (listings.data ?? []) as unknown as PublicListing[];
+  const rows = visible((listings.data ?? []) as unknown as Row[]);
   if (!profile.data || rows.length === 0) return null;
   await fillMissingCovers(rows);
   return { seller: profile.data as PublicSeller, listings: rows };
 });
 
-/** Recalcule l'estimation d'une decklist avec les prix du jour. */
+/** Recalcule l'estimation d'une decklist avec les prix du jour (lus en cache, une heure au plus). */
 export async function estimateDecklistNow(
   decklist: string,
 ): Promise<{ deck: ParsedDeck; estimate: Estimate; pricesAsOf: string | null }> {
   const deck = parseDecklist(decklist);
-  const { prices, pricesAsOf } = await lookupDeckPrices(deck);
+  const { prices, pricesAsOf } = await lookupDeckPricesCached(deck);
   return { deck, estimate: buildEstimate(deck, prices), pricesAsOf };
 }

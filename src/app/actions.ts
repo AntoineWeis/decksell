@@ -3,6 +3,7 @@
 import { parseDecklist, type ParsedDeck } from "@/lib/decklist";
 import type { CardPrice } from "@/lib/pricing";
 import { lookupDeckPrices } from "@/lib/estimate";
+import { archidektToText, parseDeckUrl } from "@/lib/deck-import";
 
 export type EstimateState =
   | { status: "idle" }
@@ -37,5 +38,34 @@ export async function estimateAction(_prev: EstimateState, formData: FormData): 
   } catch (e) {
     console.error("Estimation impossible :", e);
     return { status: "error", message: "Les prix sont momentanément indisponibles. Réessaie dans un instant." };
+  }
+}
+
+export type ImportResult = { status: "ok"; text: string } | { status: "error"; message: string };
+
+/** Récupère la liste d'un deck à partir de son lien (Archidekt). Accessible à tous : on valide le lien. */
+export async function importDeckAction(url: string): Promise<ImportResult> {
+  const target = parseDeckUrl(typeof url === "string" ? url.slice(0, 300) : "");
+  if (target.site === "moxfield") {
+    return {
+      status: "error",
+      message: "Moxfield bloque l'import automatique. Sur ton deck Moxfield : Exporter › Copier pour MTGO, puis colle la liste ici.",
+    };
+  }
+  if (target.site !== "archidekt") {
+    return { status: "error", message: "Lien non reconnu. Colle l'adresse d'un deck Archidekt (archidekt.com/decks/…)." };
+  }
+  try {
+    const res = await fetch(`https://archidekt.com/api/decks/${target.id}/`, {
+      headers: { "User-Agent": "decksell/1.0 (https://decksell.fr)", Accept: "application/json" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (res.status === 404) return { status: "error", message: "Deck introuvable sur Archidekt (supprimé ou privé ?)." };
+    if (!res.ok) return { status: "error", message: "Archidekt ne répond pas pour l'instant. Réessaie dans un moment." };
+    const text = archidektToText(await res.json());
+    if (!text) return { status: "error", message: "Ce deck Archidekt ne contient aucune carte." };
+    return { status: "ok", text };
+  } catch {
+    return { status: "error", message: "Archidekt ne répond pas pour l'instant. Réessaie dans un moment." };
   }
 }

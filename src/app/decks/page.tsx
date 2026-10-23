@@ -6,7 +6,8 @@ import { fetchPublicListings } from "@/lib/public-listings";
 import { ListingTile } from "@/components/listing-tile";
 import { favoriteStateOf, getFavoriteIds } from "@/lib/favorites";
 import { DeckFilters } from "@/components/deck-filters";
-import { filterListings, readDeckQuery, sortListings } from "@/lib/deck-index";
+import { MIN_CARD_QUERY, decksHref, filterListings, paginate, readDeckQuery, sortListings } from "@/lib/deck-index";
+import { searchFrenchNames } from "@/lib/card-names";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -73,28 +74,32 @@ async function ListingGrid({ searchParams }: { searchParams: SearchParams }) {
     );
   }
 
+  // Recherche en français : on cherche aussi les noms anglais correspondants (« foudre » → Lightning Bolt).
+  const aliases = query.card.length >= MIN_CARD_QUERY ? (await searchFrenchNames(query.card)).map((s) => s.name) : [];
+
   // Archétypes présents parmi les decks qui correspondent aux autres filtres, avec leur nombre.
   const counts = new Map<string, { slug: string; name: string; count: number }>();
-  for (const { listing: l } of filterListings(listings, { ...query, archetype: null })) {
+  for (const { listing: l } of filterListings(listings, { ...query, archetype: null }, aliases)) {
     if (!l.archetype) continue;
     const entry = counts.get(l.archetype.slug) ?? { slug: l.archetype.slug, name: l.archetype.name, count: 0 };
     entry.count++;
     counts.set(entry.slug, entry);
   }
   const archetypeCounts = [...counts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "fr"));
-  const shown = sortListings(filterListings(listings, query), query.sort);
+  const matching = sortListings(filterListings(listings, query, aliases), query.sort);
+  const { items: shown, page, pages } = paginate(matching, query.page);
   const favorites = await getFavoriteIds();
 
   return (
     <div className="space-y-6">
-      <DeckFilters query={query} archetypeCounts={archetypeCounts} resultCount={shown.length} />
+      <DeckFilters query={query} archetypeCounts={archetypeCounts} resultCount={matching.length} />
       {shown.length === 0 ? (
         <div className="rounded-xl border border-dashed border-line px-6 py-14 text-center">
           <p className="font-semibold">Aucun deck ne correspond à ces filtres</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             {query.card
-              ? "Vérifie l'orthographe de la carte (en anglais), ou retire un filtre pour voir plus de decks."
-              : "Retire une couleur ou change d'archétype pour voir plus de decks."}
+              ? "Vérifie l'orthographe de la carte, ou retire un filtre pour voir plus de decks."
+              : "Retire une couleur, élargis la fourchette de prix ou change d'archétype pour voir plus de decks."}
           </p>
           <Link href="/decks" className="mt-5 inline-flex font-semibold text-link hover:underline">
             Voir tous les decks →
@@ -106,6 +111,27 @@ async function ListingGrid({ searchParams }: { searchParams: SearchParams }) {
             <ListingTile key={listing.id} listing={listing} hits={hits} favorite={favoriteStateOf(favorites, listing)} />
           ))}
         </ul>
+      )}
+      {pages > 1 && (
+        <nav aria-label="Pages" className="flex items-center justify-center gap-3 pt-2 text-sm">
+          {page > 1 ? (
+            <Link href={decksHref({ ...query, page: page - 1 })} className="rounded-lg border border-line px-3 py-2 font-medium hover:border-link/50 hover:text-link">
+              ← Précédents
+            </Link>
+          ) : (
+            <span className="rounded-lg border border-line px-3 py-2 text-muted opacity-50">← Précédents</span>
+          )}
+          <span className="tabular-nums text-muted">
+            Page {page} sur {pages}
+          </span>
+          {page < pages ? (
+            <Link href={decksHref({ ...query, page: page + 1 })} className="rounded-lg border border-line px-3 py-2 font-medium hover:border-link/50 hover:text-link">
+              Suivants →
+            </Link>
+          ) : (
+            <span className="rounded-lg border border-line px-3 py-2 text-muted opacity-50">Suivants →</span>
+          )}
+        </nav>
       )}
     </div>
   );

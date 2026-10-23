@@ -7,15 +7,19 @@ import { DeckView } from "@/components/deck-view";
 import { ListingAside } from "@/components/listing-aside";
 import { ManaCurveCard } from "@/components/mana-curve";
 import { cardTypeCounts, manaCurve } from "@/lib/deck-stats";
-import { CardTypesCard } from "@/components/card-types";
+import { CardTypesCard, anchorsFor } from "@/components/card-types";
 import { DeckTags } from "@/components/deck-tags";
 import { ContactSeller } from "@/components/contact-seller";
 import { DeckFavorite } from "@/components/deck-favorite";
 import { DeckShare } from "@/components/deck-share";
+import { ReportListing } from "@/components/report-listing";
+import { getUser } from "@/lib/auth";
 import { formatDecklist, parseDecklist } from "@/lib/decklist";
 
 import { CONDITIONS, FORMATS, normalizeFormat } from "@/lib/listings";
 import { formatEur } from "@/lib/pricing";
+import { deckProductJsonLd, jsonLdScript } from "@/lib/structured-data";
+import { siteUrl } from "@/lib/site-url";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -60,6 +64,11 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <>
+      {/* Fiche produit pour Google : prix, disponibilité, état. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(deckProductJsonLd(listing, `${siteUrl()}/decks/${listing.id}`)) }}
+      />
       <DeckBanner
         title={listing.title}
         coverImageUrl={listing.cover_image_url}
@@ -74,12 +83,18 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-20 pt-6 sm:px-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:items-start">
         <div className="min-w-0">
           <DeckView estimate={estimate} pricesAsOf={pricesAsOf} details={listing.card_details} />
+          <div className="mt-4 flex justify-end">
+            {/* Lit la session : à part, comme le contact. */}
+            <Suspense fallback={null}>
+              <ReportSlot listingId={listing.id} sellerId={listing.seller?.id ?? null} />
+            </Suspense>
+          </div>
         </div>
         {/* Sur mobile, le prix et le contact passent avant la liste de cartes (voir ListingAside). */}
         <div className="contents lg:block">
           <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents} priceFirstOnMobile
           stats={<>
-            <CardTypesCard counts={cardTypeCounts(estimate)} />
+            <CardTypesCard counts={cardTypeCounts(estimate)} targets={anchorsFor(estimate)} />
             <ManaCurveCard curve={manaCurve(estimate)} />
           </>}>
             {/* Lit la session : à part, pour ne pas retarder le reste de l'annonce. */}
@@ -95,6 +110,13 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
       </div>
     </>
   );
+}
+
+/** Lien « Signaler l'annonce », sauf pour son vendeur. */
+async function ReportSlot({ listingId, sellerId }: { listingId: string; sellerId: string | null }) {
+  const user = await getUser();
+  if (user && user.id === sellerId) return null;
+  return <ReportListing listingId={listingId} loggedIn={!!user} />;
 }
 
 function DeckSkeleton() {

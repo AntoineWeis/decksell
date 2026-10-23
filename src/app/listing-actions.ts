@@ -117,3 +117,31 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   await setFlash("success", `Annonce « ${title} » publiée`);
   redirect("/espace");
 }
+
+export type ReportState = { status: "idle" } | { status: "sent" } | { status: "error"; message: string };
+
+const REPORT_ERRORS: Record<string, string> = {
+  not_logged: "Connecte-toi pour signaler une annonce.",
+  invalid_reason: "Explique en quelques mots ce qui ne va pas (5 à 1000 caractères).",
+  not_found: "Cette annonce n'est plus en ligne.",
+  own_listing: "Tu ne peux pas signaler ta propre annonce.",
+  already_reported: "Tu as déjà signalé cette annonce : la modération va l'examiner.",
+};
+
+/** Signale une annonce à la modération (fausse annonce, arnaque, contenu interdit…). */
+export async function reportListing(listingId: string, _prev: ReportState, formData: FormData): Promise<ReportState> {
+  const user = await getUser();
+  if (!user) return { status: "error", message: REPORT_ERRORS.not_logged };
+  const reason = str(formData.get("reason"));
+  if (reason.length < 5 || reason.length > 1000) return { status: "error", message: REPORT_ERRORS.invalid_reason };
+
+  const supabase = await createSupabaseServer();
+  const { error } = await supabase.rpc("report_listing", { p_listing_id: listingId, p_reason: reason });
+  if (error) {
+    const code = Object.keys(REPORT_ERRORS).find((k) => error.message.includes(k));
+    if (code) return { status: "error", message: REPORT_ERRORS[code] };
+    console.error("Signalement d'annonce impossible", error.message);
+    return { status: "error", message: "Envoi impossible. Réessaie dans un instant." };
+  }
+  return { status: "sent" };
+}

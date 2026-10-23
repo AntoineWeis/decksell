@@ -455,6 +455,11 @@ declare
   v_wants_mail boolean;
   v_now        timestamptz := now();
 begin
+  -- Compte suspendu par la modération (section 19) : plus aucun message.
+  if exists (select 1 from public.profiles p where p.id = p_sender and p.suspended_until > v_now) then
+    raise exception 'suspended';
+  end if;
+
   select (u.created_at > v_now - interval '24 hours') into v_new_user from auth.users u where u.id = p_sender;
   -- Quota : 30 messages par heure (10 pour un compte de moins de 24 h).
   v_limit := case when coalesce(v_new_user, true) then 10 else 30 end;
@@ -469,6 +474,15 @@ begin
 
   insert into public.messages (conversation_id, sender_id, body, kind, offer_id)
   values (p_conversation_id, p_sender, p_body, p_kind, p_offer_id);
+
+  -- Insulte repérée (section 20) : signalement automatique, un seul ouvert par conversation.
+  if p_kind = 'text' and public._is_abusive(p_body) and not exists (
+    select 1 from public.reports r
+    where r.conversation_id = p_conversation_id and r.source = 'auto' and r.status = 'open'
+  ) then
+    insert into public.reports (reporter_id, reported_id, conversation_id, reason, source)
+    values (null, p_sender, p_conversation_id, 'Message repéré automatiquement : « ' || left(p_body, 200) || ' »', 'auto');
+  end if;
 
   if v_conv.buyer_id = p_sender then
     v_recipient := v_conv.seller_id; v_read_at := v_conv.seller_last_read_at; v_notified := v_conv.seller_notified_at;
@@ -898,6 +912,22 @@ alter table public.reports
 
 create index if not exists reports_status_idx on public.reports (status, created_at desc);
 
+-- Signalement d'une annonce (sans conversation) et signalement automatique (sans auteur), section 20.
+alter table public.reports
+  alter column conversation_id drop not null,
+  alter column reporter_id drop not null,
+  add column if not exists listing_id  uuid references public.listings (id) on delete cascade,
+  add column if not exists reported_id uuid references public.profiles (id) on delete set null,
+  add column if not exists source      text not null default 'member' check (source in ('member', 'auto'));
+
+alter table public.reports drop constraint if exists reports_target_check;
+alter table public.reports
+  add constraint reports_target_check check (conversation_id is not null or listing_id is not null);
+
+-- Un même membre ne signale qu'une fois la même annonce.
+create unique index if not exists reports_listing_once_idx on public.reports (reporter_id, listing_id)
+  where listing_id is not null;
+
 -- Vrai si le membre connecté est admin.
 create or replace function public.is_admin()
 returns boolean
@@ -908,9 +938,13 @@ $$;
 
 -- Signalements, du plus récent au plus ancien (filtrés par statut, ou un seul avec p_id).
 -- Réservé aux admins : la conversation signalée devient lisible, comme l'annonce la page Confidentialité.
+-- kind : 'conversation' ou 'listing' ; source : 'member' ou 'auto' (reporter vide).
+drop function if exists public.admin_list_reports(text, bigint);
 create or replace function public.admin_list_reports(p_status text default null, p_id bigint default null)
 returns table (
   id              bigint,
+  kind            text,
+  source          text,
   reason          text,
   status          text,
   created_at      timestamptz,
@@ -926,6 +960,7 @@ returns table (
   reported_id     uuid,
   reported_name   text,
   reported_role   text,
+  reported_suspended_until timestamptz,
   message_count   integer
 )
 language plpgsql stable security definer set search_path = ''
@@ -933,22 +968,41 @@ as $$
 begin
   if not public.is_admin() then raise exception 'forbidden'; end if;
   return query
+  with base as (
+    select
+      r.*,
+      l.id as l_id, l.title as l_title, l.status as l_status, l.seller_id as l_seller,
+      c.buyer_id as c_buyer, c.seller_id as c_seller,
+      -- Membre visé : noté à la création (signalement automatique), sinon le vendeur de
+      -- l'annonce signalée, sinon l'autre participant de la conversation.
+      coalesce(
+        r.reported_id,
+        case when r.conversation_id is null then l.seller_id
+             when r.reporter_id = c.buyer_id then c.seller_id
+             else c.buyer_id end
+      ) as target
+    from public.reports r
+    left join public.conversations c on c.id = r.conversation_id
+    join public.listings l on l.id = coalesce(r.listing_id, c.listing_id)
+    where (p_status is null or r.status = p_status)
+      and (p_id is null or r.id = p_id)
+  )
   select
-    r.id, r.reason, r.status, r.created_at, r.handled_at, h.display_name, r.admin_note,
-    c.id, l.id, l.title, l.status,
-    rp.id, rp.display_name,
-    o.id, o.display_name,
-    case when o.id = c.seller_id then 'seller' else 'buyer' end,
-    (select count(*)::integer from public.messages m where m.conversation_id = c.id)
-  from public.reports r
-  join public.conversations c on c.id = r.conversation_id
-  join public.listings l on l.id = c.listing_id
-  join public.profiles rp on rp.id = r.reporter_id
-  join public.profiles o on o.id = case when r.reporter_id = c.buyer_id then c.seller_id else c.buyer_id end
-  left join public.profiles h on h.id = r.handled_by
-  where (p_status is null or r.status = p_status)
-    and (p_id is null or r.id = p_id)
-  order by r.created_at desc
+    b.id,
+    case when b.conversation_id is null then 'listing' else 'conversation' end,
+    b.source,
+    b.reason, b.status, b.created_at, b.handled_at, h.display_name, b.admin_note,
+    b.conversation_id, b.l_id, b.l_title, b.l_status,
+    b.reporter_id, rp.display_name,
+    b.target, o.display_name,
+    case when b.target = b.l_seller then 'seller' else 'buyer' end,
+    o.suspended_until,
+    (select count(*)::integer from public.messages m where m.conversation_id = b.conversation_id)
+  from base b
+  left join public.profiles rp on rp.id = b.reporter_id
+  left join public.profiles o on o.id = b.target
+  left join public.profiles h on h.id = b.handled_by
+  order by b.created_at desc
   limit 200;
 end;
 $$;
@@ -972,46 +1026,70 @@ end;
 $$;
 
 -- Traite un signalement : classé (résolu ou sans suite), avec une note et, au besoin,
--- le retrait de l'annonce concernée (les CGU le prévoient).
+-- le retrait de l'annonce concernée et la suspension du membre visé (les CGU le prévoient).
+-- p_suspend_days : 0 = aucune suspension, -1 = levée de la suspension en cours.
+-- Renvoie le membre visé (pour l'avertir par email).
+drop function if exists public.admin_handle_report(bigint, text, text, boolean);
 create or replace function public.admin_handle_report(
   p_report_id bigint,
   p_status text,
   p_note text default null,
-  p_withdraw_listing boolean default false
+  p_withdraw_listing boolean default false,
+  p_suspend_days integer default 0
 )
-returns void
+returns uuid
 language plpgsql security definer set search_path = ''
 as $$
 declare
   v_listing uuid;
+  v_target  uuid;
 begin
   if not public.is_admin() then raise exception 'forbidden'; end if;
   if p_status not in ('open', 'resolved', 'dismissed') then raise exception 'invalid_status'; end if;
+  if p_suspend_days is null or p_suspend_days < -1 or p_suspend_days > 3650 then raise exception 'invalid_suspension'; end if;
+
+  select l.id, coalesce(
+           r.reported_id,
+           case when r.conversation_id is null then l.seller_id
+                when r.reporter_id = c.buyer_id then c.seller_id
+                else c.buyer_id end)
+    into v_listing, v_target
+  from public.reports r
+  left join public.conversations c on c.id = r.conversation_id
+  join public.listings l on l.id = coalesce(r.listing_id, c.listing_id)
+  where r.id = p_report_id;
+  if v_listing is null then raise exception 'not_found'; end if;
 
   update public.reports r set
     status     = p_status,
     handled_at = case when p_status = 'open' then null else now() end,
     handled_by = case when p_status = 'open' then null else auth.uid() end,
     admin_note = nullif(left(btrim(coalesce(p_note, '')), 1000), '')
-  where r.id = p_report_id
-  returning (select c.listing_id from public.conversations c where c.id = r.conversation_id) into v_listing;
-  if v_listing is null then raise exception 'not_found'; end if;
+  where r.id = p_report_id;
 
   if p_withdraw_listing then
     update public.listings l set status = 'withdrawn', updated_at = now()
     where l.id = v_listing and l.status in ('active', 'reserved');
   end if;
+
+  if p_suspend_days > 0 then
+    update public.profiles p set suspended_until = now() + make_interval(days => p_suspend_days) where p.id = v_target;
+  elsif p_suspend_days = -1 then
+    update public.profiles p set suspended_until = null where p.id = v_target;
+  end if;
+
+  return v_target;
 end;
 $$;
 
 revoke execute on function public.is_admin()                                    from public, anon;
 revoke execute on function public.admin_list_reports(text, bigint)              from public, anon;
 revoke execute on function public.admin_report_messages(bigint)                 from public, anon;
-revoke execute on function public.admin_handle_report(bigint, text, text, boolean) from public, anon;
+revoke execute on function public.admin_handle_report(bigint, text, text, boolean, integer) from public, anon;
 grant  execute on function public.is_admin()                                    to authenticated;
 grant  execute on function public.admin_list_reports(text, bigint)              to authenticated;
 grant  execute on function public.admin_report_messages(bigint)                 to authenticated;
-grant  execute on function public.admin_handle_report(bigint, text, text, boolean) to authenticated;
+grant  execute on function public.admin_handle_report(bigint, text, text, boolean, integer) to authenticated;
 
 -- 16. Format de jeu des decks. Modern seulement pour l'instant : pour en ouvrir un autre,
 -- ajoute-le à la liste de la contrainte ci-dessous (et dans FORMATS, src/lib/listings.ts).
@@ -1021,3 +1099,83 @@ alter table public.listings
 alter table public.listings drop constraint if exists listings_format_check;
 alter table public.listings
   add constraint listings_format_check check (format in ('modern'));
+
+-- 17. Localisation des vendeurs et mode de remise (profil)
+-- Département (code INSEE : 01…95, 2A, 2B, 971…976) et ville libre, affichés sur les annonces ;
+-- remise en main propre et envoi, pour filtrer les decks proches de chez soi ou envoyables.
+alter table public.profiles
+  add column if not exists department    text check (department ~ '^([0-9]{2}|2A|2B|97[1-6])$'),
+  add column if not exists city          text check (char_length(city) <= 60),
+  add column if not exists hand_delivery boolean not null default true,
+  add column if not exists ships         boolean not null default false;
+
+-- 18. Alertes de baisse de prix des favoris
+-- Préférence dans le profil, et date de la dernière alerte par favori (au plus une par jour).
+alter table public.profiles
+  add column if not exists price_alerts boolean not null default true;
+alter table public.favorites
+  add column if not exists price_alert_at timestamptz;
+
+-- 19. Sanctions : suspension d'un compte par la modération
+-- Un compte suspendu ne peut plus écrire de message (voir _post_message) ni créer ou
+-- modifier d'annonce ; ses annonces disparaissent des decks en vente.
+alter table public.profiles
+  add column if not exists suspended_until timestamptz;
+
+-- Vrai si le membre connecté est suspendu. Sans argument : ne renseigne sur personne d'autre.
+create or replace function public.is_suspended()
+returns boolean
+language sql stable security definer set search_path = ''
+as $$
+  select exists (select 1 from public.profiles p where p.id = auth.uid() and p.suspended_until > now());
+$$;
+revoke execute on function public.is_suspended() from public, anon;
+grant  execute on function public.is_suspended() to authenticated;
+
+drop policy if exists "annonces : création par le vendeur" on public.listings;
+create policy "annonces : création par le vendeur" on public.listings
+  for insert to authenticated
+  with check ((select auth.uid()) = seller_id and not (select public.is_suspended()));
+
+drop policy if exists "annonces : modification par le vendeur" on public.listings;
+create policy "annonces : modification par le vendeur" on public.listings
+  for update to authenticated
+  using ((select auth.uid()) = seller_id)
+  with check ((select auth.uid()) = seller_id and not (select public.is_suspended()));
+
+-- 20. Signalement d'une annonce et repérage automatique des insultes
+-- Insultes et injures courantes, sans tenir compte des accents ni des majuscules.
+-- Volontairement court : un faux positif crée seulement un signalement à relire.
+create or replace function public._is_abusive(p_body text)
+returns boolean
+language sql immutable set search_path = ''
+as $$
+  select translate(lower(coalesce(p_body, '')), 'àâäéèêëîïôöùûüç', 'aaaeeeeiioouuuc')
+    ~ '\m(connard|connasse|salope|salaud|putes?|encul[a-z]*|fdp|ntm|nique ta mere|niquer|batard|pede|enfoire|ta gueule|negres?|negro|bougnoules?|youpins?)\M';
+$$;
+revoke execute on function public._is_abusive(text) from public, anon, authenticated;
+
+-- Un membre signale une annonce (fausse annonce, arnaque, contenu interdit…).
+create or replace function public.report_listing(p_listing_id uuid, p_reason text)
+returns void
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_uid    uuid := auth.uid();
+  v_reason text := btrim(coalesce(p_reason, ''));
+  v_seller uuid;
+begin
+  if v_uid is null then raise exception 'not_logged'; end if;
+  if char_length(v_reason) < 5 or char_length(v_reason) > 1000 then raise exception 'invalid_reason'; end if;
+  select l.seller_id into v_seller from public.listings l
+  where l.id = p_listing_id and l.status in ('active', 'reserved');
+  if v_seller is null then raise exception 'not_found'; end if;
+  if v_seller = v_uid then raise exception 'own_listing'; end if;
+  insert into public.reports (reporter_id, reported_id, listing_id, reason, source)
+  values (v_uid, v_seller, p_listing_id, v_reason, 'member');
+exception
+  when unique_violation then raise exception 'already_reported';
+end;
+$$;
+revoke execute on function public.report_listing(uuid, text) from public, anon;
+grant  execute on function public.report_listing(uuid, text) to authenticated;

@@ -138,7 +138,10 @@ function FavoriteList({ items }: { items: Favorite[] }) {
               <p className={`font-bold tabular-nums ${available ? "" : "text-muted"}`}>
                 {formatEur(f.asking_cents)}
               </p>
-              <p className="hidden text-xs tabular-nums text-muted sm:block">Estimé {formatEur(f.estimated_cents)}</p>
+              <p className="text-xs tabular-nums text-muted">
+                <span className="hidden sm:inline">Estimé {formatEur(f.estimated_cents)}</span>
+                <PriceGap asking={f.asking_cents} estimated={f.estimated_cents} />
+              </p>
             </div>
             <RemoveFavoriteButton listingId={f.listing_id} title={f.title} />
           </li>
@@ -155,5 +158,19 @@ function FavoritesSkeleton() {
         <div key={i} className="h-[84px] animate-pulse bg-sunken" />
       ))}
     </div>
+  );
+}
+
+/** Écart avec l'estimation : en vert quand le deck est proposé sous sa valeur. */
+function PriceGap({ asking, estimated }: { asking: number; estimated: number }) {
+  if (estimated <= 0) return null;
+  const gap = Math.round(((asking - estimated) / estimated) * 100);
+  if (gap === 0) return null;
+  return (
+    <span className={gap < 0 ? "font-semibold text-ok" : ""}>
+      <span className="hidden sm:inline"> · </span>
+      {gap > 0 ? "+" : ""}
+      {gap} %
+    </span>
   );
 }

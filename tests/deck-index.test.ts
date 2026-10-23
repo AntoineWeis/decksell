@@ -7,6 +7,7 @@ import {
   readDeckQuery,
   sortListings,
   EMPTY_QUERY,
+  paginate,
 } from "../src/lib/deck-index.ts";
 import type { PublicListing } from "../src/lib/listings.ts";
 
@@ -39,8 +40,17 @@ test("readDeckQuery lit et nettoie l'adresse", () => {
     archetype: "burn",
     card: "Ragavan",
     sort: "prix-asc",
+    min: null,
+    max: null,
+    page: 1,
+    department: null,
+    ships: false,
   });
-  assert.deepEqual(readDeckQuery({ a: "<script>", tri: "n'importe" }), EMPTY_QUERY);
+  assert.deepEqual(readDeckQuery({ a: "<script>", tri: "n'importe", min: "abc", page: "-2", dep: "99" }), EMPTY_QUERY);
+  assert.deepEqual([readDeckQuery({ dep: "2A", envoi: "1" }).department, readDeckQuery({ envoi: "1" }).ships], ["2A", true]);
+  // Bornes de prix remises dans l'ordre, centimes ignorés.
+  const q = readDeckQuery({ min: "500", max: "99,90", page: "3" });
+  assert.deepEqual([q.min, q.max, q.page], [99, 500, 3]);
 });
 
 test("decksHref omet les valeurs par défaut", () => {
@@ -49,6 +59,7 @@ test("decksHref omet les valeurs par défaut", () => {
     decksHref({ colors: ["W", "U"], archetype: null, card: "Ragavan", sort: "affaire" }),
     "/decks?c=WU&carte=Ragavan&tri=affaire",
   );
+  assert.equal(decksHref({ ...EMPTY_QUERY, min: 100, max: 400, page: 2 }), "/decks?min=100&max=400&page=2");
 });
 
 test("findCards ignore la casse, les accents et additionne principal et réserve", () => {
@@ -77,4 +88,45 @@ test("sortListings trie par prix et par meilleure affaire", () => {
   assert.deepEqual(ids("prix-asc"), ["sans-estimation", "affaire", "cher"]);
   assert.deepEqual(ids("prix-desc"), ["cher", "affaire", "sans-estimation"]);
   assert.deepEqual(ids("affaire"), ["affaire", "cher", "sans-estimation"]);
+});
+
+test("filterListings applique la fourchette de prix, bornes comprises", () => {
+  const cheap = listing("cheap", { asking_cents: 10000 });
+  const mid = listing("mid", { asking_cents: 30000 });
+  const dear = listing("dear", { asking_cents: 90000 });
+  const ids = (min: number | null, max: number | null) =>
+    filterListings([cheap, mid, dear], { ...EMPTY_QUERY, min, max }).map((x) => x.listing.id);
+  assert.deepEqual(ids(100, 300), ["cheap", "mid"]);
+  assert.deepEqual(ids(null, 99), []);
+  assert.deepEqual(ids(500, null), ["dear"]);
+});
+
+test("paginate découpe par 24 et ramène une page trop loin à la dernière", () => {
+  const items = Array.from({ length: 50 }, (_, i) => i);
+  assert.deepEqual(paginate(items, 1).items.length, 24);
+  assert.deepEqual(paginate(items, 3), { items: [48, 49], page: 3, pages: 3 });
+  assert.equal(paginate(items, 9).page, 3);
+  assert.deepEqual(paginate([], 1), { items: [], page: 1, pages: 1 });
+});
+
+test("findCards trouve aussi les traductions d'une recherche en français", () => {
+  const list = "4 Lightning Bolt\n1 Fable of the Mirror-Breaker // Reflection of Kiki-Jiki";
+  assert.deepEqual(findCards(list, "foudre", ["Lightning Bolt"]), [{ name: "Lightning Bolt", quantity: 4 }]);
+  assert.deepEqual(findCards(list, "fable du", ["Fable of the Mirror-Breaker"]).map((h) => h.name), [
+    "Fable of the Mirror-Breaker // Reflection of Kiki-Jiki",
+  ]);
+  assert.deepEqual(findCards(list, "foudre"), [], "sans traduction : rien");
+});
+
+test("filterListings filtre par département du vendeur et par envoi", () => {
+  const seller = (department: string | null, ships: boolean) =>
+    ({ id: "s", display_name: "x", avatar_url: null, moxfield_url: null, archidekt_url: null, department, ships }) as PublicListing["seller"];
+  const lyon = listing("lyon", { seller: seller("69", false) });
+  const paris = listing("paris", { seller: seller("75", true) });
+  const none = listing("none");
+  const ids = (q: Partial<typeof EMPTY_QUERY>) => filterListings([lyon, paris, none], { ...EMPTY_QUERY, ...q }).map((x) => x.listing.id);
+  assert.deepEqual(ids({ department: "69" }), ["lyon"]);
+  assert.deepEqual(ids({ ships: true }), ["paris"]);
+  assert.deepEqual(ids({}), ["lyon", "paris", "none"]);
+  assert.equal(decksHref({ department: "69", ships: true }), "/decks?dep=69&envoi=1");
 });

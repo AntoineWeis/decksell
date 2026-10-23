@@ -5,16 +5,17 @@ import { Suspense } from "react";
 import { getProfile, requireUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { estimateDecklistNow } from "@/lib/public-listings";
-import { LISTING_COLUMNS, PUBLIC_STATUSES, STATUSES, normalizeFormat, type Listing } from "@/lib/listings";
+import { LISTING_COLUMNS, PUBLIC_STATUSES, STATUSES, type Listing } from "@/lib/listings";
 import { DeckView } from "@/components/deck-view";
 import { ListingAside } from "@/components/listing-aside";
 import { ManaCurveCard } from "@/components/mana-curve";
 import { cardTypeCounts, manaCurve } from "@/lib/deck-stats";
-import { CardTypesCard } from "@/components/card-types";
+import { CardTypesCard, anchorsFor } from "@/components/card-types";
 import { DeckTags } from "@/components/deck-tags";
 import { CardDetailsForm } from "@/components/card-details-form";
 import { DecklistEditor } from "@/components/decklist-editor";
-import { ListingIdentityForm } from "@/components/listing-identity-form";
+import { ListingEditForm } from "@/components/listing-edit-form";
+import { getArchetypes } from "@/lib/archetypes";
 import { FormatTag } from "@/components/format-tag";
 
 export const metadata: Metadata = { title: "Mon annonce" };
@@ -45,7 +46,11 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
   if (!data) notFound();
   const listing = data as unknown as Listing;
 
-  const [{ estimate, pricesAsOf }, profile] = await Promise.all([estimateDecklistNow(listing.decklist), getProfile()]);
+  const [{ estimate, pricesAsOf }, profile, archetypes] = await Promise.all([
+    estimateDecklistNow(listing.decklist),
+    getProfile(),
+    getArchetypes(),
+  ]);
   const isPublic = (PUBLIC_STATUSES as readonly string[]).includes(listing.status);
 
   return (
@@ -73,18 +78,15 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
         ) : (
           "Cette annonce n'est pas visible publiquement."
         )}{" "}
-        Le nom, le format, les couleurs, l&apos;état et la langue des cartes et la liste se modifient ci-dessous ; le statut, le
-        prix et l&apos;archétype depuis « Mes annonces ».
+        Tout se modifie ci-dessous : l&apos;annonce, l&apos;état et la langue des cartes, puis la liste.
       </p>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:items-start">
         <div className="min-w-0 space-y-6">
-          <ListingIdentityForm
-            key={`${listing.title}|${listing.format}|${(listing.colors ?? []).join("")}`}
-            listingId={listing.id}
-            title={listing.title}
-            format={normalizeFormat(listing.format)}
-            colors={listing.colors ?? []}
+          <ListingEditForm
+            key={`${listing.title}|${listing.format}|${listing.status}|${listing.asking_cents}|${(listing.colors ?? []).join("")}|${listing.archetype?.id ?? ""}`}
+            listing={listing}
+            archetypes={archetypes}
           />
           <CardDetailsForm
             // Repart de zéro quand la liste change : les lignes ne sont plus les mêmes.
@@ -110,7 +112,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
           }
           todayCents={estimate.totalCents}
           stats={<>
-            <CardTypesCard counts={cardTypeCounts(estimate)} />
+            <CardTypesCard counts={cardTypeCounts(estimate)} targets={anchorsFor(estimate)} />
             <ManaCurveCard curve={manaCurve(estimate)} />
           </>}
         />

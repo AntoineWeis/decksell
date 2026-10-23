@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
-import { REPORT_STATUSES, REPORT_STATUS_STYLE, getReport, isAdmin } from "@/lib/moderation";
+import { REPORT_STATUSES, REPORT_STATUS_STYLE, getReport, isAdmin, isSuspendedNow, reportTitle } from "@/lib/moderation";
 import { PUBLIC_STATUSES, STATUSES } from "@/lib/listings";
 import { dateTimeOf, dayLabel, sameDay, timeOf } from "@/lib/message-dates";
 import { ReportDecision } from "@/components/report-decision";
@@ -40,8 +40,13 @@ async function ReportDetail({ params }: Props) {
       <section className="rounded-xl border border-line bg-surface p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-semibold">
-            {r.reporter_name} signale {r.reported_name}{" "}
+            {reportTitle(r)}{" "}
             <span className="font-normal text-muted">({r.reported_role === "seller" ? "vendeur" : "acheteur"})</span>
+            {isSuspendedNow(r.reported_suspended_until) && (
+              <span className="ml-2 rounded-md bg-danger-soft px-2 py-0.5 text-xs font-semibold text-danger">
+                Suspendu jusqu&apos;au {dateTimeOf(r.reported_suspended_until!)}
+              </span>
+            )}
           </h2>
           <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${REPORT_STATUS_STYLE[r.status]}`}>
             {REPORT_STATUSES[r.status]}
@@ -66,6 +71,19 @@ async function ReportDetail({ params }: Props) {
         )}
       </section>
 
+      {r.kind === "listing" ? (
+        <p className="rounded-xl border border-line bg-surface px-4 py-3 text-sm sm:px-5">
+          Signalement d&apos;annonce : ouvre{" "}
+          {listingPublic ? (
+            <Link href={`/decks/${r.listing_id}`} className="font-medium text-link hover:underline">
+              l&apos;annonce publique
+            </Link>
+          ) : (
+            "l'annonce (plus visible publiquement)"
+          )}{" "}
+          pour vérifier.
+        </p>
+      ) : (
       <section className="rounded-xl border border-line bg-surface">
         <h3 className="border-b border-line px-4 py-3 text-sm font-semibold sm:px-5">
           Conversation <span className="font-normal text-muted">· {messages.length} message{messages.length > 1 ? "s" : ""}</span>
@@ -90,6 +108,7 @@ async function ReportDetail({ params }: Props) {
           })}
         </ol>
       </section>
+      )}
 
       <ReportDecision
         key={`${r.status}|${r.admin_note ?? ""}`}
@@ -97,6 +116,8 @@ async function ReportDetail({ params }: Props) {
         status={r.status}
         note={r.admin_note}
         listingWithdrawable={listingPublic}
+        memberName={r.reported_name}
+        memberSuspended={isSuspendedNow(r.reported_suspended_until)}
       />
     </div>
   );

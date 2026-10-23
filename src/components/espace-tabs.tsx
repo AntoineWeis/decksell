@@ -19,7 +19,9 @@ export function EspaceTabs({ unread = 0, moderation }: { unread?: number; modera
     "/espace/moderation": { count: moderation?.open ?? 0, label: "à traiter", className: "bg-danger" },
   };
   return (
-    <nav className="flex gap-1 overflow-x-auto border-b border-line">
+    // « relative » garde le texte caché des badges dans la barre (sinon la page déborde sur mobile) ;
+    // le trait du bas est une ombre interne : un onglet décalé d'1 px créait un défilement vertical.
+    <nav className="relative flex gap-1 overflow-x-auto overflow-y-hidden shadow-[inset_0_-1px_0_var(--line)]">
       {tabs.map((t) => {
         // « Mes annonces » reste actif sur la vue détaillée d'une annonce, les autres sur leurs sous-pages.
         const active =
@@ -32,7 +34,7 @@ export function EspaceTabs({ unread = 0, moderation }: { unread?: number; modera
             key={t.href}
             href={t.href}
             aria-current={active ? "page" : undefined}
-            className={`-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition ${
+            className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition ${
               active ? "border-link text-foreground" : "border-transparent text-muted hover:text-foreground"
             }`}
           >

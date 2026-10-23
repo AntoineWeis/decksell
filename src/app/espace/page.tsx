@@ -6,7 +6,6 @@ import { createSupabaseServer } from "@/lib/supabase-auth";
 import { formatEur } from "@/lib/pricing";
 import { LISTING_COLUMNS, type Listing } from "@/lib/listings";
 import { ListingCard } from "@/components/listing-card";
-import { getArchetypes } from "@/lib/archetypes";
 
 export const metadata: Metadata = { title: "Mes annonces" };
 
@@ -31,7 +30,6 @@ async function Dashboard() {
     return <p className="rounded-xl bg-danger-soft px-5 py-4 text-danger">Impossible de charger tes annonces.</p>;
   }
   const listings = (data ?? []) as unknown as Listing[];
-  const archetypes = await getArchetypes();
 
   const count = (s: Listing["status"]) => listings.filter((l) => l.status === s).length;
   const soldTotal = listings.reduce((n, l) => n + (l.status === "sold" ? (l.sold_cents ?? 0) : 0), 0);
@@ -39,6 +37,19 @@ async function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {listings.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted">
+            {listings.length} annonce{listings.length > 1 ? "s" : ""}
+          </p>
+          <Link
+            href="/estimer"
+            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-accent px-4 text-sm font-semibold text-on-accent transition hover:bg-accent-hover"
+          >
+            <span aria-hidden>+</span> Ajouter un deck
+          </Link>
+        </div>
+      )}
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="En vente" value={String(count("active"))} hint={onSaleValue ? formatEur(onSaleValue) : undefined} />
         <Stat label="Réservés" value={String(count("reserved"))} />
@@ -62,7 +73,7 @@ async function Dashboard() {
       ) : (
         <ul className="space-y-3">
           {listings.map((l) => (
-            <ListingCard key={l.id} listing={l} archetypes={archetypes} />
+            <ListingCard key={`${l.id}-${l.status}`} listing={l} />
           ))}
         </ul>
       )}

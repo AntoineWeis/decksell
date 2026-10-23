@@ -1,15 +1,13 @@
 "use client";
 
-import { submitWithoutReset } from "@/lib/form";
 import Image from "next/image";
 import Link from "next/link";
-import { useActionState, useTransition } from "react";
-import { deleteListing, updateListing, type FormState } from "@/app/espace/actions";
-import { useActionToast, useToast } from "./toaster";
+import { useState, useTransition } from "react";
+import { deleteListing, setListingStatus } from "@/app/espace/actions";
+import { useToast } from "./toaster";
 import { formatEur } from "@/lib/pricing";
-import { CONDITIONS, PUBLIC_STATUSES, STATUSES, artCrop, type Archetype, type Listing, type ListingStatus } from "@/lib/listings";
+import { CONDITIONS, PUBLIC_STATUSES, STATUSES, artCrop, type Listing, type ListingStatus } from "@/lib/listings";
 import { LanguageBar } from "./language-bar";
-import { ArchetypeSelect, ColorPicker } from "./deck-tags-fields";
 import { ManaColors } from "./mana";
 
 const STATUS_STYLE: Record<ListingStatus, string> = {
@@ -19,18 +17,26 @@ const STATUS_STYLE: Record<ListingStatus, string> = {
   withdrawn: "bg-sunken text-muted",
 };
 
-const fieldClass =
-  "rounded-lg border border-line bg-sunken px-2.5 py-1.5 text-sm outline-none focus:border-link focus:ring-2 focus:ring-link/25";
-
 const date = (iso: string) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 
-export function ListingCard({ listing: l, archetypes }: { listing: Listing; archetypes: Archetype[] }) {
-  const [state, action, saving] = useActionState<FormState, FormData>(updateListing.bind(null, l.id), {
-    status: "idle",
-  });
+/** Une annonce dans « Mes annonces » : l'essentiel, le statut en un clic ; le reste se modifie sur sa page. */
+export function ListingCard({ listing: l }: { listing: Listing }) {
   const [deleting, startDelete] = useTransition();
+  const [changing, startChange] = useTransition();
+  const [status, setStatus] = useState<ListingStatus>(l.status);
   const toast = useToast();
-  useActionToast(state, { success: "Annonce mise à jour" });
+
+  function changeStatus(next: ListingStatus) {
+    const previous = status;
+    setStatus(next); // affichage immédiat, annulé si l'enregistrement échoue
+    startChange(async () => {
+      const r = await setListingStatus(l.id, next);
+      if (r.status === "error") {
+        setStatus(previous);
+        toast("error", r.message);
+      } else toast("success", `Annonce « ${l.title} » : ${STATUSES[next].toLowerCase()}`);
+    });
+  }
   const diff = l.estimated_cents > 0 ? Math.round(((l.asking_cents - l.estimated_cents) / l.estimated_cents) * 100) : null;
   // Ce qui manque pour que l'annonce soit bien trouvée dans les filtres de l'index.
   const missing = [
@@ -51,8 +57,8 @@ export function ListingCard({ listing: l, archetypes }: { listing: Listing; arch
           <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate font-semibold">{l.title}</h3>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[l.status]}`}>
-              {STATUSES[l.status]}
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[status]}`}>
+              {STATUSES[status]}
             </span>
           </div>
           <p className="mt-0.5 text-xs text-muted">
@@ -80,14 +86,22 @@ export function ListingCard({ listing: l, archetypes }: { listing: Listing; arch
 
       {missing.length > 0 && l.status !== "sold" && l.status !== "withdrawn" && (
         <p className="hatch mt-4 rounded-lg border border-warn/40 px-3 py-2 text-sm text-warn">
-          <strong className="font-semibold">À compléter :</strong> {missing.join(", ")}. Renseigne-les ci-dessous pour que
-          l&apos;annonce apparaisse dans les filtres des decks en vente.
+          <strong className="font-semibold">À compléter :</strong> {missing.join(", ")}.{" "}
+          <Link href={`/espace/annonces/${l.id}`} className="font-semibold underline">
+            Modifier l&apos;annonce
+          </Link>{" "}
+          pour qu&apos;elle apparaisse dans les filtres des decks en vente.
         </p>
       )}
-      <form onSubmit={submitWithoutReset(action)} className="mt-4 flex flex-wrap items-end gap-2 border-t border-line pt-4">
-        <label className="text-xs text-muted">
-          <span className="mb-1 block">Statut</span>
-          <select name="status" defaultValue={l.status} className={fieldClass}>
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
+        <label className="flex items-center gap-2 text-sm text-muted">
+          Statut
+          <select
+            value={status}
+            disabled={changing}
+            onChange={(e) => changeStatus(e.target.value as ListingStatus)}
+            className="h-9 rounded-lg border border-line bg-sunken px-2.5 text-sm text-foreground outline-none focus:border-link focus:ring-2 focus:ring-link/25 disabled:opacity-60"
+          >
             {Object.entries(STATUSES).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -95,44 +109,20 @@ export function ListingCard({ listing: l, archetypes }: { listing: Listing; arch
             ))}
           </select>
         </label>
-        <label className="text-xs text-muted">
-          <span className="mb-1 block">Prix demandé (€)</span>
-          <input
-            name="asking_price"
-            inputMode="decimal"
-            defaultValue={(l.asking_cents / 100).toString().replace(".", ",")}
-            className={`${fieldClass} w-28 tabular-nums`}
-          />
-        </label>
-        <ColorPicker defaultColors={l.colors ?? []} compact />
-        <label className="text-xs text-muted">
-          <span className="mb-1 block">Archétype</span>
-          <ArchetypeSelect archetypes={archetypes} defaultId={l.archetype?.id ?? null} className={`${fieldClass} max-w-44`} />
-        </label>
-        {/* Sans détail carte par carte (anciennes annonces), la part de français se saisit ici. */}
-        {(l.card_details ?? []).length === 0 && (
-          <label className="text-xs text-muted">
-            <span className="mb-1 block">Français (%)</span>
-            <input
-              name="french_percent"
-              type="number"
-              min={0}
-              max={100}
-              inputMode="numeric"
-              defaultValue={l.french_percent ?? ""}
-              className={`${fieldClass} w-20 tabular-nums`}
-            />
-          </label>
-        )}
-        <button
-          type="submit"
-          disabled={saving}
-          className="h-[34px] rounded-lg bg-accent px-3 text-sm font-semibold text-on-accent hover:bg-accent-hover disabled:opacity-50"
+        <Link
+          href={`/espace/annonces/${l.id}`}
+          className="inline-flex h-9 items-center rounded-lg bg-accent px-3.5 text-sm font-semibold text-on-accent transition hover:bg-accent-hover"
         >
-          {saving ? "…" : "Enregistrer"}
-        </button>
-        {state.status === "error" && <span className="pb-2 text-xs text-danger">{state.message}</span>}
-
+          Modifier
+        </Link>
+        {(PUBLIC_STATUSES as readonly string[]).includes(status) && (
+          <Link
+            href={`/decks/${l.id}`}
+            className="inline-flex h-9 items-center rounded-lg border border-line px-3 text-sm font-medium transition hover:border-link/50 hover:text-link"
+          >
+            Voir l&apos;annonce
+          </Link>
+        )}
         <button
           type="button"
           disabled={deleting}
@@ -145,21 +135,10 @@ export function ListingCard({ listing: l, archetypes }: { listing: Listing; arch
               });
             }
           }}
-          className="ml-auto h-[34px] rounded-lg px-3 text-sm text-danger hover:bg-danger-soft"
+          className="ml-auto h-9 rounded-lg px-3 text-sm text-danger hover:bg-danger-soft"
         >
           Supprimer
         </button>
-      </form>
-
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-        <Link href={`/espace/annonces/${l.id}`} className="font-medium text-link hover:underline">
-          Voir le deck en détail
-        </Link>
-        {(PUBLIC_STATUSES as readonly string[]).includes(l.status) && (
-          <Link href={`/decks/${l.id}`} className="font-medium text-link hover:underline">
-            Voir l&apos;annonce publique
-          </Link>
-        )}
       </div>
     </li>
   );

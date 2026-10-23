@@ -27,6 +27,7 @@ const SQL_ERRORS: Record<string, string> = {
   listing_unavailable: "Cette annonce n'est plus disponible.",
   own_listing: "C'est ton annonce : tu ne peux pas t'écrire à toi-même.",
   blocked: "Cet échange n'est plus possible.",
+  suspended: "Ton compte est suspendu par la modération : tu ne peux plus envoyer de message pour l'instant.",
   quota_conversations: "Tu as contacté beaucoup de vendeurs aujourd'hui. Réessaie demain.",
   quota_messages: "Tu as envoyé beaucoup de messages en peu de temps. Patiente un peu avant de réessayer.",
   not_found: "Conversation introuvable.",

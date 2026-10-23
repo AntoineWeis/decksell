@@ -6,6 +6,16 @@ import { updateProfile, uploadAvatar, type FormState } from "@/app/espace/action
 import type { Profile } from "@/lib/auth";
 import Link from "next/link";
 import { Avatar } from "./avatar";
+import { DEPARTMENTS } from "@/lib/departments";
+
+export type ProfilePrefs = {
+  email_notifications: boolean;
+  department: string | null;
+  city: string | null;
+  hand_delivery: boolean;
+  ships: boolean;
+  price_alerts: boolean;
+};
 import { useActionToast } from "./toaster";
 
 const inputClass =
@@ -29,11 +39,14 @@ async function toSquareWebp(file: File, size = 256): Promise<Blob> {
 export function ProfileForm({
   profile,
   email,
-  emailNotifications,
+  prefs,
+  locationReady,
 }: {
   profile: Profile;
   email: string;
-  emailNotifications: boolean;
+  prefs: ProfilePrefs;
+  /** Faux tant que la base n'a pas les colonnes de localisation : les champs sont masqués. */
+  locationReady: boolean;
 }) {
   const [state, action, saving] = useActionState<FormState, FormData>(updateProfile, { status: "idle" });
   const [avatarMsg, setAvatarMsg] = useState<FormState>({ status: "idle" });
@@ -118,11 +131,47 @@ export function ProfileForm({
         </label>
         <p className="text-xs text-muted">Ces liens seront visibles par les acheteurs sur tes annonces.</p>
 
+        {locationReady && (
+          <fieldset className="space-y-4 border-t border-line pt-4">
+            <legend className="sr-only">Localisation et remise</legend>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-medium">Département</span>
+                <select name="department" defaultValue={prefs.department ?? ""} className={inputClass}>
+                  <option value="">Non renseigné</option>
+                  {Object.entries(DEPARTMENTS).map(([code, name]) => (
+                    <option key={code} value={code}>
+                      {code} · {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-medium">Ville (facultatif)</span>
+                <input name="city" defaultValue={prefs.city ?? ""} maxLength={60} placeholder="Lyon" className={inputClass} />
+              </label>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="hand_delivery" defaultChecked={prefs.hand_delivery} className="h-4 w-4 accent-[var(--accent)]" />
+                Remise en main propre
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="ships" defaultChecked={prefs.ships} className="h-4 w-4 accent-[var(--accent)]" />
+                Envoi possible
+              </label>
+            </div>
+            <p className="text-xs text-muted">
+              Affichés sur tes annonces, pour que les acheteurs proches te trouvent. Jamais d&apos;adresse exacte.
+            </p>
+          </fieldset>
+        )}
+
         <label className="flex items-start gap-3 border-t border-line pt-4">
           <input
             type="checkbox"
             name="email_notifications"
-            defaultChecked={emailNotifications}
+            defaultChecked={prefs.email_notifications}
             className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
           />
           <span>
@@ -132,6 +181,20 @@ export function ProfileForm({
             </span>
           </span>
         </label>
+        {locationReady && (
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              name="price_alerts"
+              defaultChecked={prefs.price_alerts}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
+            />
+            <span>
+              <span className="block text-sm font-medium">Être prévenu quand un deck de mes favoris baisse de prix</span>
+              <span className="block text-xs text-muted">Un email au plus par deck et par jour.</span>
+            </span>
+          </label>
+        )}
 
         <div className="flex items-center gap-3">
           <button

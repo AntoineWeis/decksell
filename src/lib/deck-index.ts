@@ -2,6 +2,7 @@
 // Fonctions pures : ni base, ni réseau. Testées dans tests/deck-index.test.ts.
 import { normalizeName, parseDecklist } from "./decklist.ts";
 import { normalizeColors, type ManaColor, type PublicListing } from "./listings.ts";
+import { isDepartment } from "./departments.ts";
 
 export const SORTS = {
   recent: "Plus récents",
@@ -18,9 +19,38 @@ export type DeckQuery = {
   /** Texte cherché dans les noms de cartes, tel que saisi. */
   card: string;
   sort: SortKey;
+  /** Fourchette de prix demandé, en euros entiers (null : pas de borne). */
+  min: number | null;
+  max: number | null;
+  /** Page affichée, à partir de 1. */
+  page: number;
+  /** Département du vendeur (code INSEE), ou null. */
+  department: string | null;
+  /** Seulement les vendeurs qui acceptent l'envoi. */
+  ships: boolean;
 };
 
-export const EMPTY_QUERY: DeckQuery = { colors: [], archetype: null, card: "", sort: DEFAULT_SORT };
+export const EMPTY_QUERY: DeckQuery = {
+  colors: [],
+  archetype: null,
+  card: "",
+  sort: DEFAULT_SORT,
+  min: null,
+  max: null,
+  page: 1,
+  department: null,
+  ships: false,
+};
+
+/** Decks affichés par page de l'index. */
+export const PAGE_SIZE = 24;
+
+/** Montant en euros entiers lu dans l'adresse (« 150 », « 150,50 » → 150), ou null. */
+function readEuros(v: string | undefined): number | null {
+  if (!v) return null;
+  const n = Math.floor(Number(v.replace(",", ".")));
+  return Number.isFinite(n) && n >= 0 && n <= 100_000 ? n : null;
+}
 
 /** Longueur minimale d'une recherche par carte : en dessous, presque tout correspond. */
 export const MIN_CARD_QUERY = 3;
@@ -28,27 +58,49 @@ export const MIN_CARD_QUERY = 3;
 type RawParams = Record<string, string | string[] | undefined>;
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
-/** Lit l'adresse : ?c=UR (couleurs) & a=burn (archétype) & carte=ragavan & tri=prix-asc. */
+/**
+ * Lit l'adresse : ?c=UR (couleurs) & a=burn (archétype) & carte=ragavan & tri=prix-asc
+ * & min=100 & max=500 (euros) & page=2.
+ */
 export function readDeckQuery(sp: RawParams): DeckQuery {
   const c = first(sp.c);
   const a = first(sp.a);
   const card = (first(sp.carte) ?? "").replace(/\s+/g, " ").trim().slice(0, 60);
   const sort = first(sp.tri);
+  let min = readEuros(first(sp.min));
+  let max = readEuros(first(sp.max));
+  // Bornes inversées (« de 500 à 100 ») : on les remet dans l'ordre.
+  if (min != null && max != null && min > max) [min, max] = [max, min];
+  const page = Number(first(sp.page));
+  const dep = first(sp.dep);
   return {
     colors: normalizeColors(typeof c === "string" ? c.toUpperCase().split("") : []),
     archetype: typeof a === "string" && /^[a-z0-9-]{1,60}$/.test(a) ? a : null,
     card,
     sort: sort && sort in SORTS ? (sort as SortKey) : DEFAULT_SORT,
+    min,
+    max,
+    page: Number.isInteger(page) && page > 1 ? Math.min(page, 10_000) : 1,
+    department: isDepartment(dep) ? dep : null,
+    ships: first(sp.envoi) === "1",
   };
 }
 
-/** Adresse de l'index pour cette requête (couleurs dans l'ordre WUBRG, paramètres par défaut omis). */
-export function decksHref(q: DeckQuery): string {
+/**
+ * Adresse de l'index pour cette requête (couleurs dans l'ordre WUBRG, paramètres par défaut omis).
+ * Les champs absents prennent leur valeur par défaut ; la page n'est gardée que si elle est donnée.
+ */
+export function decksHref(q: Partial<DeckQuery>): string {
   const params = new URLSearchParams();
-  if (q.colors.length) params.set("c", q.colors.join(""));
+  if (q.colors?.length) params.set("c", q.colors.join(""));
   if (q.archetype) params.set("a", q.archetype);
   if (q.card) params.set("carte", q.card);
-  if (q.sort !== DEFAULT_SORT) params.set("tri", q.sort);
+  if (q.min != null) params.set("min", String(q.min));
+  if (q.max != null) params.set("max", String(q.max));
+  if (q.department) params.set("dep", q.department);
+  if (q.ships) params.set("envoi", "1");
+  if (q.sort && q.sort !== DEFAULT_SORT) params.set("tri", q.sort);
+  if (q.page && q.page > 1) params.set("page", String(q.page));
   const s = params.toString();
   return s ? `/decks?${s}` : "/decks";
 }
@@ -58,15 +110,19 @@ export type CardHit = { name: string; quantity: number };
 /**
  * Cartes de la liste dont le nom contient le texte cherché (sans tenir compte des
  * majuscules, des accents ni des apostrophes typographiques). Principal et réserve
- * sont additionnés.
+ * sont additionnés. `aliases` : noms anglais exacts qui correspondent aussi (traductions
+ * d'une recherche en français, ex. « foudre » → Lightning Bolt).
  */
-export function findCards(decklist: string, query: string): CardHit[] {
+export function findCards(decklist: string, query: string, aliases: string[] = []): CardHit[] {
   const q = normalizeName(query);
   if (q.length < MIN_CARD_QUERY) return [];
+  // Comparées sur la première face : « Fable of the Mirror-Breaker // Reflection of Kiki-Jiki » = « Fable of the Mirror-Breaker ».
+  const front = (name: string) => normalizeName(name).split(" // ")[0];
+  const exact = new Set(aliases.map(front));
   const deck = parseDecklist(decklist);
   const hits = new Map<string, CardHit>();
   for (const e of [...deck.main, ...deck.side]) {
-    if (!normalizeName(e.name).includes(q)) continue;
+    if (!normalizeName(e.name).includes(q) && !exact.has(front(e.name))) continue;
     const key = normalizeName(e.name);
     const hit = hits.get(key);
     if (hit) hit.quantity += e.quantity;
@@ -82,17 +138,21 @@ export function priceGap(l: Pick<PublicListing, "asking_cents" | "estimated_cent
 
 export type IndexedListing = { listing: PublicListing; hits: CardHit[] };
 
-/** Applique couleurs, archétype et recherche par carte (sans le tri). */
-export function filterListings(listings: PublicListing[], q: DeckQuery): IndexedListing[] {
+/** Applique couleurs, archétype, prix et recherche par carte (sans le tri). `aliases` : voir findCards. */
+export function filterListings(listings: PublicListing[], q: DeckQuery, aliases: string[] = []): IndexedListing[] {
   const out: IndexedListing[] = [];
   for (const l of listings) {
     const colors = l.colors ?? [];
     if (!q.colors.every((c) => colors.includes(c))) continue;
     if (q.archetype && l.archetype?.slug !== q.archetype) continue;
+    if (q.min != null && l.asking_cents < q.min * 100) continue;
+    if (q.max != null && l.asking_cents > q.max * 100) continue;
+    if (q.department && l.seller?.department !== q.department) continue;
+    if (q.ships && !l.seller?.ships) continue;
     let hits: CardHit[] = [];
     // Recherche trop courte : ignorée (l'interface le signale) plutôt que de tout masquer.
     if (normalizeName(q.card).length >= MIN_CARD_QUERY) {
-      hits = findCards(l.decklist, q.card);
+      hits = findCards(l.decklist, q.card, aliases);
       if (hits.length === 0) continue;
     }
     out.push({ listing: l, hits });
@@ -116,4 +176,11 @@ export function sortListings<T extends { listing: PublicListing }>(items: T[], s
     },
   };
   return [...items].sort(by[sort]);
+}
+
+/** Découpe en pages de PAGE_SIZE ; une page au-delà de la dernière ramène à la dernière. */
+export function paginate<T>(items: T[], page: number): { items: T[]; page: number; pages: number } {
+  const pages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const current = Math.min(Math.max(1, page), pages);
+  return { items: items.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE), page: current, pages };
 }

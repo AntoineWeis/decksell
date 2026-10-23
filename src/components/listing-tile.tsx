@@ -4,6 +4,7 @@ import { formatEur } from "@/lib/pricing";
 import { CONDITIONS, artCrop, type PublicListing } from "@/lib/listings";
 import type { CardHit } from "@/lib/deck-index";
 import { Avatar } from "./avatar";
+import { formatLocation } from "@/lib/departments";
 import { LanguageBar } from "./language-bar";
 import { hasMixedConditions } from "@/lib/card-details";
 import { ManaColors } from "./mana";
@@ -114,6 +115,13 @@ export function ListingTile({
             <p className="mt-auto flex items-center gap-2 border-t border-line pt-3 text-sm text-muted">
               <Avatar name={l.seller.display_name} url={l.seller.avatar_url} size={22} />
               <span className="truncate">{l.seller.display_name}</span>
+              {/* Département seulement : la ville est sur la page de l'annonce. */}
+              {l.seller.department && (
+                <span className="ml-auto shrink-0 text-xs" title={formatLocation(l.seller.department, null) ?? undefined}>
+                  {l.seller.department}
+                  {l.seller.ships && " · envoi"}
+                </span>
+              )}
             </p>
           )}
         </div>

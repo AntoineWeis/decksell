@@ -1,6 +1,8 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { after } from "next/server";
+import { alertPriceDrop } from "@/lib/price-alerts";
 import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { buildEstimate, parseEur, starCard } from "@/lib/pricing";
@@ -18,6 +20,7 @@ import {
 } from "@/lib/listings";
 import { parseDecklist } from "@/lib/decklist";
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
+import { isDepartment } from "@/lib/departments";
 
 // Chaque action revérifie le membre : elles sont joignables par n'importe qui (POST).
 // Les règles RLS limitent en plus chaque écriture aux données du membre.
@@ -28,6 +31,17 @@ const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v.trim() 
 const NOT_LOGGED: FormState = { status: "error", message: "Ta session a expiré. Reconnecte-toi." };
 
 /* ---------- Annonces ---------- */
+
+type SoldInfo = { status: ListingStatus; sold_cents: number | null; sold_at: string | null };
+
+/** Passage à « Vendu » : on note le prix et la date de la vente (gardés s'il l'était déjà). */
+function soldFields(current: SoldInfo, status: ListingStatus, askingCents: number) {
+  if (status !== "sold") return { sold_cents: null, sold_at: null };
+  return {
+    sold_cents: current.status === "sold" ? (current.sold_cents ?? askingCents) : askingCents,
+    sold_at: current.status === "sold" ? (current.sold_at ?? new Date().toISOString()) : new Date().toISOString(),
+  };
+}
 
 export async function updateListing(id: string, _prev: FormState, formData: FormData): Promise<FormState> {
   const user = await getUser();
@@ -50,24 +64,27 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
   if (askingCents == null || askingCents <= 0 || askingCents > 10_000_000) {
     return { status: "error", message: "Prix invalide." };
   }
+  // Nom et format : envoyés par le formulaire complet de la page de l'annonce.
+  const identity: { title?: string; format?: string } = {};
+  if (formData.has("title")) {
+    const title = str(formData.get("title"));
+    if (title.length < 3 || title.length > 80) return { status: "error", message: "Le nom doit faire entre 3 et 80 caractères." };
+    if (colors.length === 0) return { status: "error", message: "Coche au moins une couleur du deck." };
+    const rawFormat = str(formData.get("format"));
+    if (rawFormat !== "" && !(rawFormat in FORMATS)) return { status: "error", message: "Format de jeu inconnu." };
+    identity.title = title;
+    identity.format = normalizeFormat(rawFormat);
+  }
 
   const supabase = await createSupabaseServer();
   const { data: current } = await supabase
     .from("listings")
-    .select("status, sold_cents, sold_at")
+    .select("status, sold_cents, sold_at, asking_cents, title")
     .eq("id", id)
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!current) return { status: "error", message: "Annonce introuvable." };
-
-  // Passage à « Vendu » : on note le prix et la date de la vente.
-  const sold =
-    status === "sold"
-      ? {
-          sold_cents: current.status === "sold" ? (current.sold_cents ?? askingCents) : askingCents,
-          sold_at: current.status === "sold" ? (current.sold_at ?? new Date().toISOString()) : new Date().toISOString(),
-        }
-      : { sold_cents: null, sold_at: null };
+  const sold = soldFields(current as SoldInfo, status, askingCents);
 
   const { error } = await supabase
     .from("listings")
@@ -78,9 +95,43 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
       ...(formData.has("french_percent") ? { french_percent: frenchPercent } : {}),
       colors,
       archetype_id: archetypeId,
+      ...identity,
       ...sold,
       updated_at: new Date().toISOString(),
     })
+    .eq("id", id)
+    .eq("seller_id", user.id);
+  if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };
+
+  // Prix en baisse sur une annonce en vente : alerte aux membres qui la suivent, après la réponse.
+  if (status === "active" && askingCents < current.asking_cents) {
+    const drop = { listingId: id, sellerId: user.id, title: identity.title ?? current.title, oldCents: current.asking_cents, newCents: askingCents };
+    after(() => alertPriceDrop(drop).catch((e) => console.error("Alerte de prix impossible", e)));
+  }
+
+  refresh();
+  return { status: "saved" };
+}
+
+/** Changement de statut seul, depuis la liste des annonces ou une conversation. */
+export async function setListingStatus(id: string, status: string): Promise<FormState> {
+  const user = await getUser();
+  if (!user) return NOT_LOGGED;
+  if (!(status in STATUSES)) return { status: "error", message: "Statut inconnu." };
+
+  const supabase = await createSupabaseServer();
+  const { data: current } = await supabase
+    .from("listings")
+    .select("status, sold_cents, sold_at, asking_cents")
+    .eq("id", id)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!current) return { status: "error", message: "Annonce introuvable." };
+
+  const next = status as ListingStatus;
+  const { error } = await supabase
+    .from("listings")
+    .update({ status: next, ...soldFields(current as SoldInfo, next, current.asking_cents), updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("seller_id", user.id);
   if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };
@@ -124,33 +175,6 @@ export async function updateCardDetails(id: string, _prev: FormState, formData: 
     .eq("id", id)
     .eq("seller_id", user.id);
   if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };
-
-  refresh();
-  return { status: "saved" };
-}
-
-/** Nom et couleurs d'une annonce, depuis sa page de gestion. */
-export async function updateListingIdentity(id: string, _prev: FormState, formData: FormData): Promise<FormState> {
-  const user = await getUser();
-  if (!user) return NOT_LOGGED;
-
-  const title = str(formData.get("title"));
-  if (title.length < 3 || title.length > 80) return { status: "error", message: "Le nom doit faire entre 3 et 80 caractères." };
-  const colors = normalizeColors(formData.getAll("colors"));
-  if (colors.length === 0) return { status: "error", message: "Coche au moins une couleur du deck." };
-  const rawFormat = str(formData.get("format"));
-  if (rawFormat !== "" && !(rawFormat in FORMATS)) return { status: "error", message: "Format de jeu inconnu." };
-  const format = normalizeFormat(rawFormat);
-
-  const supabase = await createSupabaseServer();
-  const { data, error } = await supabase
-    .from("listings")
-    .update({ title, format, colors, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .eq("seller_id", user.id)
-    .select("id");
-  if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };
-  if (!data?.length) return { status: "error", message: "Annonce introuvable." };
 
   refresh();
   return { status: "saved" };
@@ -258,6 +282,20 @@ export async function updateProfile(_prev: FormState, formData: FormData): Promi
     return { status: "error", message: "Le lien Archidekt doit commencer par https://archidekt.com/" };
   }
 
+  // Localisation, remise et alertes : seulement quand le formulaire les affiche (base à jour).
+  const extra: Record<string, unknown> = {};
+  if (formData.has("department")) {
+    const department = str(formData.get("department"));
+    if (department !== "" && !isDepartment(department)) return { status: "error", message: "Département inconnu." };
+    const city = str(formData.get("city"));
+    if (city.length > 60) return { status: "error", message: "Nom de ville trop long (60 caractères max)." };
+    extra.department = department || null;
+    extra.city = city || null;
+    extra.hand_delivery = formData.get("hand_delivery") === "on";
+    extra.ships = formData.get("ships") === "on";
+    extra.price_alerts = formData.get("price_alerts") === "on";
+  }
+
   const supabase = await createSupabaseServer();
   const { error } = await supabase
     .from("profiles")
@@ -266,6 +304,7 @@ export async function updateProfile(_prev: FormState, formData: FormData): Promi
       moxfield_url: moxfield,
       archidekt_url: archidekt,
       email_notifications: formData.get("email_notifications") === "on",
+      ...extra,
       updated_at: new Date().toISOString(),
     })
     .eq("id", user.id);

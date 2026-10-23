@@ -1,5 +1,6 @@
 import { formatEur, type Estimate } from "@/lib/pricing";
 import { CardList } from "./card-list";
+import { groupAnchor } from "./card-types";
 import { detailsByKey, type CardDetail } from "@/lib/card-details";
 
 /** Vue d'un deck : valeur du jour, puis deck principal et réserve carte par carte. */
@@ -43,6 +44,7 @@ export function DeckView({
         title="Réserve"
         lines={estimate.lines.filter((l) => l.board === "side")}
         totalCents={estimate.sideCents}
+        id={groupAnchor("side")}
         previewSide="right"
         details={byKey}
       />

@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useEffect, useMemo, useState } from "react";
-import { estimateAction, type EstimateState } from "@/app/actions";
+import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
+import { estimateAction, importDeckAction, type EstimateState } from "@/app/actions";
 import { normalizeName } from "@/lib/decklist";
 import { buildEstimate, formatEur, parseEur, type Estimate, type ManualPrices, type PricedLine } from "@/lib/pricing";
 import { SAMPLE_DECK } from "@/lib/sample-deck";
@@ -30,6 +30,21 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
   const [text, setText] = useState("");
   const [manualInputs, setManualInputs] = useState<Record<string, string>>({});
   const [state, formAction, pending] = useActionState<EstimateState, FormData>(estimateAction, { status: "idle" });
+  const [importUrl, setImportUrl] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importing, startImport] = useTransition();
+
+  function importFromUrl() {
+    if (!importUrl.trim()) return;
+    setImportError(null);
+    startImport(async () => {
+      const r = await importDeckAction(importUrl);
+      if (r.status === "ok") {
+        setText(r.text);
+        setImportUrl("");
+      } else setImportError(r.message);
+    });
+  }
 
   // Brouillon gardé dans l'onglet : la liste survit à un passage par la page de connexion.
   useEffect(() => {
@@ -116,6 +131,44 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
               Essayer avec un exemple
             </button>
           </div>
+          {/* Import par lien : remplit la liste, qu'on peut relire avant d'estimer. */}
+          <div className="mb-3">
+            <label htmlFor="deck-url" className="sr-only">
+              Lien d&apos;un deck Archidekt
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="deck-url"
+                type="url"
+                inputMode="url"
+                value={importUrl}
+                onChange={(e) => setImportUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  // Entrée importe le lien au lieu d'envoyer le formulaire d'estimation.
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    importFromUrl();
+                  }
+                }}
+                placeholder="Lien Archidekt (archidekt.com/decks/…)"
+                aria-describedby={importError ? "deck-url-error" : undefined}
+                className="h-9 min-w-0 flex-1 rounded-lg border border-line bg-sunken px-3 text-sm outline-none placeholder:text-muted/70 focus:border-link focus:ring-2 focus:ring-link/25"
+              />
+              <button
+                type="button"
+                onClick={importFromUrl}
+                disabled={importing || !importUrl.trim()}
+                className="h-9 shrink-0 rounded-lg border border-line px-3 text-sm font-medium transition hover:border-link/50 hover:text-link disabled:opacity-50"
+              >
+                {importing ? "Import…" : "Importer"}
+              </button>
+            </div>
+            {importError && (
+              <p id="deck-url-error" role="alert" className="mt-1.5 text-xs text-danger">
+                {importError}
+              </p>
+            )}
+          </div>
           <textarea
             id="decklist"
             name="decklist"
@@ -127,7 +180,7 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
             placeholder={"4 Lightning Bolt\n4 Ragavan, Nimble Pilferer\n…\n\nSideboard\n2 Engineered Explosives"}
             className="block w-full resize-y rounded-lg border border-line bg-sunken px-3 py-2.5 font-mono text-[13px] leading-6 outline-none placeholder:text-muted/70 focus:border-link focus:ring-2 focus:ring-link/25 max-sm:h-48"
           />
-          <p className="mt-2 text-xs text-muted">Une carte par ligne, avec la réserve à la suite.</p>
+          <p className="mt-2 text-xs text-muted">Une carte par ligne, avec la réserve à la suite. Ou importe un deck Archidekt par son lien.</p>
           <button
             type="submit"
             disabled={pending}

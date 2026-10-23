@@ -13,6 +13,7 @@ import { sendMessage } from "../actions";
 import { Avatar } from "@/components/avatar";
 import { MessageComposer } from "@/components/message-composer";
 import { ConversationTools } from "@/components/conversation-tools";
+import { ConversationStatus } from "@/components/conversation-status";
 import { AutoRefresh, MarkRead, ThreadScroller } from "@/components/conversation-live";
 
 type Props = { params: Promise<{ id: string }> };
@@ -74,6 +75,11 @@ async function Conversation({ params }: Props) {
               <span className="rounded-md bg-warn-soft px-2 py-0.5 text-xs font-semibold text-warn">{STATUSES[c.listing_status]}</span>
             )}
           </p>
+          {c.role === "seller" && (
+            <div className="mt-2">
+              <ConversationStatus listingId={c.listing_id} status={c.listing_status} buyerName={c.other_name} />
+            </div>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-2 text-sm">
           <Avatar name={c.other_name} url={c.other_avatar_url} size={32} />
@@ -97,11 +103,8 @@ async function Conversation({ params }: Props) {
           <strong className="font-semibold">Offre acceptée : {formatEur(accepted.amount_cents)}.</strong>{" "}
           {c.role === "seller" ? (
             <>
-              Convenez de la remise et du paiement ici. Pense à passer l&apos;annonce en « Réservé » depuis{" "}
-              <Link href="/espace" className="font-semibold underline">
-                Mes annonces
-              </Link>
-              .
+              Convenez de la remise et du paiement ici. Pense à réserver l&apos;annonce pour {c.other_name} (bouton
+              ci-dessus).
             </>
           ) : (
             "Convenez avec le vendeur de la remise et du paiement ici. Le paiement en ligne n'est pas encore proposé sur decksell."

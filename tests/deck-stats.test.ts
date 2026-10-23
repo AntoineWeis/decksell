@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cardTypeCounts, isLand, manaCurve, typeGroup } from "../src/lib/deck-stats.ts";
+import { cardTypeCounts, isLand, manaCurve, typeGroup, typeTargets } from "../src/lib/deck-stats.ts";
 import type { Estimate, PricedLine } from "../src/lib/pricing.ts";
 
 function line(name: string, quantity: number, cmc: number | null, typeLine: string | null, board: "main" | "side" = "main"): PricedLine {
@@ -81,4 +81,16 @@ test("typeGroup range chaque carte dans un seul groupe, d'après la face avant",
   assert.equal(typeGroup("Legendary Artifact"), "Artifact");
   assert.equal(typeGroup("Enchantment — Saga"), "Enchantment");
   assert.equal(typeGroup(null), "Other");
+});
+
+test("typeTargets renvoie le groupe où trouver chaque type, et la réserve pour le compagnon", () => {
+  const t = typeTargets(
+    est([
+      line("Ornithopter", 4, 0, "Artifact Creature — Thopter"),
+      line("Bolt", 4, 1, "Instant"),
+      line("Lurrus", 1, 3, "Legendary Creature — Cat Nightmare", "side"),
+    ]),
+  );
+  // Ornithopter est rangé en créatures : il n'y a pas de groupe Artefacts où renvoyer.
+  assert.deepEqual(t, { Creature: "Creature", Instant: "Instant", Companion: "side" });
 });

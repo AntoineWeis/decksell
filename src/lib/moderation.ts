@@ -23,21 +23,26 @@ export const REPORT_STATUS_STYLE: Record<ReportStatus, string> = {
 
 export type Report = {
   id: number;
+  /** Conversation signalée, ou annonce signalée depuis sa page. */
+  kind: "conversation" | "listing";
+  /** Signalé par un membre, ou repéré automatiquement (insulte) : alors sans auteur. */
+  source: "member" | "auto";
   reason: string;
   status: ReportStatus;
   created_at: string;
   handled_at: string | null;
   handler_name: string | null;
   admin_note: string | null;
-  conversation_id: string;
+  conversation_id: string | null;
   listing_id: string;
   listing_title: string;
   listing_status: ListingStatus;
-  reporter_id: string;
-  reporter_name: string;
+  reporter_id: string | null;
+  reporter_name: string | null;
   reported_id: string;
   reported_name: string;
   reported_role: "buyer" | "seller";
+  reported_suspended_until: string | null;
   message_count: number;
 };
 
@@ -81,3 +86,13 @@ export async function getReport(id: number): Promise<{ report: Report; messages:
   const row = ((report.data ?? []) as Report[])[0];
   return row ? { report: row, messages: (messages.data ?? []) as ReportMessage[] } : null;
 }
+
+/** Titre d'un signalement : qui signale qui (ou quoi). */
+export function reportTitle(r: Pick<Report, "kind" | "source" | "reporter_name" | "reported_name">): string {
+  if (r.source === "auto") return `Message de ${r.reported_name} repéré automatiquement`;
+  if (r.kind === "listing") return `${r.reporter_name ?? "Un membre"} signale l'annonce de ${r.reported_name}`;
+  return `${r.reporter_name ?? "Un membre"} signale ${r.reported_name}`;
+}
+
+/** Vrai si le membre visé est suspendu en ce moment. */
+export const isSuspendedNow = (until: string | null) => !!until && new Date(until).getTime() > Date.now();

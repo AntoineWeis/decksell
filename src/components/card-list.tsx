@@ -1,8 +1,9 @@
 import Image from "next/image";
 import { formatEur, type PricedLine } from "@/lib/pricing";
-import { CONDITIONS } from "@/lib/listings";
+import { CONDITIONS, smallImage } from "@/lib/listings";
 import { CONDITION_SHORT, CONDITION_TONE, LANGUAGES, detailKey, type CardDetail } from "@/lib/card-details";
 import { TYPE_GROUPS, typeGroup } from "@/lib/deck-stats";
+import { groupAnchor } from "./card-types";
 
 const RARITY_LABEL: Record<string, string> = {
   common: "Commune",
@@ -28,6 +29,7 @@ export function CardList({
   previewSide = "left",
   details,
   groupByType = false,
+  id,
 }: {
   title: string;
   lines: PricedLine[];
@@ -38,6 +40,8 @@ export function CardList({
   previewSide?: "left" | "right";
   /** Regroupe les cartes par type, façon Moxfield (créatures, éphémères, terrains…), triées par valeur dans chaque groupe. */
   groupByType?: boolean;
+  /** Ancre de la section (ex. « type-side » pour la réserve). */
+  id?: string;
 }) {
   if (lines.length === 0) return null;
   const count = lines.reduce((n, l) => n + l.quantity, 0);
@@ -57,7 +61,7 @@ export function CardList({
     />
   );
   return (
-    <section className="rounded-xl border border-line bg-surface">
+    <section id={id} className="scroll-mt-20 rounded-xl border border-line bg-surface">
       <header className="flex items-baseline justify-between gap-4 px-4 pb-3 pt-4 sm:px-5">
         <h2 className="text-lg font-semibold">
           {title} <span className="ml-1 text-sm font-normal text-muted">{count} cartes</span>
@@ -72,7 +76,7 @@ export function CardList({
       </div>
       {groups.map((g) =>
         g.label ? (
-          <div key={g.key} className="border-b border-line last:border-b-0">
+          <div key={g.key} id={groupAnchor(g.key)} className="scroll-mt-20 border-b border-line last:border-b-0">
             <h3 className="flex items-baseline justify-between gap-4 border-b border-line px-4 pb-1.5 pt-3 text-sm font-semibold sm:px-5">
               <span>
                 {g.label} <span className="ml-0.5 font-normal tabular-nums text-muted">{g.lines.reduce((n, l) => n + l.quantity, 0)}</span>
@@ -113,16 +117,20 @@ function CardRow({
       <span className="w-6 shrink-0 text-right text-sm font-medium tabular-nums text-muted">{line.quantity}</span>
 
       <div className="relative h-[42px] w-[30px] shrink-0 overflow-hidden rounded-[3px] bg-sunken">
-        {card?.imageUrl && <Image src={card.imageUrl} alt="" fill sizes="30px" unoptimized className="object-cover" />}
+        {/* Miniature : petite image Scryfall ; la grande ne sert qu'à l'aperçu au survol. */}
+        {card?.imageUrl && <Image src={smallImage(card.imageUrl)!} alt="" fill sizes="30px" unoptimized className="object-cover" />}
       </div>
 
-      {/* Aperçu agrandi au survol (écrans larges), ouvert du côté où il y a de la place. */}
+      {/* Aperçu agrandi au survol (écrans larges), ouvert du côté où il y a de la place.
+          Image de fond : le navigateur ne la télécharge qu'au survol (une <img> masquée se charge quand même). */}
       {card?.imageUrl && (
-        <div className={`pointer-events-none absolute top-1/2 z-20 hidden w-[244px] -translate-y-1/2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 sm:left-1/2 sm:block ${
+        <div
+          aria-hidden
+          style={{ "--preview": `url("${card.imageUrl}")` } as React.CSSProperties}
+          className={`pointer-events-none absolute top-1/2 z-20 hidden aspect-[244/340] w-[244px] -translate-y-1/2 rounded-[12px] bg-cover shadow-2xl sm:left-1/2 sm:group-hover:block sm:group-hover:[background-image:var(--preview)] ${
             previewSide === "left" ? "lg:left-auto lg:right-full lg:mr-4" : "lg:left-full lg:ml-4"
-          }`}>
-          <Image src={card.imageUrl} alt={card.name} width={244} height={340} unoptimized className="rounded-[12px] shadow-2xl" />
-        </div>
+          }`}
+        />
       )}
 
       <div className="min-w-0 flex-1">

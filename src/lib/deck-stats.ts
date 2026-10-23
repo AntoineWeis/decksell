@@ -140,3 +140,18 @@ export function typeGroup(typeLine: string | null | undefined): TypeGroupKey {
   const types = new Set(typeLine.split(" // ")[0].split("—")[0].trim().split(/\s+/));
   return GROUP_PRIORITY.find((t) => types.has(t)) ?? "Other";
 }
+
+/**
+ * Pour chaque type compté, le groupe de la liste où le trouver, s'il existe :
+ * le groupe du même nom dans le principal, ou la réserve pour le compagnon.
+ */
+export function typeTargets(estimate: Estimate): Partial<Record<CardTypeKey, TypeGroupKey | "side">> {
+  const groups = new Set(estimate.lines.filter((l) => l.board === "main").map((l) => typeGroup(l.card?.typeLine)));
+  const out: Partial<Record<CardTypeKey, TypeGroupKey | "side">> = {};
+  for (const t of CARD_TYPES) {
+    if (t.key === "Companion") {
+      if (estimate.lines.some((l) => l.board === "side")) out.Companion = "side";
+    } else if (groups.has(t.key)) out[t.key] = t.key;
+  }
+  return out;
+}

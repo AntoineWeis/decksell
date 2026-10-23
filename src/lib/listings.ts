@@ -85,12 +85,22 @@ export type PublicListing = Omit<Listing, "sold_cents" | "sold_at"> & {
     avatar_url: string | null;
     moxfield_url: string | null;
     archidekt_url: string | null;
+    /** Localisation et remise (absentes tant que le schéma n'est pas à jour). */
+    department?: string | null;
+    city?: string | null;
+    hand_delivery?: boolean | null;
+    ships?: boolean | null;
   } | null;
 };
 
 /** Illustration seule (art crop) à partir de l'image Scryfall « normal » d'une carte. */
 export function artCrop(imageUrl: string | null): string | null {
   return imageUrl ? imageUrl.replace("/normal/", "/art_crop/") : null;
+}
+
+/** Petite image Scryfall (146 × 204, ~15 Ko au lieu de ~110 Ko) pour les miniatures. */
+export function smallImage(imageUrl: string | null): string | null {
+  return imageUrl ? imageUrl.replace("/normal/", "/small/") : null;
 }
 
 /** Colonnes sélectionnées pour une annonce. */

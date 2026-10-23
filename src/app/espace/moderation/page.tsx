@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
-import { REPORT_STATUSES, REPORT_STATUS_STYLE as STATUS_STYLE, isAdmin, listReports, type ReportStatus } from "@/lib/moderation";
+import { REPORT_STATUSES, REPORT_STATUS_STYLE as STATUS_STYLE, isAdmin, listReports, type ReportStatus, reportTitle } from "@/lib/moderation";
 import { shortDate } from "@/lib/message-dates";
 
 export const metadata: Metadata = { title: "Modération", robots: { index: false } };
@@ -38,7 +38,8 @@ async function Reports({ searchParams }: { searchParams: SearchParams }) {
       <div>
         <h2 className="font-semibold">Signalements</h2>
         <p className="text-sm text-muted">
-          Conversations signalées par les membres. Ouvre un signalement pour lire l&apos;échange et le traiter.
+          Conversations et annonces signalées par les membres, et messages repérés automatiquement. Ouvre un
+          signalement pour vérifier et le traiter.
         </p>
       </div>
 
@@ -70,7 +71,10 @@ async function Reports({ searchParams }: { searchParams: SearchParams }) {
               <Link href={`/espace/moderation/${r.id}`} className="block px-4 py-3.5 transition hover:bg-sunken sm:px-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-semibold">
-                    {r.reporter_name} signale {r.reported_name}
+                    {reportTitle(r)}
+                    {r.source === "auto" && (
+                      <span className="ml-2 rounded-md bg-warn-soft px-1.5 py-0.5 text-xs font-semibold text-warn">Auto</span>
+                    )}
                     <span className="ml-2 text-xs font-normal text-muted">
                       ({r.reported_role === "seller" ? "vendeur" : "acheteur"}) · {r.listing_title}
                     </span>
