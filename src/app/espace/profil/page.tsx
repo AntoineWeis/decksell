@@ -22,13 +22,13 @@ async function ProfileSection() {
     return <p className="rounded-2xl bg-danger-soft px-5 py-4 text-danger">Profil introuvable.</p>;
   }
   const supabase = await createSupabaseServer();
-  const { count } = await supabase
-    .from("listings")
-    .select("id", { count: "exact", head: true })
-    .eq("seller_id", user.id);
+  const [{ count }, { data: prefs }] = await Promise.all([
+    supabase.from("listings").select("id", { count: "exact", head: true }).eq("seller_id", user.id),
+    supabase.from("profiles").select("email_notifications").eq("id", user.id).maybeSingle(),
+  ]);
   return (
     <>
-      <ProfileForm profile={profile} email={user.email} />
+      <ProfileForm profile={profile} email={user.email} emailNotifications={prefs?.email_notifications ?? true} />
       <DeleteAccount listingCount={count ?? 0} />
     </>
   );

@@ -162,6 +162,7 @@ export async function updateProfile(_prev: FormState, formData: FormData): Promi
       display_name: displayName,
       moxfield_url: moxfield,
       archidekt_url: archidekt,
+      email_notifications: formData.get("email_notifications") === "on",
       updated_at: new Date().toISOString(),
     })
     .eq("id", user.id);

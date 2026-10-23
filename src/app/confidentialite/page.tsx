@@ -72,6 +72,10 @@ export default function PrivacyPage() {
             fois le deck vendu, le prix et la date de la vente ;
           </li>
           <li>
+            tes messages avec les autres membres, liés à une annonce, ainsi que les membres que tu bloques et les
+            conversations que tu signales ;
+          </li>
+          <li>
             des données techniques de connexion (date de création du compte, dernière connexion, adresse IP) conservées
             par le prestataire d&apos;authentification pour sécuriser les comptes.
           </li>
@@ -89,8 +93,14 @@ export default function PrivacyPage() {
             : exécution du contrat.
           </li>
           <li>
+            <strong>Mettre en relation acheteurs et vendeurs</strong> par la messagerie, liée à une annonce :
+            exécution du contrat. Les messages ne sont lus que par les deux participants. decksell n&apos;y accède
+            qu&apos;en cas de signalement, pour traiter le problème signalé.
+          </li>
+          <li>
             <strong>T&apos;envoyer les emails du service</strong> (confirmation d&apos;inscription, lien de nouveau mot
-            de passe), jamais d&apos;email commercial : exécution du contrat.
+            de passe, alerte de nouveau message que tu peux désactiver dans ton profil), jamais d&apos;email
+            commercial : exécution du contrat.
           </li>
           <li>
             <strong>Sécuriser le site</strong> et prévenir les abus, grâce aux journaux techniques des prestataires :
@@ -102,7 +112,8 @@ export default function PrivacyPage() {
       <Section n={4} id="visibilite" title="Ce qui est public">
         <p>
           Sur une annonce en vente ou réservée, tout visiteur voit son contenu ainsi que ton pseudo, ta photo et tes
-          liens Moxfield et Archidekt. <strong>Ton adresse email n&apos;est jamais affichée.</strong> Une annonce
+          liens Moxfield et Archidekt. <strong>Ton adresse email n&apos;est jamais affichée</strong>, pas même aux
+          membres avec qui tu échanges des messages. Une annonce
           retirée ou vendue n&apos;apparaît plus dans la liste publique.
         </p>
       </Section>
@@ -122,12 +133,16 @@ export default function PrivacyPage() {
             pages.
           </li>
           <li>
+            <strong>Resend</strong> : envoi des alertes de nouveau message. Il reçoit ton adresse email, le pseudo de
+            l&apos;expéditeur et le titre de l&apos;annonce, jamais le texte des messages.
+          </li>
+          <li>
             <strong>Scryfall</strong> : les images de cartes et les symboles de mana sont chargés depuis ses serveurs,
             qui reçoivent donc ton adresse IP. Aucune donnée de compte ne lui est envoyée.
           </li>
         </ul>
         <p>
-          Supabase et Vercel sont des sociétés américaines : certaines données peuvent être traitées hors de
+          Supabase, Vercel et Resend sont des sociétés américaines : certaines données peuvent être traitées hors de
           l&apos;Union européenne, avec les garanties prévues par le RGPD, comme les clauses contractuelles types de la
           Commission européenne.
         </p>
@@ -138,6 +153,10 @@ export default function PrivacyPage() {
           <li>
             <strong>Compte, profil, photo et annonces</strong> : tant que ton compte existe. Ils sont effacés dès que tu
             le supprimes.
+          </li>
+          <li>
+            <strong>Messages</strong> : tant que l&apos;annonce et les comptes des deux participants existent. Ils sont
+            effacés quand l&apos;un des deux supprime son compte ou quand le vendeur supprime l&apos;annonce.
           </li>
           <li>
             <strong>Journaux techniques</strong> des prestataires : selon leurs propres durées, limitées à ce qui est

@@ -26,7 +26,15 @@ async function toSquareWebp(file: File, size = 256): Promise<Blob> {
   );
 }
 
-export function ProfileForm({ profile, email }: { profile: Profile; email: string }) {
+export function ProfileForm({
+  profile,
+  email,
+  emailNotifications,
+}: {
+  profile: Profile;
+  email: string;
+  emailNotifications: boolean;
+}) {
   const [state, action, saving] = useActionState<FormState, FormData>(updateProfile, { status: "idle" });
   const [avatarMsg, setAvatarMsg] = useState<FormState>({ status: "idle" });
   const [uploading, startUpload] = useTransition();
@@ -109,6 +117,21 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
           />
         </label>
         <p className="text-xs text-muted">Ces liens seront visibles par les acheteurs sur tes annonces.</p>
+
+        <label className="flex items-start gap-3 border-t border-line pt-4">
+          <input
+            type="checkbox"
+            name="email_notifications"
+            defaultChecked={emailNotifications}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
+          />
+          <span>
+            <span className="block text-sm font-medium">Recevoir les notifications de messages par email</span>
+            <span className="block text-xs text-muted">
+              Un seul email par conversation tant que tu ne l&apos;as pas ouverte, sans le texte du message.
+            </span>
+          </span>
+        </label>
 
         <div className="flex items-center gap-3">
           <button

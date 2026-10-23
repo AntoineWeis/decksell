@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { EspaceTabs } from "@/components/espace-tabs";
 import { signOut } from "@/app/auth-actions";
+import { getUnreadCount } from "@/lib/messaging";
 
 export default function EspaceLayout({ children }: LayoutProps<"/espace">) {
   return (
@@ -8,7 +9,7 @@ export default function EspaceLayout({ children }: LayoutProps<"/espace">) {
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h1 className="display text-3xl sm:text-4xl">Mon espace</h1>
-          <p className="mt-1 text-muted">Tes decks en vente et ton profil.</p>
+          <p className="mt-1 text-muted">Tes decks en vente, tes messages et ton profil.</p>
         </div>
         <form action={signOut}>
           <button type="submit" className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-sunken hover:text-foreground">
@@ -18,9 +19,13 @@ export default function EspaceLayout({ children }: LayoutProps<"/espace">) {
       </div>
       {/* Les onglets lisent l'adresse : à part, pour les pages à adresse variable. */}
       <Suspense fallback={<div className="h-[42px] border-b border-line" />}>
-        <EspaceTabs />
+        <TabsWithUnread />
       </Suspense>
       <div className="pt-6">{children}</div>
     </main>
   );
+}
+
+async function TabsWithUnread() {
+  return <EspaceTabs unread={await getUnreadCount()} />;
 }

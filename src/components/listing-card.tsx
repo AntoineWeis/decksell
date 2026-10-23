@@ -137,7 +137,7 @@ export function ListingCard({ listing: l, archetypes }: { listing: Listing; arch
           type="button"
           disabled={deleting}
           onClick={() => {
-            if (confirm(`Supprimer l'annonce « ${l.title} » ? Cette action est définitive.`)) {
+            if (confirm(`Supprimer l'annonce « ${l.title} » ? Ses conversations avec les acheteurs seront aussi effacées. Cette action est définitive.`)) {
               startDelete(async () => {
                 const res = await deleteListing(l.id);
                 if (res.status === "error") toast("error", res.message);

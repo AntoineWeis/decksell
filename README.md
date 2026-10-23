@@ -94,6 +94,8 @@ npm install
    | `NEXT_PUBLIC_SUPABASE_URL` | Supabase › Connect | Adresse du projet |
    | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Settings › API Keys | Clé publique (navigateur) |
    | `SUPABASE_SECRET_KEY` | Settings › API Keys | Clé secrète, **serveur uniquement** |
+   | `RESEND_API_KEY` | resend.com › API Keys | Emails de nouveau message (facultatif) |
+   | `EMAIL_FROM` | Adresse d'un domaine vérifié chez Resend | Expéditeur, ex. `decksell <notifications@ton-domaine.fr>` |
 
 2. Dans Supabase › **SQL Editor**, exécute tout le fichier [`supabase/schema.sql`](supabase/schema.sql). Il est
    réexécutable sans risque après chaque mise à jour.

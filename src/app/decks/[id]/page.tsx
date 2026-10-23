@@ -8,6 +8,7 @@ import { ListingAside } from "@/components/listing-aside";
 import { ManaCurveCard } from "@/components/mana-curve";
 import { manaCurve } from "@/lib/deck-stats";
 import { DeckTags } from "@/components/deck-tags";
+import { ContactSeller } from "@/components/contact-seller";
 
 import { CONDITIONS } from "@/lib/listings";
 import { formatEur } from "@/lib/pricing";
@@ -72,9 +73,10 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
         <div className="lg:order-2">
           <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents}
           stats={<ManaCurveCard curve={manaCurve(estimate)} />}>
-            <p className="mt-4 rounded-lg bg-brand-soft px-3 py-2 text-sm text-link">
-              La prise de contact avec le vendeur arrive bientôt sur decksell.
-            </p>
+            {/* Lit la session : à part, pour ne pas retarder le reste de l'annonce. */}
+            <Suspense fallback={<div className="mt-4 h-11 animate-pulse rounded-xl bg-sunken" />}>
+              <ContactSeller listingId={listing.id} sellerId={listing.seller?.id ?? null} title={listing.title} />
+            </Suspense>
           </ListingAside>
         </div>
       </div>

@@ -51,6 +51,7 @@ export function DeleteAccount({ listingCount }: { listingCount: number }) {
                   : `Tes ${listingCount} annonces seront supprimées, y compris celles vendues ou réservées.`}
             </li>
             <li>Ton pseudo, ta photo et tes liens Moxfield et Archidekt disparaîtront du site.</li>
+            <li>Tes conversations seront effacées, pour toi comme pour les membres avec qui tu as échangé.</li>
             <li>Tu pourras recréer un compte plus tard avec la même adresse email.</li>
           </ul>
           <label className="block max-w-sm">
