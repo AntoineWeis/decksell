@@ -12,6 +12,8 @@ import { ManaCurveCard } from "@/components/mana-curve";
 import { manaCurve } from "@/lib/deck-stats";
 import { DeckTags } from "@/components/deck-tags";
 import { CardDetailsForm } from "@/components/card-details-form";
+import { DecklistEditor } from "@/components/decklist-editor";
+import { ListingIdentityForm } from "@/components/listing-identity-form";
 
 export const metadata: Metadata = { title: "Mon annonce" };
 
@@ -68,21 +70,27 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
         ) : (
           "Cette annonce n'est pas visible publiquement."
         )}{" "}
-        Statut, prix, couleurs et archétype se modifient depuis « Mes annonces » ; l&apos;état et la langue des cartes, ci-dessous.
+        Le nom, les couleurs, l&apos;état et la langue des cartes et la liste se modifient ci-dessous ; le statut, le
+        prix et l&apos;archétype depuis « Mes annonces ».
       </p>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:items-start">
         <div className="min-w-0 space-y-6">
+          <ListingIdentityForm
+            key={`${listing.title}|${(listing.colors ?? []).join("")}`}
+            listingId={listing.id}
+            title={listing.title}
+            colors={listing.colors ?? []}
+          />
           <CardDetailsForm
+            // Repart de zéro quand la liste change : les lignes ne sont plus les mêmes.
+            key={listing.decklist}
             listingId={listing.id}
             lines={estimate.lines.map(({ board, name, quantity }) => ({ board, name, quantity }))}
             initial={listing.card_details ?? []}
           />
           <DeckView estimate={estimate} pricesAsOf={pricesAsOf} details={listing.card_details} />
-          <details className="rounded-xl border border-line bg-surface px-5 py-3 text-sm">
-            <summary className="cursor-pointer font-medium">Liste au format texte</summary>
-            <pre className="mt-3 max-h-80 overflow-auto rounded-lg bg-sunken p-3 font-mono text-xs leading-5">{listing.decklist}</pre>
-          </details>
+          <DecklistEditor listingId={listing.id} decklist={listing.decklist} />
         </div>
         <ListingAside
           listing={listing}

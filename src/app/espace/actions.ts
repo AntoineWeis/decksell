@@ -3,7 +3,8 @@
 import { refresh } from "next/cache";
 import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
-import { parseEur } from "@/lib/pricing";
+import { buildEstimate, parseEur, starCard } from "@/lib/pricing";
+import { lookupDeckPrices } from "@/lib/estimate";
 import { CONDITIONS, STATUSES, normalizeColors, parsePercent, type Condition, type ListingStatus } from "@/lib/listings";
 import { parseDecklist } from "@/lib/decklist";
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
@@ -116,6 +117,92 @@ export async function updateCardDetails(id: string, _prev: FormState, formData: 
 
   refresh();
   return { status: "saved" };
+}
+
+/** Nom et couleurs d'une annonce, depuis sa page de gestion. */
+export async function updateListingIdentity(id: string, _prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await getUser();
+  if (!user) return NOT_LOGGED;
+
+  const title = str(formData.get("title"));
+  if (title.length < 3 || title.length > 80) return { status: "error", message: "Le nom doit faire entre 3 et 80 caractères." };
+  const colors = normalizeColors(formData.getAll("colors"));
+  if (colors.length === 0) return { status: "error", message: "Coche au moins une couleur du deck." };
+
+  const supabase = await createSupabaseServer();
+  const { data, error } = await supabase
+    .from("listings")
+    .update({ title, colors, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("seller_id", user.id)
+    .select("id");
+  if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };
+  if (!data?.length) return { status: "error", message: "Annonce introuvable." };
+
+  refresh();
+  return { status: "saved" };
+}
+
+export type DecklistState = FormState | { status: "saved"; ignored: number };
+
+/**
+ * Nouvelle liste de cartes : l'estimation, le nombre de cartes et la carte phare sont
+ * recalculés. L'état et la langue des cartes conservées sont gardés ; les nouvelles
+ * cartes prennent l'état principal de l'annonce et l'anglais.
+ */
+export async function updateDecklist(id: string, _prev: DecklistState, formData: FormData): Promise<DecklistState> {
+  const user = await getUser();
+  if (!user) return NOT_LOGGED;
+
+  const decklist = str(formData.get("decklist"));
+  if (decklist === "") return { status: "error", message: "La liste est vide." };
+  if (decklist.length > 20_000) return { status: "error", message: "Liste trop longue (20 000 caractères max)." };
+  const deck = parseDecklist(decklist);
+  const cardCount = deck.mainCount + deck.sideCount;
+  if (cardCount === 0) return { status: "error", message: "Aucune carte reconnue dans la liste." };
+
+  const supabase = await createSupabaseServer();
+  const { data: current } = await supabase
+    .from("listings")
+    .select("condition, card_details")
+    .eq("id", id)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!current) return { status: "error", message: "Annonce introuvable." };
+
+  let estimate;
+  try {
+    const { prices } = await lookupDeckPrices(deck);
+    estimate = buildEstimate(deck, prices);
+  } catch (e) {
+    console.error("Liste : estimation impossible", e);
+    return { status: "error", message: "Les prix sont momentanément indisponibles. Réessaie dans un instant." };
+  }
+
+  const fallback: Condition = current.condition in CONDITIONS ? (current.condition as Condition) : "near_mint";
+  const details = buildDetails(deck, current.card_details ?? [], { condition: fallback, lang: "en" });
+  const star = starCard(estimate);
+
+  const { error } = await supabase
+    .from("listings")
+    .update({
+      decklist,
+      card_count: cardCount,
+      estimated_cents: estimate.totalCents,
+      estimate_complete: estimate.complete,
+      card_details: details,
+      condition: dominantCondition(details, fallback),
+      french_percent: frenchPercentOf(details),
+      // Carte phare recalculée ; on garde l'ancienne si aucune carte n'a d'image.
+      ...(star?.imageUrl ? { cover_card_name: star.name, cover_image_url: star.imageUrl } : {}),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("seller_id", user.id);
+  if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };
+
+  refresh();
+  return { status: "saved", ignored: deck.errors.length };
 }
 
 export async function deleteListing(id: string): Promise<FormState> {
