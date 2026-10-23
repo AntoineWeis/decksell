@@ -37,6 +37,7 @@ export function DeckView({
         totalCents={estimate.mainCents}
         previewSide="right"
         details={byKey}
+        groupByType
       />
       <CardList
         title="Réserve"

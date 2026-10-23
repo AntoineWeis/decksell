@@ -111,3 +111,32 @@ export function cardTypeCounts(estimate: Estimate): CardTypeCounts | null {
   }
   return known > 0 ? counts : null;
 }
+
+/** Groupes de la liste, façon Moxfield : chaque carte va dans un seul groupe, dans cet ordre d'affichage. */
+export const TYPE_GROUPS = [
+  { key: "Planeswalker", label: "Planeswalkers" },
+  { key: "Creature", label: "Créatures" },
+  { key: "Sorcery", label: "Rituels" },
+  { key: "Instant", label: "Éphémères" },
+  { key: "Artifact", label: "Artefacts" },
+  { key: "Enchantment", label: "Enchantements" },
+  { key: "Battle", label: "Batailles" },
+  { key: "Land", label: "Terrains" },
+  { key: "Other", label: "Autres" },
+] as const;
+
+export type TypeGroupKey = (typeof TYPE_GROUPS)[number]["key"];
+
+/** Quand une carte a plusieurs types, le premier de cette liste l'emporte. */
+const GROUP_PRIORITY: TypeGroupKey[] = ["Creature", "Planeswalker", "Battle", "Land", "Instant", "Sorcery", "Artifact", "Enchantment"];
+
+/**
+ * Groupe d'une carte d'après sa face avant : « Artifact Creature » → créatures,
+ * « Enchantment Land » (Urza's Saga) → terrains, « Instant // Land » → éphémères.
+ * Type inconnu (carte introuvable) → « Other ».
+ */
+export function typeGroup(typeLine: string | null | undefined): TypeGroupKey {
+  if (!typeLine) return "Other";
+  const types = new Set(typeLine.split(" // ")[0].split("—")[0].trim().split(/\s+/));
+  return GROUP_PRIORITY.find((t) => types.has(t)) ?? "Other";
+}

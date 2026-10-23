@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cardTypeCounts, isLand, manaCurve } from "../src/lib/deck-stats.ts";
+import { cardTypeCounts, isLand, manaCurve, typeGroup } from "../src/lib/deck-stats.ts";
 import type { Estimate, PricedLine } from "../src/lib/pricing.ts";
 
 function line(name: string, quantity: number, cmc: number | null, typeLine: string | null, board: "main" | "side" = "main"): PricedLine {
@@ -69,4 +69,16 @@ test("cardTypeCounts compte chaque type du principal, face avant, sous-types ign
     Creature: 5, Planeswalker: 2, Sorcery: 0, Instant: 6, Artifact: 4, Enchantment: 2, Land: 18, Companion: 1,
   });
   assert.equal(cardTypeCounts(est([line("Inconnue", 2, null, null)])), null);
+});
+
+test("typeGroup range chaque carte dans un seul groupe, d'après la face avant", () => {
+  assert.equal(typeGroup("Artifact Creature — Thopter"), "Creature");
+  assert.equal(typeGroup("Enchantment Land — Urza's Saga"), "Land");
+  assert.equal(typeGroup("Artifact Land"), "Land");
+  assert.equal(typeGroup("Instant // Land"), "Instant");
+  assert.equal(typeGroup("Legendary Planeswalker — Teferi"), "Planeswalker");
+  assert.equal(typeGroup("Kindred Sorcery — Eldrazi"), "Sorcery");
+  assert.equal(typeGroup("Legendary Artifact"), "Artifact");
+  assert.equal(typeGroup("Enchantment — Saga"), "Enchantment");
+  assert.equal(typeGroup(null), "Other");
 });

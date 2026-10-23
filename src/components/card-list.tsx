@@ -2,6 +2,7 @@ import Image from "next/image";
 import { formatEur, type PricedLine } from "@/lib/pricing";
 import { CONDITIONS } from "@/lib/listings";
 import { CONDITION_SHORT, CONDITION_TONE, LANGUAGES, detailKey, type CardDetail } from "@/lib/card-details";
+import { TYPE_GROUPS, typeGroup } from "@/lib/deck-stats";
 
 const RARITY_LABEL: Record<string, string> = {
   common: "Commune",
@@ -26,6 +27,7 @@ export function CardList({
   totalCents,
   previewSide = "left",
   details,
+  groupByType = false,
 }: {
   title: string;
   lines: PricedLine[];
@@ -34,10 +36,26 @@ export function CardList({
   details?: Map<string, CardDetail>;
   /** Côté où s'ouvre l'aperçu agrandi sur grand écran (là où il y a de la place). */
   previewSide?: "left" | "right";
+  /** Regroupe les cartes par type, façon Moxfield (créatures, éphémères, terrains…), triées par valeur dans chaque groupe. */
+  groupByType?: boolean;
 }) {
   if (lines.length === 0) return null;
   const count = lines.reduce((n, l) => n + l.quantity, 0);
   const sorted = [...lines].sort(byValue);
+  const groups = groupByType
+    ? TYPE_GROUPS.map((g) => ({ ...g, lines: sorted.filter((l) => typeGroup(l.card?.typeLine) === g.key) })).filter((g) => g.lines.length > 0)
+    : [{ key: "all", label: null, lines: sorted }];
+  // Ordre d'apparition des lignes : de la moins chère à la plus chère, sur toute la liste.
+  const rank = new Map(sorted.map((l, i) => [l, sorted.length - 1 - i]));
+  const row = (l: PricedLine) => (
+    <CardRow
+      key={`${l.board}-${l.name}`}
+      line={l}
+      delayMs={Math.min(rank.get(l)! * 20, 500)}
+      previewSide={previewSide}
+      detail={details?.get(detailKey(l.board, l.name))}
+    />
+  );
   return (
     <section className="rounded-xl border border-line bg-surface">
       <header className="flex items-baseline justify-between gap-4 px-4 pb-3 pt-4 sm:px-5">
@@ -52,18 +70,23 @@ export function CardList({
         <span className="flex-1">Carte</span>
         <span>Prix</span>
       </div>
-      <ul className="divide-y divide-line">
-        {sorted.map((l, i) => (
-          // Les lignes apparaissent de la moins chère à la plus chère.
-          <CardRow
-            key={`${l.board}-${l.name}`}
-            line={l}
-            delayMs={Math.min((sorted.length - 1 - i) * 20, 500)}
-            previewSide={previewSide}
-            detail={details?.get(detailKey(l.board, l.name))}
-          />
-        ))}
-      </ul>
+      {groups.map((g) =>
+        g.label ? (
+          <div key={g.key} className="border-b border-line last:border-b-0">
+            <h3 className="flex items-baseline justify-between gap-4 border-b border-line px-4 pb-1.5 pt-3 text-sm font-semibold sm:px-5">
+              <span>
+                {g.label} <span className="ml-0.5 font-normal tabular-nums text-muted">{g.lines.reduce((n, l) => n + l.quantity, 0)}</span>
+              </span>
+              <span className="font-normal tabular-nums text-muted">{formatEur(g.lines.reduce((n, l) => n + (l.lineCents ?? 0), 0))}</span>
+            </h3>
+            <ul className="divide-y divide-line">{g.lines.map(row)}</ul>
+          </div>
+        ) : (
+          <ul key={g.key} className="divide-y divide-line">
+            {g.lines.map(row)}
+          </ul>
+        ),
+      )}
     </section>
   );
 }
