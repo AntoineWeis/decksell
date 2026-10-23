@@ -7,7 +7,7 @@ export default function NotFound() {
   return (
     <StatusPage
       code="Erreur 404"
-      title="Cette page est introuvable"
+      title="Mulligan ! Cette page n'existe pas"
       actions={
         <>
           <PrimaryLink href="/decks">Voir les decks en vente</PrimaryLink>

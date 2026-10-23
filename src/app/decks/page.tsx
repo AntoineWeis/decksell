@@ -95,7 +95,9 @@ async function ListingGrid({ searchParams }: { searchParams: SearchParams }) {
       <DeckFilters query={query} archetypeCounts={archetypeCounts} resultCount={matching.length} />
       {shown.length === 0 ? (
         <div className="rounded-xl border border-dashed border-line px-6 py-14 text-center">
-          <p className="font-semibold">Aucun deck ne correspond à ces filtres</p>
+          <p className="font-semibold">
+            {query.card ? "Aucun deck ne contient cette carte… pour l'instant" : "Aucun deck ne correspond à ces filtres… pour l'instant"}
+          </p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             {query.card
               ? "Vérifie l'orthographe de la carte, ou retire un filtre pour voir plus de decks."

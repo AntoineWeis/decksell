@@ -51,7 +51,7 @@ export function OfferCard({
             <button
               type="button"
               disabled={pending}
-              onClick={() => run(() => respondOffer(offer.id, true), "Offre acceptée")}
+              onClick={() => run(() => respondOffer(offer.id, true), "Deal ! Offre acceptée")}
               className="h-9 flex-1 rounded-lg bg-accent px-3 text-sm font-semibold text-on-accent hover:bg-accent-hover disabled:opacity-50"
             >
               Accepter

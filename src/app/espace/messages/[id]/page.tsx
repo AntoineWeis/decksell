@@ -100,7 +100,7 @@ async function Conversation({ params }: Props) {
 
       {accepted && (
         <p className="rounded-lg border border-ok/30 bg-ok-soft px-4 py-3 text-sm text-ok">
-          <strong className="font-semibold">Offre acceptée : {formatEur(accepted.amount_cents)}.</strong>{" "}
+          <strong className="font-semibold">Deal ! Offre acceptée à {formatEur(accepted.amount_cents)}.</strong>{" "}
           {c.role === "seller" ? (
             <>
               Convenez de la remise et du paiement ici. Pense à réserver l&apos;annonce pour {c.other_name} (bouton

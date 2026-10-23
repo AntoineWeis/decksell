@@ -9,6 +9,8 @@ import { SAMPLE_DECK } from "@/lib/sample-deck";
 import type { Archetype } from "@/lib/listings";
 import { CardList } from "./card-list";
 import { SellPanel } from "./sell-panel";
+import { CountUp } from "./count-up";
+import { TiltCard } from "./tilt";
 
 const DRAFT_KEY = "decksell:draft";
 
@@ -272,9 +274,9 @@ function Receipt({ estimate, pricesAsOf }: { estimate: Estimate; pricesAsOf: str
     <section className="grid gap-6 rounded-xl border border-line bg-surface p-5 sm:p-6 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
       {star?.card?.imageUrl && (
         <figure className="flip-in mx-auto w-[160px] [animation-delay:600ms] sm:w-[180px]">
-          <div className="relative aspect-[488/680] overflow-hidden rounded-[4.75%/3.5%] shadow-[0_18px_40px_-16px_rgba(0,0,0,0.55)] ring-[3px] ring-reveal">
+          <TiltCard className="relative aspect-[488/680] overflow-hidden rounded-[4.75%/3.5%] shadow-[0_18px_40px_-16px_rgba(0,0,0,0.55)] ring-[3px] ring-reveal">
             <Image src={star.card.imageUrl} alt={star.card.name} fill sizes="180px" unoptimized className="object-cover" />
-          </div>
+          </TiltCard>
           <figcaption className="mt-3 text-center text-sm">
             <span className="font-semibold text-reveal">Carte phare</span>
             <span className="block text-muted">
@@ -288,7 +290,7 @@ function Receipt({ estimate, pricesAsOf }: { estimate: Estimate; pricesAsOf: str
       <div>
         <p className="text-lg text-muted">Ce deck vaut environ</p>
         <p className="display mt-1 text-[clamp(2.5rem,5vw,3.75rem)] tabular-nums">
-          {formatEur(estimate.totalCents)}
+          <CountUp cents={estimate.totalCents} />
           {!estimate.complete && <span className="ml-1 text-warn">+</span>}
         </p>
         <p className="mt-4 max-w-[60ch] leading-relaxed">
