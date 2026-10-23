@@ -103,13 +103,17 @@ function CardRow({
       )}
 
       <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-2 font-medium">
-          {rarity && (
-            <span className={`gem gem-${rarity}`} title={RARITY_LABEL[rarity] ?? rarity}>
-              <span className="sr-only">{RARITY_LABEL[rarity] ?? rarity}</span>
-            </span>
-          )}
-          <span className="truncate">{line.name}</span>
+        {/* Le nom passe à la ligne plutôt que d'être coupé ; les badges suivent dessous s'il le faut. */}
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-medium leading-snug">
+          {/* Le losange de rareté reste collé au début du nom, même quand celui-ci passe à la ligne. */}
+          <span className="min-w-0 break-words">
+            {rarity && (
+              <span className={`gem gem-${rarity} mr-2 align-[1px]`} title={RARITY_LABEL[rarity] ?? rarity}>
+                <span className="sr-only">{RARITY_LABEL[rarity] ?? rarity}</span>
+              </span>
+            )}
+            {line.name}
+          </span>
           {detail && (
             <span className="flex shrink-0 items-center gap-1 text-[11px] font-semibold tabular-nums">
               <span className="rounded bg-sunken px-1.5 py-0.5 text-muted" title={LANGUAGES[detail.lang].label}>

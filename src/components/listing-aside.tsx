@@ -16,6 +16,7 @@ export function ListingAside({
   todayCents,
   children,
   stats,
+  priceFirstOnMobile = false,
 }: {
   listing: Pick<
     Listing,
@@ -26,11 +27,18 @@ export function ListingAside({
   children?: React.ReactNode;
   /** Encadrés de statistiques affichés sous le prix (ex. courbe de mana). */
   stats?: React.ReactNode;
+  /**
+   * Sur mobile, place l'encadré du prix avant le contenu de la page (le reste suit).
+   * La page doit poser l'encadré dans une grille, via un parent en `contents lg:block`.
+   */
+  priceFirstOnMobile?: boolean;
 }) {
   const diff = todayCents > 0 ? Math.round(((l.asking_cents - todayCents) / todayCents) * 100) : null;
   return (
-    <aside className="space-y-4 lg:sticky lg:top-20">
-      <div className="rounded-xl border border-line bg-surface p-5">
+    // En mode « prix d'abord », l'encadré s'efface sur mobile : ses blocs deviennent des
+    // éléments de la grille de la page, que l'on peut ordonner autour de la liste de cartes.
+    <aside className={priceFirstOnMobile ? "contents lg:sticky lg:top-20 lg:block lg:space-y-4" : "space-y-4 lg:sticky lg:top-20"}>
+      <div className={`rounded-xl border border-line bg-surface p-5 ${priceFirstOnMobile ? "order-first lg:order-none" : ""}`}>
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-muted">Prix demandé</p>
           {l.status !== "active" && (
@@ -66,52 +74,54 @@ export function ListingAside({
         {children}
       </div>
 
-      {stats}
+      <div className="space-y-4">
+        {stats}
 
-      {seller && (
-        <div className="rounded-xl border border-line bg-surface p-5">
-          <p className="text-sm text-muted">Vendeur</p>
-          <p className="mt-2 flex items-center gap-3 font-semibold">
-            <Avatar name={seller.display_name} url={seller.avatar_url} size={36} />
-            {seller.id ? (
-              <Link href={`/vendeurs/${seller.id}`} className="hover:text-link hover:underline">
-                {seller.display_name}
-              </Link>
-            ) : (
-              seller.display_name
-            )}
-          </p>
-          {(seller.moxfield_url || seller.archidekt_url) && (
-            <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              {seller.moxfield_url && (
-                <a href={seller.moxfield_url} target="_blank" rel="noopener noreferrer nofollow" className="font-medium text-link hover:underline">
-                  Profil Moxfield ↗
-                </a>
-              )}
-              {seller.archidekt_url && (
-                <a href={seller.archidekt_url} target="_blank" rel="noopener noreferrer nofollow" className="font-medium text-link hover:underline">
-                  Profil Archidekt ↗
-                </a>
+        {seller && (
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <p className="text-sm text-muted">Vendeur</p>
+            <p className="mt-2 flex items-center gap-3 font-semibold">
+              <Avatar name={seller.display_name} url={seller.avatar_url} size={36} />
+              {seller.id ? (
+                <Link href={`/vendeurs/${seller.id}`} className="hover:text-link hover:underline">
+                  {seller.display_name}
+                </Link>
+              ) : (
+                seller.display_name
               )}
             </p>
-          )}
-          {seller.id && (
-            <Link
-              href={`/vendeurs/${seller.id}`}
-              className="mt-4 flex h-9 items-center justify-center rounded-lg border border-line text-sm font-medium transition hover:border-link/50 hover:text-link"
-            >
-              Voir ses decks en vente
-            </Link>
-          )}
-        </div>
-      )}
+            {(seller.moxfield_url || seller.archidekt_url) && (
+              <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                {seller.moxfield_url && (
+                  <a href={seller.moxfield_url} target="_blank" rel="noopener noreferrer nofollow" className="font-medium text-link hover:underline">
+                    Profil Moxfield ↗
+                  </a>
+                )}
+                {seller.archidekt_url && (
+                  <a href={seller.archidekt_url} target="_blank" rel="noopener noreferrer nofollow" className="font-medium text-link hover:underline">
+                    Profil Archidekt ↗
+                  </a>
+                )}
+              </p>
+            )}
+            {seller.id && (
+              <Link
+                href={`/vendeurs/${seller.id}`}
+                className="mt-4 flex h-9 items-center justify-center rounded-lg border border-line text-sm font-medium transition hover:border-link/50 hover:text-link"
+              >
+                Voir ses decks en vente
+              </Link>
+            )}
+          </div>
+        )}
 
-      {l.description && (
-        <div className="rounded-xl border border-line bg-surface p-5">
-          <p className="text-sm text-muted">Description</p>
-          <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">{l.description}</p>
-        </div>
-      )}
+        {l.description && (
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <p className="text-sm text-muted">Description</p>
+            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">{l.description}</p>
+          </div>
+        )}
+      </div>
     </aside>
   );
 }

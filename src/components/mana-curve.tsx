@@ -50,23 +50,26 @@ function Chart({ curve }: { curve: ManaCurve }) {
         </div>
       </div>
 
-      <table className="sr-only">
-        <caption>Nombre de cartes du deck principal par valeur de mana, terrains exclus</caption>
-        <thead>
-          <tr>
-            <th scope="col">Valeur de mana</th>
-            <th scope="col">Cartes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {curve.counts.map((n, i) => (
-            <tr key={CURVE_BUCKETS[i]}>
-              <th scope="row">{CURVE_BUCKETS[i]}</th>
-              <td>{n}</td>
+      {/* Un tableau ne se réduit pas à 1 px : on le masque dans un bloc, sinon la page déborde sur mobile. */}
+      <div className="sr-only">
+        <table>
+          <caption>Nombre de cartes du deck principal par valeur de mana, terrains exclus</caption>
+          <thead>
+            <tr>
+              <th scope="col">Valeur de mana</th>
+              <th scope="col">Cartes</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {curve.counts.map((n, i) => (
+              <tr key={CURVE_BUCKETS[i]}>
+                <th scope="row">{CURVE_BUCKETS[i]}</th>
+                <td>{n}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1 border-t border-line pt-3 text-sm text-muted">
         <span>

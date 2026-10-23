@@ -72,11 +72,12 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
         </div>
       </DeckBanner>
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-20 pt-6 sm:px-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:items-start">
-        <div className="min-w-0 lg:order-1">
+        <div className="min-w-0">
           <DeckView estimate={estimate} pricesAsOf={pricesAsOf} details={listing.card_details} />
         </div>
-        <div className="lg:order-2">
-          <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents}
+        {/* Sur mobile, le prix et le contact passent avant la liste de cartes (voir ListingAside). */}
+        <div className="contents lg:block">
+          <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents} priceFirstOnMobile
           stats={<>
             <CardTypesCard counts={cardTypeCounts(estimate)} />
             <ManaCurveCard curve={manaCurve(estimate)} />
