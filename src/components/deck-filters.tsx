@@ -4,7 +4,6 @@ import { MIN_CARD_QUERY, SORTS, decksHref, type DeckQuery, type SortKey } from "
 import { ManaSymbol } from "./mana";
 import { FiltersPanel } from "./filters-panel";
 import { CardSearchInput } from "./card-search-input";
-import { DEPARTMENTS } from "@/lib/departments";
 
 const ORDER = Object.keys(MANA_COLORS) as ManaColor[];
 
@@ -33,19 +32,17 @@ export function DeckFilters({
     query.colors.length +
     (query.archetype ? 1 : 0) +
     (query.card ? 1 : 0) +
-    (query.min != null || query.max != null ? 1 : 0) +
-    (query.department ? 1 : 0);
+    (query.min != null || query.max != null ? 1 : 0);
   const active = activeCount > 0;
   const summary = active ? `${activeCount} filtre${activeCount > 1 ? "s" : ""} · ${resultCount} deck${resultCount > 1 ? "s" : ""}` : `${resultCount} deck${resultCount > 1 ? "s" : ""}`;
   // Champs cachés qui gardent les autres filtres quand on envoie un des formulaires.
-  const keep = (except: "card" | "price" | "place") => (
+  const keep = (except: "card" | "price") => (
     <>
       {query.colors.length > 0 && <input type="hidden" name="c" value={query.colors.join("")} />}
       {query.archetype && <input type="hidden" name="a" value={query.archetype} />}
       {except !== "card" && query.card && <input type="hidden" name="carte" value={query.card} />}
       {except !== "price" && query.min != null && <input type="hidden" name="min" value={query.min} />}
       {except !== "price" && query.max != null && <input type="hidden" name="max" value={query.max} />}
-      {except !== "place" && query.department && <input type="hidden" name="dep" value={query.department} />}
       {query.sort !== "recent" && <input type="hidden" name="tri" value={query.sort} />}
     </>
   );
@@ -195,36 +192,6 @@ export function DeckFilters({
             </button>
           </div>
         </form>
-
-        {/* Lieu : département d'expédition du vendeur, formulaire GET qui garde les autres filtres */}
-        <form action="/decks" className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <label htmlFor="deck-dep" className="w-24 shrink-0 text-sm font-semibold">
-            Lieu
-          </label>
-          <div className="flex flex-wrap items-center gap-2">
-            {keep("place")}
-            <select
-              id="deck-dep"
-              name="dep"
-              defaultValue={query.department ?? ""}
-              className="h-9 max-w-56 rounded-lg border border-line bg-sunken px-2.5 text-sm outline-none focus:border-link focus:ring-2 focus:ring-link/25"
-            >
-              <option value="">Toute la France</option>
-              {Object.entries(DEPARTMENTS).map(([code, name]) => (
-                <option key={code} value={code}>
-                  {code} · {name}
-                </option>
-              ))}
-            </select>
-            <button
-              type="submit"
-              className="h-9 rounded-lg border border-line px-3 text-sm font-medium transition hover:border-link/50 hover:text-link"
-            >
-              Appliquer
-            </button>
-          </div>
-        </form>
-
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <p className="w-24 shrink-0 text-sm font-semibold">Trier par</p>
           <div className="flex flex-wrap gap-1.5">
@@ -256,7 +223,6 @@ export function DeckFilters({
             {query.min != null && query.max != null && ` entre ${query.min} et ${query.max} €`}
             {query.min != null && query.max == null && ` à partir de ${query.min} €`}
             {query.min == null && query.max != null && ` jusqu'à ${query.max} €`}
-          {query.department && ` · expédiés depuis le ${query.department} (${DEPARTMENTS[query.department]})`}
             {query.sort === "affaire" && " · du plus avantageux au moins avantageux par rapport à l'estimation"}
           </p>
           {active && (

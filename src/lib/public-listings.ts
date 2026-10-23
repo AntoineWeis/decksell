@@ -112,6 +112,9 @@ export type PublicSeller = {
   moxfield_url: string | null;
   archidekt_url: string | null;
   created_at: string;
+  /** Lieu d'expédition (absent tant que le schéma n'est pas à jour). */
+  department?: string | null;
+  city?: string | null;
 };
 
 /**
@@ -132,21 +135,17 @@ export const fetchPublicSeller = cache(async function fetchPublicSeller(
       .in("status", [...PUBLIC_STATUSES])
       .order("created_at", { ascending: false })
       .limit(100);
-  const [profile, firstListings] = await Promise.all([
-    admin
-      .from("profiles")
-      .select("id, display_name, avatar_url, moxfield_url, archidekt_url, created_at")
-      .eq("id", id)
-      .maybeSingle(),
-    sellerListings(SELECT),
-  ]);
+  const sellerProfile = (cols: string) => admin.from("profiles").select(cols).eq("id", id).maybeSingle();
+  const PROFILE = "id, display_name, avatar_url, moxfield_url, archidekt_url, created_at";
+  const [firstProfile, firstListings] = await Promise.all([sellerProfile(`${PROFILE}, department, city`), sellerListings(SELECT)]);
+  const profile = missingColumn(firstProfile.error) ? await sellerProfile(PROFILE) : firstProfile;
   const listings = missingColumn(firstListings.error) ? await sellerListings(LEGACY_SELECT) : firstListings;
   if (profile.error) throw new Error(`Lecture du vendeur impossible : ${profile.error.message}`);
   if (listings.error) throw new Error(`Lecture des annonces impossible : ${listings.error.message}`);
   const rows = visible((listings.data ?? []) as unknown as Row[]);
   if (!profile.data || rows.length === 0) return null;
   await fillMissingCovers(rows);
-  return { seller: profile.data as PublicSeller, listings: rows };
+  return { seller: profile.data as unknown as PublicSeller, listings: rows };
 });
 
 /** Recalcule l'estimation d'une decklist avec les prix du jour (lus en cache, une heure au plus). */

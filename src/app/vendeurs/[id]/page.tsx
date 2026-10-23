@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { fetchPublicSeller } from "@/lib/public-listings";
 import { formatEur } from "@/lib/pricing";
+import { formatLocation } from "@/lib/departments";
 import { Avatar } from "@/components/avatar";
 import { ListingTile } from "@/components/listing-tile";
 import { favoriteStateOf, getFavoriteIds } from "@/lib/favorites";
@@ -64,7 +65,10 @@ async function SellerContent({ params }: { params: Promise<{ id: string }> }) {
             <div className="min-w-0">
               <p className="text-sm text-banner-muted">Vendeur</p>
               <h1 className="display break-words text-3xl sm:text-4xl">{seller.display_name}</h1>
-              <p className="mt-1 text-sm text-banner-muted">Membre depuis {monthYear(seller.created_at)}</p>
+              <p className="mt-1 text-sm text-banner-muted">
+                Membre depuis {monthYear(seller.created_at)}
+                {formatLocation(seller.department, seller.city) && <> · Expédie depuis {formatLocation(seller.department, seller.city)}</>}
+              </p>
             </div>
           </div>
 

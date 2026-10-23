@@ -184,6 +184,17 @@ a {
     opacity: 0.5;
     cursor: not-allowed;
   }
+  /* Champs numériques (prix, pourcentages) : sans les flèches natives, peu lisibles et mal alignées.
+     Les flèches ↑ ↓ du clavier et la molette continuent d'ajuster la valeur. */
+  input[type="number"] {
+    appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+
   /* Variante pour une action lourde (ex. retirer une annonce). */
   input[type="checkbox"].checkbox-danger:checked {
     background: var(--danger);

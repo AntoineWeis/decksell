@@ -2,7 +2,6 @@
 // Fonctions pures : ni base, ni réseau. Testées dans tests/deck-index.test.ts.
 import { normalizeName, parseDecklist } from "./decklist.ts";
 import { normalizeColors, type ManaColor, type PublicListing } from "./listings.ts";
-import { isDepartment } from "./departments.ts";
 
 export const SORTS = {
   recent: "Plus récents",
@@ -24,8 +23,6 @@ export type DeckQuery = {
   max: number | null;
   /** Page affichée, à partir de 1. */
   page: number;
-  /** Département d'expédition du vendeur (code INSEE), ou null. */
-  department: string | null;
 };
 
 export const EMPTY_QUERY: DeckQuery = {
@@ -36,7 +33,6 @@ export const EMPTY_QUERY: DeckQuery = {
   min: null,
   max: null,
   page: 1,
-  department: null,
 };
 
 /** Decks affichés par page de l'index. */
@@ -69,7 +65,6 @@ export function readDeckQuery(sp: RawParams): DeckQuery {
   // Bornes inversées (« de 500 à 100 ») : on les remet dans l'ordre.
   if (min != null && max != null && min > max) [min, max] = [max, min];
   const page = Number(first(sp.page));
-  const dep = first(sp.dep);
   return {
     colors: normalizeColors(typeof c === "string" ? c.toUpperCase().split("") : []),
     archetype: typeof a === "string" && /^[a-z0-9-]{1,60}$/.test(a) ? a : null,
@@ -78,7 +73,6 @@ export function readDeckQuery(sp: RawParams): DeckQuery {
     min,
     max,
     page: Number.isInteger(page) && page > 1 ? Math.min(page, 10_000) : 1,
-    department: isDepartment(dep) ? dep : null,
   };
 }
 
@@ -93,7 +87,6 @@ export function decksHref(q: Partial<DeckQuery>): string {
   if (q.card) params.set("carte", q.card);
   if (q.min != null) params.set("min", String(q.min));
   if (q.max != null) params.set("max", String(q.max));
-  if (q.department) params.set("dep", q.department);
   if (q.sort && q.sort !== DEFAULT_SORT) params.set("tri", q.sort);
   if (q.page && q.page > 1) params.set("page", String(q.page));
   const s = params.toString();
@@ -142,7 +135,6 @@ export function filterListings(listings: PublicListing[], q: DeckQuery, aliases:
     if (q.archetype && l.archetype?.slug !== q.archetype) continue;
     if (q.min != null && l.asking_cents < q.min * 100) continue;
     if (q.max != null && l.asking_cents > q.max * 100) continue;
-    if (q.department && l.seller?.department !== q.department) continue;
     let hits: CardHit[] = [];
     // Recherche trop courte : ignorée (l'interface le signale) plutôt que de tout masquer.
     if (normalizeName(q.card).length >= MIN_CARD_QUERY) {
