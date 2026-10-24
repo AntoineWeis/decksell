@@ -5,6 +5,7 @@ import { parseDecklist, type ParsedDeck } from "./decklist.ts";
 import { buildEstimate, starCard, type Estimate } from "./pricing.ts";
 import { lookupDeckPrices, lookupDeckPricesCached } from "./estimate.ts";
 import { getSupabaseAdmin } from "./supabase-server.ts";
+import type { EarnedBadge } from "./badges.ts";
 import { LISTING_COLUMNS, PUBLIC_STATUSES, type PublicListing } from "./listings.ts";
 
 // Lecture publique des annonces. On passe par la clé secrète côté serveur, mais on ne
@@ -15,6 +16,11 @@ import { LISTING_COLUMNS, PUBLIC_STATUSES, type PublicListing } from "./listings
 const SELLER_BASE = "id, display_name, avatar_url, moxfield_url, archidekt_url, created_at";
 // Localisation et suspension (sections 17 et 19 du schéma). Base pas encore migrée : on relit sans.
 const SELECT = `${LISTING_COLUMNS}, meta_score, meta_status, meta_archetype, seller:profiles!listings_seller_id_fkey(${SELLER_BASE}, department, city, suspended_until)`;
+// Page d'un deck : badges et nombre de decks en vente du vendeur dans la même requête.
+const DETAIL_SELECT = SELECT.replace(
+  "suspended_until)",
+  "suspended_until, user_badges(badge, level), active:listings!listings_seller_id_fkey(count))",
+);
 const LEGACY_SELECT = `${LISTING_COLUMNS}, seller:profiles!listings_seller_id_fkey(${SELLER_BASE})`;
 
 type Row = PublicListing & { seller: (PublicListing["seller"] & { suspended_until?: string | null }) | null };
@@ -91,18 +97,41 @@ export const fetchPublicListings = cache(async function fetchPublicListings(): P
   return listings;
 });
 
+/** Annonce publique avec, si la base les fournit, les badges et le nombre de decks en vente du vendeur. */
+export type PublicListingDetail = PublicListing & {
+  /** Null : non lus (schéma pas à jour) ; l'appelant peut les demander à part. */
+  sellerBadges: EarnedBadge[] | null;
+  sellerDeckCount: number | null;
+};
+
+type SellerExtras = { user_badges?: { badge: string; level: number }[]; active?: { count: number }[] };
+
 /** Une annonce publique. Mise en cache le temps de la requête : le titre et la page la partagent. */
-export const fetchPublicListing = cache(async function fetchPublicListing(id: string): Promise<PublicListing | null> {
+export const fetchPublicListing = cache(async function fetchPublicListing(id: string): Promise<PublicListingDetail | null> {
   await connection();
   if (!UUID.test(id)) return null;
-  const one = (cols: string) =>
-    getSupabaseAdmin().from("listings").select(cols).eq("id", id).in("status", [...PUBLIC_STATUSES]).maybeSingle();
-  let { data, error } = await one(SELECT);
+  const one = (cols: string) => {
+    const q = getSupabaseAdmin().from("listings").select(cols).eq("id", id).in("status", [...PUBLIC_STATUSES]);
+    return (cols === DETAIL_SELECT ? q.eq("seller.active.status", "active") : q).maybeSingle();
+  };
+  let { data, error } = await one(DETAIL_SELECT);
+  if (missingColumn(error)) ({ data, error } = await one(SELECT));
   if (missingColumn(error)) ({ data, error } = await one(LEGACY_SELECT));
   if (error) throw new Error(`Lecture de l'annonce impossible : ${error.message}`);
-  const listing = data ? (visible([data as unknown as Row])[0] ?? null) : null;
-  if (listing) await fillMissingCovers([listing]);
-  return listing;
+  const row = data as unknown as (Row & { seller: (Row["seller"] & SellerExtras) | null }) | null;
+  const extras: SellerExtras = { user_badges: row?.seller?.user_badges, active: row?.seller?.active };
+  if (row?.seller) {
+    delete row.seller.user_badges;
+    delete row.seller.active;
+  }
+  const listing = row ? (visible([row])[0] ?? null) : null;
+  if (!listing) return null;
+  await fillMissingCovers([listing]);
+  return {
+    ...listing,
+    sellerBadges: extras.user_badges ? extras.user_badges.map((b) => ({ key: b.badge, level: b.level })) : null,
+    sellerDeckCount: extras.active?.[0]?.count ?? null,
+  };
 });
 
 export type PublicSeller = {
@@ -123,7 +152,7 @@ export type PublicSeller = {
  */
 export const fetchPublicSeller = cache(async function fetchPublicSeller(
   id: string,
-): Promise<{ seller: PublicSeller; listings: PublicListing[] } | null> {
+): Promise<{ seller: PublicSeller; listings: PublicListing[]; badges: EarnedBadge[] | null } | null> {
   await connection();
   if (!UUID.test(id)) return null;
   const admin = getSupabaseAdmin();
@@ -137,7 +166,10 @@ export const fetchPublicSeller = cache(async function fetchPublicSeller(
       .limit(100);
   const sellerProfile = (cols: string) => admin.from("profiles").select(cols).eq("id", id).maybeSingle();
   const PROFILE = "id, display_name, avatar_url, moxfield_url, archidekt_url, created_at";
-  const [firstProfile, firstListings] = await Promise.all([sellerProfile(`${PROFILE}, department, city`), sellerListings(SELECT)]);
+  const [firstProfile, firstListings] = await Promise.all([
+    sellerProfile(`${PROFILE}, department, city, user_badges(badge, level)`),
+    sellerListings(SELECT),
+  ]);
   const profile = missingColumn(firstProfile.error) ? await sellerProfile(PROFILE) : firstProfile;
   const listings = missingColumn(firstListings.error) ? await sellerListings(LEGACY_SELECT) : firstListings;
   if (profile.error) throw new Error(`Lecture du vendeur impossible : ${profile.error.message}`);
@@ -145,7 +177,12 @@ export const fetchPublicSeller = cache(async function fetchPublicSeller(
   const rows = visible((listings.data ?? []) as unknown as Row[]);
   if (!profile.data || rows.length === 0) return null;
   await fillMissingCovers(rows);
-  return { seller: profile.data as unknown as PublicSeller, listings: rows };
+  const { user_badges, ...seller } = profile.data as unknown as PublicSeller & SellerExtras;
+  return {
+    seller,
+    listings: rows,
+    badges: user_badges ? user_badges.map((b) => ({ key: b.badge, level: b.level })) : null,
+  };
 });
 
 /** Recalcule l'estimation d'une decklist avec les prix du jour (lus en cache, une heure au plus). */

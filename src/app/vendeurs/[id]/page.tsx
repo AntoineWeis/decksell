@@ -46,7 +46,8 @@ async function SellerContent({ params }: { params: Promise<{ id: string }> }) {
   const data = await fetchPublicSeller(id);
   if (!data) notFound();
   const { seller, listings } = data;
-  const [favorites, badges] = await Promise.all([getFavoriteIds(), getUserBadges(seller.id)]);
+  // Badges lus avec le profil ; à part seulement si la base ne les a pas fournis.
+  const [favorites, badges] = await Promise.all([getFavoriteIds(), data.badges ?? getUserBadges(seller.id)]);
 
   const active = listings.filter((l) => l.status === "active");
   const totalAsking = active.reduce((sum, l) => sum + l.asking_cents, 0);

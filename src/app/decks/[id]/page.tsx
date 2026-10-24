@@ -63,12 +63,15 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
   const listing = await fetchPublicListing(id);
   if (!listing) notFound();
 
-  const [{ deck, estimate, pricesAsOf }, sellerDeckCount, sellerBadges] = await Promise.all([
-    estimateDecklistNow(listing.decklist),
-    listing.seller ? countSellerDecks(listing.seller.id) : Promise.resolve(null),
-    listing.seller ? getUserBadges(listing.seller.id) : Promise.resolve([]),
+  // Tout en parallèle : le score méta part dès que l'estimation est prête.
+  const estimated = estimateDecklistNow(listing.decklist);
+  const [{ estimate, pricesAsOf }, meta, sellerDeckCount, sellerBadges] = await Promise.all([
+    estimated,
+    estimated.then(({ deck, estimate }) => metaResultFor(estimate, deck.errors.length, listing.decklist)),
+    // Déjà lus avec l'annonce ; requêtes à part seulement si la base ne les a pas fournis.
+    listing.sellerDeckCount ?? (listing.seller ? countSellerDecks(listing.seller.id) : null),
+    listing.sellerBadges ?? (listing.seller ? getUserBadges(listing.seller.id) : []),
   ]);
-  const meta = await metaResultFor(estimate, deck.errors.length);
 
   return (
     <>

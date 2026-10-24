@@ -7,6 +7,7 @@ import { siteUrl } from "@/lib/site-url";
 import { Suspense } from "react";
 import { FlashToasts, ToastProvider } from "@/components/toaster";
 import { BadgeUnlock } from "@/components/badge-unlock";
+import { getUser } from "@/lib/auth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,12 +55,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Suspense fallback={null}>
             <FlashToasts />
           </Suspense>
-          {/* Animation de déblocage des badges (membre connecté) */}
+          {/* Animation de déblocage des badges : seulement pour un membre connecté (aucun appel sinon). */}
           <Suspense fallback={null}>
-            <BadgeUnlock />
+            <BadgeUnlockSlot />
           </Suspense>
         </ToastProvider>
       </body>
     </html>
   );
+}
+
+async function BadgeUnlockSlot() {
+  return (await getUser()) ? <BadgeUnlock /> : null;
 }
