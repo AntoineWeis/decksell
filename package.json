@@ -10,7 +10,8 @@
     "test": "node --test \"tests/**/*.test.ts\"",
     "import:scryfall": "node --env-file=.env.local scripts/import-scryfall.mjs",
     "check:supabase": "node --env-file=.env.local scripts/check-supabase.mjs",
-    "estimate": "node --env-file=.env.local scripts/estimate-deck.mjs"
+    "estimate": "node --env-file=.env.local scripts/estimate-deck.mjs",
+    "import:meta": "node --env-file=.env.local scripts/import-meta.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

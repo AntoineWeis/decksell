@@ -131,6 +131,7 @@ Le site est alors disponible sur [http://localhost:3000](http://localhost:3000).
 | `npm test` | Tests (lecteur de decklists, calcul des prix, saisies) |
 | `npm run lint` | Vérification ESLint |
 | `npm run import:scryfall` | Import des cartes et des prix Scryfall dans Supabase (`-- --limit 2000` pour un essai, `-- --force` pour réimporter le même fichier) |
+| `npm run import:meta` | Import des listes de tournoi Modern (résultats officiels MTGO) et recalcul du score de proximité méta des annonces (`-- --dry-run` pour simuler, `-- --only-rescore` pour recalculer seulement). Méthode : [docs/score-meta.md](docs/score-meta.md) |
 | `npm run check:supabase` | Test de connexion à Supabase |
 | `npm run estimate -- deck.txt` | Estimation d'une decklist en ligne de commande |
 

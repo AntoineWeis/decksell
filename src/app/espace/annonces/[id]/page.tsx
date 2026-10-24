@@ -5,6 +5,8 @@ import { Suspense } from "react";
 import { getProfile, requireUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { estimateDecklistNow } from "@/lib/public-listings";
+import { metaResultFor } from "@/lib/meta-corpus";
+import { MetaProximityCard } from "@/components/meta-proximity";
 import { LISTING_COLUMNS, PUBLIC_STATUSES, STATUSES, type Listing } from "@/lib/listings";
 import { DeckView } from "@/components/deck-view";
 import { ListingAside } from "@/components/listing-aside";
@@ -46,7 +48,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
   if (!data) notFound();
   const listing = data as unknown as Listing;
 
-  const [{ estimate, pricesAsOf }, profile, archetypes] = await Promise.all([
+  const [{ deck, estimate, pricesAsOf }, profile, archetypes] = await Promise.all([
     estimateDecklistNow(listing.decklist),
     getProfile(),
     getArchetypes(),
@@ -112,6 +114,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
           }
           todayCents={estimate.totalCents}
           stats={<>
+            <MetaProximityCard result={await metaResultFor(estimate, deck.errors.length)} />
             <CardTypesCard counts={cardTypeCounts(estimate)} targets={anchorsFor(estimate)} />
             <ManaCurveCard curve={manaCurve(estimate)} />
           </>}

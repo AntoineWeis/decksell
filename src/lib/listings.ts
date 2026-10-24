@@ -79,6 +79,10 @@ export const PUBLIC_STATUSES = ["active", "reserved"] as const;
 
 /** Annonce telle qu'affichée publiquement (avec le profil du vendeur). */
 export type PublicListing = Omit<Listing, "sold_cents" | "sold_at"> & {
+  /** Proximité méta (absente tant que le schéma n'est pas à jour ou le score pas calculé). */
+  meta_score?: number | null;
+  meta_status?: string | null;
+  meta_archetype?: string | null;
   seller: {
     id: string;
     display_name: string;

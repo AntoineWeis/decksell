@@ -10,6 +10,8 @@ import { lookupDeckPrices } from "@/lib/estimate";
 import { checkDeckQuality } from "@/lib/quality";
 import { CONDITIONS, FORMATS, normalizeColors, normalizeFormat, type Condition } from "@/lib/listings";
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
+import { after } from "next/server";
+import { refreshListingMeta } from "@/lib/meta-corpus";
 
 export type SellState = { status: "idle" } | { status: "error"; message: string } | { status: "auth" };
 
@@ -92,7 +94,7 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   const star = starCard(estimate);
 
   const supabase = await createSupabaseServer();
-  const { error } = await supabase.from("listings").insert({
+  const { data: created, error } = await supabase.from("listings").insert({
     seller_id: user.id,
     title,
     decklist,
@@ -109,11 +111,13 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
     archetype_id: archetypeId,
     cover_card_name: star?.name ?? null,
     cover_image_url: star?.imageUrl ?? null,
-  });
+  }).select("id").single();
   if (error) {
     console.error("Mise en vente : écriture impossible", error.message);
     return { status: "error", message: "Impossible d'enregistrer l'annonce. Réessaie dans un instant." };
   }
+  // Score de proximité méta, calculé après la réponse (n'allonge pas la publication).
+  if (created) after(() => refreshListingMeta(created.id).catch((e) => console.error("Score méta :", e)));
   await setFlash("success", `Annonce « ${title} » publiée`);
   redirect("/espace");
 }

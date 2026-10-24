@@ -1,0 +1,37 @@
+# Import quotidien des listes de tournoi Modern (résultats officiels MTGO) dans Supabase,
+# puis recalcul du score de proximité méta de toutes les annonces. Voir docs/score-meta.md.
+# Après l'import des prix (10 h 23 UTC) : les noms officiels des cartes sont à jour.
+# Secrets : NEXT_PUBLIC_SUPABASE_URL et SUPABASE_SECRET_KEY (les mêmes que pour les prix).
+name: Import quotidien du méta Modern
+
+on:
+  schedule:
+    - cron: "47 11 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: import-meta
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Import des listes de tournoi et recalcul des scores
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: node scripts/import-meta.mjs

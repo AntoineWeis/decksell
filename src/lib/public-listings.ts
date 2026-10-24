@@ -14,7 +14,7 @@ import { LISTING_COLUMNS, PUBLIC_STATUSES, type PublicListing } from "./listings
 // elle Supabase refuse la jointure (plusieurs chemins possibles, erreur PGRST201).
 const SELLER_BASE = "id, display_name, avatar_url, moxfield_url, archidekt_url, created_at";
 // Localisation et suspension (sections 17 et 19 du schéma). Base pas encore migrée : on relit sans.
-const SELECT = `${LISTING_COLUMNS}, seller:profiles!listings_seller_id_fkey(${SELLER_BASE}, department, city, suspended_until)`;
+const SELECT = `${LISTING_COLUMNS}, meta_score, meta_status, meta_archetype, seller:profiles!listings_seller_id_fkey(${SELLER_BASE}, department, city, suspended_until)`;
 const LEGACY_SELECT = `${LISTING_COLUMNS}, seller:profiles!listings_seller_id_fkey(${SELLER_BASE})`;
 
 type Row = PublicListing & { seller: (PublicListing["seller"] & { suspended_until?: string | null }) | null };

@@ -1179,3 +1179,44 @@ end;
 $$;
 revoke execute on function public.report_listing(uuid, text) from public, anon;
 grant  execute on function public.report_listing(uuid, text) to authenticated;
+
+-- 21. Listes de tournoi Modern (référence du score de proximité méta)
+-- Alimentée par scripts/import-meta.mjs : résultats officiels MTGO (Challenges, Leagues 5-0).
+-- Les cartes sont stockées
+-- normalisées (clé → quantité) pour comparer vite ; la liste texte d'origine est gardée.
+create table if not exists public.meta_decks (
+  id          bigint generated always as identity primary key,
+  source      text not null check (source in ('mtgo', 'mtgtop8')),
+  source_id   text not null,                 -- identifiant de la liste chez la source
+  event_name  text not null,
+  event_date  date not null,
+  placement   text,                          -- « 1 », « 5-8 », « 5-0 »
+  player      text,
+  archetype   text,                          -- déduit des cartes types (src/lib/archetype-signatures.ts)
+  archetype_inferred boolean not null default false, -- vrai : nom déduit, pas donné par la source
+  source_url  text,
+  decklist    text not null check (char_length(decklist) <= 20000),
+  main        jsonb not null,                -- { "lightning bolt": 4, … }
+  side        jsonb not null default '{}',
+  names       jsonb not null,                -- { "lightning bolt": "Lightning Bolt", … }
+  main_count  integer not null,
+  side_count  integer not null,
+  fingerprint text not null,                 -- date + liste normalisée : la même liste vue chez deux sources
+  imported_at timestamptz not null default now(),
+  unique (source, source_id)
+);
+
+create unique index if not exists meta_decks_fingerprint_idx on public.meta_decks (fingerprint);
+create index if not exists meta_decks_date_idx on public.meta_decks (event_date desc);
+
+alter table public.meta_decks enable row level security;
+-- Aucune politique : lue et écrite par le serveur seulement (clé secrète).
+
+-- Score de proximité méta de chaque annonce, recalculé à la publication, à chaque changement de
+-- liste et après chaque import (pour l'afficher sur les vignettes sans recalcul).
+alter table public.listings
+  add column if not exists meta_score       smallint check (meta_score between 0 and 100),
+  add column if not exists meta_status      text check (meta_status in ('ok', 'partial', 'unreliable', 'invalid')),
+  add column if not exists meta_deck_id     bigint references public.meta_decks (id) on delete set null,
+  add column if not exists meta_archetype   text,
+  add column if not exists meta_computed_at timestamptz;

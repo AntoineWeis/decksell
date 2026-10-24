@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { countSellerDecks, estimateDecklistNow, fetchPublicListing } from "@/lib/public-listings";
+import { metaResultFor } from "@/lib/meta-corpus";
+import { MetaProximityCard } from "@/components/meta-proximity";
 import { DeckBanner } from "@/components/deck-banner";
 import { DeckView } from "@/components/deck-view";
 import { ListingAside } from "@/components/listing-aside";
@@ -60,10 +62,11 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
   const listing = await fetchPublicListing(id);
   if (!listing) notFound();
 
-  const [{ estimate, pricesAsOf }, sellerDeckCount] = await Promise.all([
+  const [{ deck, estimate, pricesAsOf }, sellerDeckCount] = await Promise.all([
     estimateDecklistNow(listing.decklist),
     listing.seller ? countSellerDecks(listing.seller.id) : Promise.resolve(null),
   ]);
+  const meta = await metaResultFor(estimate, deck.errors.length);
 
   return (
     <>
@@ -97,6 +100,7 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
         <div className="contents lg:block">
           <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents} priceFirstOnMobile sellerDeckCount={sellerDeckCount}
           stats={<>
+            <MetaProximityCard result={meta} />
             <CardTypesCard counts={cardTypeCounts(estimate)} targets={anchorsFor(estimate)} />
             <ManaCurveCard curve={manaCurve(estimate)} />
           </>}>

@@ -21,6 +21,7 @@ import {
 import { parseDecklist } from "@/lib/decklist";
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
 import { isDepartment } from "@/lib/departments";
+import { refreshListingMeta } from "@/lib/meta-corpus";
 
 // Chaque action revérifie le membre : elles sont joignables par n'importe qui (POST).
 // Les règles RLS limitent en plus chaque écriture aux données du membre.
@@ -241,6 +242,8 @@ export async function updateDecklist(id: string, _prev: DecklistState, formData:
     .eq("seller_id", user.id);
   if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };
 
+  // Nouvelle liste : nouveau score de proximité méta, après la réponse.
+  after(() => refreshListingMeta(id).catch((e) => console.error("Score méta :", e)));
   refresh();
   return { status: "saved", ignored: deck.errors.length };
 }
