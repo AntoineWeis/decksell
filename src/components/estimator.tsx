@@ -11,6 +11,7 @@ import { CardList } from "./card-list";
 import { SellPanel } from "./sell-panel";
 import { CountUp } from "./count-up";
 import { TiltCard } from "./tilt";
+import { EstimateSkeleton } from "./deck-skeleton";
 
 const DRAFT_KEY = "decksell:draft";
 
@@ -196,13 +197,14 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
         <section
           id="resultat"
           aria-live="polite"
-          className={`min-w-0 scroll-mt-20 space-y-6 transition-opacity ${pending ? "opacity-60" : ""}`}
+          className="min-w-0 scroll-mt-20 space-y-6"
         >
-          {state.status === "idle" && <HowItWorks />}
-          {state.status === "error" && (
+          {pending && <EstimateSkeleton />}
+          {!pending && state.status === "idle" && <HowItWorks />}
+          {!pending && state.status === "error" && (
             <div className="rounded-xl border border-danger/30 bg-danger-soft px-5 py-4 text-danger">{state.message}</div>
           )}
-          {state.status === "ok" && estimate && (
+          {!pending && state.status === "ok" && estimate && (
             <div key={revealId(state)} className="space-y-6">
               <Receipt estimate={estimate} pricesAsOf={state.pricesAsOf} />
               <SellPanel decklist={text} estimate={estimate} manual={manual} archetypes={archetypes} />

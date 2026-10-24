@@ -326,3 +326,68 @@ a {
     display: none;
   }
 }
+
+/* Chargement d'un deck : squelettes balayés d'un reflet violet, lignes en cascade, fiole qui se
+   remplit. Affichés après 250 ms seulement, pour qu'un chargement rapide ne clignote pas. */
+@keyframes load-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes skel-sweep {
+  0% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(100%); }
+}
+@keyframes skel-row-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes flask-fill {
+  0% { transform: translateY(7px); }
+  70%, 100% { transform: translateY(0); }
+}
+@keyframes flask-bubble {
+  0% { opacity: 0; transform: translateY(0); }
+  30% { opacity: 0.9; }
+  100% { opacity: 0; transform: translateY(-9px); }
+}
+.load-delay {
+  animation: load-appear 200ms ease-out 250ms backwards;
+}
+.skel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.375rem;
+  background: var(--sunken);
+}
+.skel-dark {
+  background: rgba(255, 255, 255, 0.08);
+}
+.skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(157, 132, 255, 0.16);
+  transform: translateX(-100%);
+  animation: skel-sweep 1.6s ease-in-out var(--skel-delay, 0ms) infinite;
+}
+.skel-row {
+  animation: skel-row-in 400ms ease-out calc(var(--skel-delay, 0ms) + 250ms) backwards;
+}
+.flask-liquid {
+  animation: flask-fill 1.8s ease-in-out infinite;
+}
+.flask-bubble {
+  opacity: 0;
+  animation: flask-bubble 1.8s ease-in infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .load-delay,
+  .skel-row,
+  .flask-liquid {
+    animation: none;
+  }
+  .skel::after,
+  .flask-bubble {
+    display: none;
+  }
+}

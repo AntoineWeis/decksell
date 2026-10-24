@@ -23,6 +23,7 @@ import { formatEur } from "@/lib/pricing";
 import { deckProductJsonLd, jsonLdScript } from "@/lib/structured-data";
 import { siteUrl } from "@/lib/site-url";
 import { getUserBadges } from "@/lib/badges-server";
+import { DeckPageSkeleton } from "@/components/deck-skeleton";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -51,7 +52,7 @@ export default function DeckPage({ params }: Props) {
   return (
     <main className="flex-1">
       {/* L'identifiant vient de l'adresse : tout le contenu est lu au moment de la requête. */}
-      <Suspense fallback={<DeckSkeleton />}>
+      <Suspense fallback={<DeckPageSkeleton />}>
         <DeckContent params={params} />
       </Suspense>
     </main>
@@ -129,16 +130,4 @@ async function ReportSlot({ listingId, sellerId }: { listingId: string; sellerId
   const user = await getUser();
   if (user && user.id === sellerId) return null;
   return <ReportListing listingId={listingId} loggedIn={!!user} />;
-}
-
-function DeckSkeleton() {
-  return (
-    <div aria-busy>
-      <div className="h-48 animate-pulse bg-banner" />
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 pt-6 sm:px-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)]">
-        <div className="h-96 animate-pulse rounded-xl bg-sunken" />
-        <div className="h-72 animate-pulse rounded-xl bg-sunken" />
-      </div>
-    </div>
-  );
 }
