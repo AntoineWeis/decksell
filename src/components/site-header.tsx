@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoMark } from "./logo-mark";
 import { Suspense } from "react";
 import { getProfile } from "@/lib/auth";
 import { getUnreadCount } from "@/lib/messaging";
@@ -11,7 +12,13 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-banner text-banner-ink">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 sm:gap-6 sm:px-6">
-        <Link href="/" aria-label="decksell, accueil" className="shrink-0 rounded-md font-logo text-[25px] font-bold leading-none sm:text-[27px]">
+        <Link
+          href="/"
+          aria-label="decksell, accueil"
+          className="group flex shrink-0 items-center gap-1.5 rounded-md font-logo text-[25px] font-bold leading-none sm:text-[27px]"
+        >
+          {/* Fiole de mana : petite inclinaison au survol. */}
+          <LogoMark size={24} className="transition-transform duration-500 group-hover:-rotate-12 sm:size-[26px]" />
           <span aria-hidden>
             deck<span className="text-[#5a90ff]">sell</span>
           </span>

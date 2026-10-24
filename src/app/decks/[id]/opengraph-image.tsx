@@ -3,6 +3,7 @@ import { fetchPublicListing } from "@/lib/public-listings";
 import { artCrop, CONDITIONS } from "@/lib/listings";
 import { formatEur } from "@/lib/pricing";
 import { imageDataUrl, ogFonts } from "@/lib/og";
+import { OgLogo } from "@/components/og-logo";
 
 // Aperçu de partage d'un deck : illustration de sa carte phare, nom, prix et valeur estimée.
 export const alt = "Deck Modern en vente sur decksell";
@@ -41,12 +42,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           }}
         />
         <div style={{ position: "relative", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 64, width: "100%", fontFamily: display }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 12, background: "#3b7bff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: 20, height: 28, borderRadius: 4, background: "#f4f7ff" }} />
-            </div>
-            <div style={{ fontSize: 34, fontWeight: 700, fontFamily: display }}>decksell</div>
-          </div>
+          <OgLogo />
 
           {listing ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>

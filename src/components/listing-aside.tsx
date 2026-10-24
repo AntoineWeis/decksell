@@ -5,6 +5,7 @@ import { Avatar } from "./avatar";
 import { LanguageBar } from "./language-bar";
 import { hasMixedConditions } from "@/lib/card-details";
 import { formatLocation } from "@/lib/departments";
+import { PriceGauge } from "./price-gauge";
 
 type Seller = {
   id?: string;
@@ -49,7 +50,6 @@ export function ListingAside({
   /** Nombre de decks que le vendeur a en vente (affiché à droite de son nom). */
   sellerDeckCount?: number | null;
 }) {
-  const diff = todayCents > 0 ? Math.round(((l.asking_cents - todayCents) / todayCents) * 100) : null;
   return (
     // En mode « prix d'abord », l'encadré s'efface sur mobile : ses blocs deviennent des
     // éléments de la grille de la page, que l'on peut ordonner autour de la liste de cartes.
@@ -62,15 +62,10 @@ export function ListingAside({
           )}
         </div>
         <p className="display mt-1 text-4xl tabular-nums">{formatEur(l.asking_cents)}</p>
+        <PriceGauge askingCents={l.asking_cents} valueCents={todayCents} className="mt-3" />
         <dl className="mt-4 space-y-2 text-sm">
           <Row label="Valeur du jour">
             {formatEur(todayCents)}
-            {diff != null && diff !== 0 && (
-              <span className={`ml-1.5 text-xs ${diff < 0 ? "text-ok" : "text-muted"}`}>
-                ({diff > 0 ? "+" : ""}
-                {diff} % demandé)
-              </span>
-            )}
           </Row>
           <Row label="Valeur à la publication">
             {formatEur(l.estimated_cents)}

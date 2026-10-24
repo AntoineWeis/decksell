@@ -10,6 +10,7 @@ import { ManaColors } from "./mana";
 import { FavoriteButton } from "./favorite-button";
 import { FormatTag } from "./format-tag";
 import type { FavoriteState } from "@/lib/favorites";
+import { PriceGauge } from "./price-gauge";
 
 /**
  * Une annonce dans l'index public : illustration de la carte phare, prix, langue, vendeur.
@@ -28,7 +29,6 @@ export function ListingTile({
   favorite?: FavoriteState;
 }) {
   const art = artCrop(l.cover_image_url);
-  const diff = l.estimated_cents > 0 ? Math.round(((l.asking_cents - l.estimated_cents) / l.estimated_cents) * 100) : null;
   return (
     <li className="relative">
       {/* Hors du lien : un bouton ne peut pas être dans un lien. */}
@@ -87,13 +87,9 @@ export function ListingTile({
 
           <div className="flex items-baseline justify-between gap-3">
             <p className="text-xl font-bold tabular-nums">{formatEur(l.asking_cents)}</p>
-            <p className="text-xs tabular-nums text-muted">
-              Estimé {formatEur(l.estimated_cents)}
-              {diff != null && diff !== 0 && (
-                <span className={diff < 0 ? "text-ok" : ""}> · {diff > 0 ? "+" : ""}{diff} %</span>
-              )}
-            </p>
+            <p className="text-xs tabular-nums text-muted">Estimé {formatEur(l.estimated_cents)}</p>
           </div>
+          <PriceGauge askingCents={l.asking_cents} valueCents={l.estimated_cents} />
 
           {hits.length > 0 && (
             <p className="rounded-lg bg-brand-soft px-2.5 py-1.5 text-xs text-link">

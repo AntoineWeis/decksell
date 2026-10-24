@@ -29,11 +29,16 @@ export function loadGoogleFont(family: string, weight: number): Promise<ArrayBuf
 
 /** Polices pour ImageResponse : Sora normale et grasse, ou la police par défaut si le chargement échoue. */
 export async function ogFonts() {
-  const [regular, bold] = await Promise.all([loadGoogleFont("Sora", 400), loadGoogleFont("Sora", 700)]);
+  const [regular, bold, logo] = await Promise.all([
+    loadGoogleFont("Sora", 400),
+    loadGoogleFont("Sora", 700),
+    loadGoogleFont("Rajdhani", 700),
+  ]);
   if (!regular || !bold) return undefined;
   return [
     { name: "Sora", data: regular, weight: 400 as const, style: "normal" as const },
     { name: "Sora", data: bold, weight: 700 as const, style: "normal" as const },
+    ...(logo ? [{ name: "Rajdhani", data: logo, weight: 700 as const, style: "normal" as const }] : []),
   ];
 }
 

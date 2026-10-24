@@ -7,6 +7,7 @@ import { formatEur, type Estimate } from "@/lib/pricing";
 import { CardTypesCard } from "./card-types";
 import { ManaCurveCard } from "./mana-curve";
 import { FormatTag } from "./format-tag";
+import { PriceGauge } from "./price-gauge";
 
 const POINTS = [
   ["Le prix face à la valeur du jour", "L'écart est calculé carte par carte, avec les prix Cardmarket du jour."],
@@ -33,7 +34,6 @@ export async function DeckPreview() {
   if (!data) return null;
   const { l, estimate } = data;
   const today = estimate.totalCents;
-  const diff = today > 0 ? Math.round(((l.asking_cents - today) / today) * 100) : null;
 
   return (
     <section className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-start">
@@ -76,15 +76,10 @@ export async function DeckPreview() {
               <p className="text-xs text-muted">Valeur du jour</p>
               <p className="font-semibold tabular-nums">
                 {formatEur(today)}
-                {diff != null && diff !== 0 && (
-                  <span className={`ml-1.5 text-xs font-normal ${diff < 0 ? "text-ok" : "text-muted"}`}>
-                    ({diff > 0 ? "+" : ""}
-                    {diff} %)
-                  </span>
-                )}
               </p>
             </div>
           </div>
+          <PriceGauge askingCents={l.asking_cents} valueCents={today} className="mt-4" />
         </Link>
         <CardTypesCard counts={cardTypeCounts(estimate)} />
         <ManaCurveCard curve={manaCurve(estimate)} />

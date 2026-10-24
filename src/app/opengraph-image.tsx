@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { ogFonts } from "@/lib/og";
+import { OgLogo } from "@/components/og-logo";
 
 // Aperçu de partage par défaut (Discord, réseaux sociaux) pour toutes les pages du site.
 export const alt = "decksell : estime et vends ton deck Magic Modern au juste prix";
@@ -23,25 +24,10 @@ export default async function Image() {
           color: "#f4f7ff",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <div
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: 16,
-              background: "#3b7bff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div style={{ width: 26, height: 36, borderRadius: 5, background: "#f4f7ff" }} />
-          </div>
-          <div style={{ fontSize: 44, fontWeight: 700, fontFamily: display }}>decksell</div>
-        </div>
+        <OgLogo size={64} />
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <div style={{ fontSize: 72, fontWeight: 700, lineHeight: 1.05, maxWidth: 950, fontFamily: display }}>
-            Combien vaut ton deck Modern ?
+            Des decks Modern complets, au juste prix
           </div>
           <div style={{ fontSize: 34, color: "#aab6d6", maxWidth: 950, fontFamily: display, fontWeight: 400 }}>
             Estimation carte par carte d&apos;après les prix Cardmarket, puis vente entre joueurs.

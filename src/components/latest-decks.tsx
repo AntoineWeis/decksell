@@ -7,6 +7,7 @@ import { formatEur } from "@/lib/pricing";
 import { Avatar } from "./avatar";
 import { ManaColors } from "./mana";
 import { FormatTag } from "./format-tag";
+import { PriceGauge } from "./price-gauge";
 
 const SHOWN = 4;
 
@@ -78,12 +79,6 @@ export function LatestDecksView({ pool }: { pool: PublicListing[] }) {
   );
 }
 
-function Diff({ asking, estimated }: { asking: number; estimated: number }) {
-  if (estimated <= 0) return null;
-  const diff = Math.round(((asking - estimated) / estimated) * 100);
-  if (diff === 0) return null;
-  return <span className={diff < 0 ? "text-ok" : ""}> · {diff > 0 ? "+" : ""}{diff} %</span>;
-}
 
 /** Grande carte : illustration de la carte phare, nom, couleurs, prix, vendeur. */
 function FeaturedDeck({ listing: l, wide = false }: { listing: PublicListing; wide?: boolean }) {
@@ -126,13 +121,12 @@ function FeaturedDeck({ listing: l, wide = false }: { listing: PublicListing; wi
             </span>
           </p>
         </div>
-        <div className="mt-auto flex flex-wrap items-end justify-between gap-3 border-t border-line pt-4">
+        <div className="mt-auto space-y-4 border-t border-line pt-4">
+        <PriceGauge askingCents={l.asking_cents} valueCents={l.estimated_cents} />
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="display text-3xl tabular-nums">{formatEur(l.asking_cents)}</p>
-            <p className="text-xs tabular-nums text-muted">
-              Estimé {formatEur(l.estimated_cents)}
-              <Diff asking={l.asking_cents} estimated={l.estimated_cents} />
-            </p>
+            <p className="text-xs tabular-nums text-muted">Estimé {formatEur(l.estimated_cents)}</p>
           </div>
           {l.seller && (
             <p className="flex items-center gap-2 text-sm text-muted">
@@ -140,6 +134,7 @@ function FeaturedDeck({ listing: l, wide = false }: { listing: PublicListing; wi
               <span className="max-w-36 truncate">{l.seller.display_name}</span>
             </p>
           )}
+        </div>
         </div>
       </div>
     </Link>
@@ -174,13 +169,11 @@ function CompactDeck({ listing: l }: { listing: PublicListing }) {
         <p className="mt-1 truncate text-xs text-muted">
           {l.card_count} cartes · {CONDITIONS[l.condition]}
         </p>
+        <PriceGauge askingCents={l.asking_cents} valueCents={l.estimated_cents} label={false} className="mt-2.5" />
         <div className="mt-auto flex items-end justify-between gap-2 pt-2">
           <p className="min-w-0 text-sm font-bold tabular-nums">
             {formatEur(l.asking_cents)}
-            <span className="block text-xs font-normal text-muted">
-              estimé {formatEur(l.estimated_cents)}
-              <Diff asking={l.asking_cents} estimated={l.estimated_cents} />
-            </span>
+            <span className="block text-xs font-normal text-muted">estimé {formatEur(l.estimated_cents)}</span>
           </p>
           {l.seller && (
             <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted">
