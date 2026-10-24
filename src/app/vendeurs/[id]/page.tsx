@@ -8,6 +8,8 @@ import { formatLocation } from "@/lib/departments";
 import { Avatar } from "@/components/avatar";
 import { ListingTile } from "@/components/listing-tile";
 import { favoriteStateOf, getFavoriteIds } from "@/lib/favorites";
+import { getUserBadges } from "@/lib/badges-server";
+import { BadgeGrid } from "@/components/badge-list";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -44,7 +46,7 @@ async function SellerContent({ params }: { params: Promise<{ id: string }> }) {
   const data = await fetchPublicSeller(id);
   if (!data) notFound();
   const { seller, listings } = data;
-  const favorites = await getFavoriteIds();
+  const [favorites, badges] = await Promise.all([getFavoriteIds(), getUserBadges(seller.id)]);
 
   const active = listings.filter((l) => l.status === "active");
   const totalAsking = active.reduce((sum, l) => sum + l.asking_cents, 0);
@@ -97,6 +99,14 @@ async function SellerContent({ params }: { params: Promise<{ id: string }> }) {
       </section>
 
       <div className="mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6">
+        {badges.length > 0 && (
+          <section className="mb-10">
+            <h2 className="display text-2xl">Badges</h2>
+            <div className="mt-4">
+              <BadgeGrid badges={badges} />
+            </div>
+          </section>
+        )}
         <h2 className="display text-2xl">
           {listings.length > 1 ? `Ses ${listings.length} decks` : "Son deck"}
         </h2>

@@ -1220,3 +1220,25 @@ alter table public.listings
   add column if not exists meta_deck_id     bigint references public.meta_decks (id) on delete set null,
   add column if not exists meta_archetype   text,
   add column if not exists meta_computed_at timestamptz;
+
+-- 22. Badges des membres (vague 1 : voir src/lib/badges.ts)
+-- Calculés par le serveur à partir de faits en base (annonces, réponses, profil), jamais
+-- déclarés par le membre. Un badge obtenu n'est jamais retiré ; un niveau gagné remet
+-- seen_at à vide pour afficher l'animation de déblocage.
+create table if not exists public.user_badges (
+  user_id   uuid not null references public.profiles (id) on delete cascade,
+  badge     text not null check (char_length(badge) between 1 and 40),
+  level     smallint not null default 1 check (level between 1 and 3),
+  earned_at timestamptz not null default now(),
+  seen_at   timestamptz,
+  primary key (user_id, badge)
+);
+
+create index if not exists user_badges_unseen_idx on public.user_badges (user_id) where seen_at is null;
+
+alter table public.user_badges enable row level security;
+
+-- Chaque membre lit ses badges ; l'affichage public (vendeurs) et l'écriture passent par le serveur.
+drop policy if exists "badges : lecture par le membre" on public.user_badges;
+create policy "badges : lecture par le membre" on public.user_badges
+  for select to authenticated using ((select auth.uid()) = user_id);

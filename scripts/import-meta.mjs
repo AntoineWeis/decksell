@@ -19,6 +19,7 @@ import { boardSize, compareDecks } from "../src/lib/similarity.ts";
 import { buildCorpus, deckCardsFromParsed } from "../src/lib/meta-match.ts";
 import { classifyArchetype } from "../src/lib/archetype-signatures.ts";
 import { metaColumns, scoreDecklist } from "../src/lib/meta-score.ts";
+import { refreshBadges } from "../src/lib/badge-stats.ts";
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(`--${name}`);
@@ -295,6 +296,16 @@ async function rescoreListings(rows) {
   }
 }
 
+/** Badges de tous les membres qui ont publié : l'ancienneté et la réactivité évoluent sans action. */
+async function refreshAllBadges() {
+  const { data, error } = await db.from("listings").select("seller_id");
+  if (error) throw new Error(`Lecture des vendeurs impossible : ${error.message}`);
+  const sellers = [...new Set(data.map((l) => l.seller_id))];
+  let earned = 0;
+  for (const id of sellers) earned += (await refreshBadges(db, id)).length;
+  console.log(`Badges : ${sellers.length} membres vérifiés, ${earned} badge${earned > 1 ? "s" : ""} gagné${earned > 1 ? "s" : ""}.`);
+}
+
 const started = Date.now();
 console.log(`Import méta Modern (MTGO) depuis le ${sinceIso}${DRY ? " (simulation, rien n'est écrit)" : ""}.`);
 try {
@@ -307,6 +318,7 @@ try {
     await reclassify(rows);
     calibration(rows);
     await rescoreListings(rows);
+    await refreshAllBadges();
   }
   console.log(`Terminé en ${Math.round((Date.now() - started) / 1000)} s.`);
 } catch (e) {

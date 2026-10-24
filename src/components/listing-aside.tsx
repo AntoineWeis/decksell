@@ -6,6 +6,8 @@ import { LanguageBar } from "./language-bar";
 import { hasMixedConditions } from "@/lib/card-details";
 import { formatLocation } from "@/lib/departments";
 import { PriceGauge } from "./price-gauge";
+import { SellerBadges } from "./badge-list";
+import type { EarnedBadge } from "@/lib/badges";
 
 type Seller = {
   id?: string;
@@ -32,6 +34,7 @@ export function ListingAside({
   stats,
   priceFirstOnMobile = false,
   sellerDeckCount = null,
+  sellerBadges = [],
 }: {
   listing: Pick<
     Listing,
@@ -49,6 +52,8 @@ export function ListingAside({
   priceFirstOnMobile?: boolean;
   /** Nombre de decks que le vendeur a en vente (affiché à droite de son nom). */
   sellerDeckCount?: number | null;
+  /** Badges du vendeur (les 3 plus forts sont affichés). */
+  sellerBadges?: EarnedBadge[];
 }) {
   return (
     // En mode « prix d'abord », l'encadré s'efface sur mobile : ses blocs deviennent des
@@ -112,6 +117,7 @@ export function ListingAside({
                 </p>
               )}
             </div>
+            <SellerBadges badges={sellerBadges} />
             {formatLocation(seller.department, seller.city) && (
             <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
               {formatLocation(seller.department, seller.city) && (

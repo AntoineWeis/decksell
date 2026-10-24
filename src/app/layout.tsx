@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { siteUrl } from "@/lib/site-url";
 import { Suspense } from "react";
 import { FlashToasts, ToastProvider } from "@/components/toaster";
+import { BadgeUnlock } from "@/components/badge-unlock";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,6 +53,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {/* Lit l'adresse courante : à part, pour ne pas bloquer le rendu statique. */}
           <Suspense fallback={null}>
             <FlashToasts />
+          </Suspense>
+          {/* Animation de déblocage des badges (membre connecté) */}
+          <Suspense fallback={null}>
+            <BadgeUnlock />
           </Suspense>
         </ToastProvider>
       </body>

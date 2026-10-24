@@ -22,6 +22,7 @@ import { CONDITIONS, FORMATS, normalizeFormat } from "@/lib/listings";
 import { formatEur } from "@/lib/pricing";
 import { deckProductJsonLd, jsonLdScript } from "@/lib/structured-data";
 import { siteUrl } from "@/lib/site-url";
+import { getUserBadges } from "@/lib/badges-server";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -62,9 +63,10 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
   const listing = await fetchPublicListing(id);
   if (!listing) notFound();
 
-  const [{ deck, estimate, pricesAsOf }, sellerDeckCount] = await Promise.all([
+  const [{ deck, estimate, pricesAsOf }, sellerDeckCount, sellerBadges] = await Promise.all([
     estimateDecklistNow(listing.decklist),
     listing.seller ? countSellerDecks(listing.seller.id) : Promise.resolve(null),
+    listing.seller ? getUserBadges(listing.seller.id) : Promise.resolve([]),
   ]);
   const meta = await metaResultFor(estimate, deck.errors.length);
 
@@ -98,7 +100,7 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
         </div>
         {/* Sur mobile, le prix et le contact passent avant la liste de cartes (voir ListingAside). */}
         <div className="contents lg:block">
-          <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents} priceFirstOnMobile sellerDeckCount={sellerDeckCount}
+          <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents} priceFirstOnMobile sellerDeckCount={sellerDeckCount} sellerBadges={sellerBadges}
           stats={<>
             <MetaProximityCard result={meta} />
             <CardTypesCard counts={cardTypeCounts(estimate)} targets={anchorsFor(estimate)} />

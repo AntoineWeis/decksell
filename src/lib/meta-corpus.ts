@@ -5,6 +5,7 @@ import { META_WINDOW_DAYS } from "./meta-config.ts";
 import { buildCorpus, type MetaCorpus, type MetaDeck } from "./meta-match.ts";
 import { metaColumns, scoreDecklist, scoreEstimate } from "./meta-score.ts";
 import type { Estimate } from "./pricing.ts";
+import { refreshUserBadges } from "./badges-server.ts";
 
 // Listes de tournoi de référence (table meta_decks), lues en cache : elles ne changent qu'à
 // l'import quotidien. Table absente (schéma pas encore à jour) : corpus vide, pas d'erreur.
@@ -53,10 +54,12 @@ export async function metaResultFor(estimate: Estimate, parseErrors: number) {
  */
 export async function refreshListingMeta(listingId: string): Promise<void> {
   const admin = getSupabaseAdmin();
-  const { data } = await admin.from("listings").select("decklist").eq("id", listingId).maybeSingle();
+  const { data } = await admin.from("listings").select("decklist, seller_id").eq("id", listingId).maybeSingle();
   if (!data) return;
   const cols = metaColumns(await scoreDecklist(admin, data.decklist, await getMetaCorpus()));
   if (!cols) return;
   const { error } = await admin.from("listings").update(cols).eq("id", listingId);
   if (error) console.error("Score méta non enregistré :", error.message);
+  // Le score peut débloquer « Liste méta ».
+  await refreshUserBadges(data.seller_id);
 }

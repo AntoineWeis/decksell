@@ -10,6 +10,7 @@ import { MESSAGE_MAX, REPORT_MAX, isUuid } from "@/lib/messaging-shared";
 import { notifyNewMessage } from "@/lib/email";
 import { setFlash } from "@/lib/flash";
 import { parseEur } from "@/lib/pricing";
+import { refreshUserBadges } from "@/lib/badges-server";
 
 // Chaque action revérifie le membre ; les fonctions SQL revérifient tout le reste
 // (participant, blocage, quotas, email confirmé).
@@ -96,6 +97,8 @@ export async function sendMessage(conversationId: string, formData: FormData): P
     .single<{ conversation_id: string; notify_user: string | null }>();
   if (error || !data) return failure("envoi impossible", error ?? { message: "" });
 
+  // Une réponse du vendeur peut faire gagner « Réactif » (calculé après la réponse).
+  after(() => refreshUserBadges(user.id));
   await scheduleNotification(conversationId, data.notify_user);
   refresh();
   return { status: "sent" };

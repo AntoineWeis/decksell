@@ -12,6 +12,7 @@ import { CONDITIONS, FORMATS, normalizeColors, normalizeFormat, type Condition }
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
 import { after } from "next/server";
 import { refreshListingMeta } from "@/lib/meta-corpus";
+import { refreshUserBadges } from "@/lib/badges-server";
 
 export type SellState = { status: "idle" } | { status: "error"; message: string } | { status: "auth" };
 
@@ -118,6 +119,8 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   }
   // Score de proximité méta, calculé après la réponse (n'allonge pas la publication).
   if (created) after(() => refreshListingMeta(created.id).catch((e) => console.error("Score méta :", e)));
+  // Badges recalculés avant la redirection : l'animation s'affiche dès l'arrivée dans l'espace.
+  await refreshUserBadges(user.id);
   await setFlash("success", `Annonce « ${title} » publiée`);
   redirect("/espace");
 }

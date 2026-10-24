@@ -22,6 +22,7 @@ import { parseDecklist } from "@/lib/decklist";
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
 import { isDepartment } from "@/lib/departments";
 import { refreshListingMeta } from "@/lib/meta-corpus";
+import { refreshUserBadges } from "@/lib/badges-server";
 
 // Chaque action revérifie le membre : elles sont joignables par n'importe qui (POST).
 // Les règles RLS limitent en plus chaque écriture aux données du membre.
@@ -111,6 +112,7 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
   }
 
   refresh();
+  await refreshUserBadges(user.id);
   return { status: "saved" };
 }
 
@@ -178,6 +180,7 @@ export async function updateCardDetails(id: string, _prev: FormState, formData: 
   if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };
 
   refresh();
+  await refreshUserBadges(user.id);
   return { status: "saved" };
 }
 
@@ -312,6 +315,7 @@ export async function updateProfile(_prev: FormState, formData: FormData): Promi
   if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };
 
   refresh();
+  await refreshUserBadges(user.id);
   return { status: "saved" };
 }
 
@@ -349,5 +353,6 @@ export async function uploadAvatar(formData: FormData): Promise<FormState> {
     .eq("id", user.id);
 
   refresh();
+  await refreshUserBadges(user.id);
   return { status: "saved" };
 }
