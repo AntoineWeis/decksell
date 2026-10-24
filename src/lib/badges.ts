@@ -140,6 +140,11 @@ export function badgeChanges(previous: EarnedBadge[], next: EarnedBadge[]): Earn
   return next.filter((b) => b.level > (before.get(b.key) ?? 0));
 }
 
+/** Badges utiles à la décision d'achat (confiance) : seuls affichés à côté d'une annonce. Les autres restent sur le profil. */
+export function isTransactionBadge(b: EarnedBadge): boolean {
+  return BADGE_BY_KEY.get(b.key)?.family === "trust";
+}
+
 export const ROMAN = ["", "I", "II", "III"] as const;
 
 /** Les badges les plus forts à montrer à côté d'un vendeur : confiance d'abord, puis niveau. */

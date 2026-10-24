@@ -9,7 +9,7 @@ import { Avatar } from "@/components/avatar";
 import { ListingTile } from "@/components/listing-tile";
 import { favoriteStateOf, getFavoriteIds } from "@/lib/favorites";
 import { getUserBadges } from "@/lib/badges-server";
-import { BadgeGrid } from "@/components/badge-list";
+import { SellerBadges } from "@/components/badge-list";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -64,13 +64,14 @@ async function SellerContent({ params }: { params: Promise<{ id: string }> }) {
           </Link>
           <div className="mt-6 flex flex-wrap items-center gap-5">
             <Avatar name={seller.display_name} url={seller.avatar_url} size={88} />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1 basis-60">
               <p className="text-sm text-banner-muted">Vendeur</p>
               <h1 className="display break-words text-3xl sm:text-4xl">{seller.display_name}</h1>
               <p className="mt-1 text-sm text-banner-muted">
                 Membre depuis {monthYear(seller.created_at)}
                 {formatLocation(seller.department, seller.city) && <> · Expédie depuis {formatLocation(seller.department, seller.city)}</>}
               </p>
+              <SellerBadges badges={badges} max={badges.length} tone="banner" />
             </div>
           </div>
 
@@ -99,14 +100,6 @@ async function SellerContent({ params }: { params: Promise<{ id: string }> }) {
       </section>
 
       <div className="mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6">
-        {badges.length > 0 && (
-          <section className="mb-10">
-            <h2 className="display text-2xl">Badges</h2>
-            <div className="mt-4">
-              <BadgeGrid badges={badges} />
-            </div>
-          </section>
-        )}
         <h2 className="display text-2xl">
           {listings.length > 1 ? `Ses ${listings.length} decks` : "Son deck"}
         </h2>
