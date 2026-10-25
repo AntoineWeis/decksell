@@ -7,6 +7,8 @@ import { createSupabaseServer } from "@/lib/supabase-auth";
 import { estimateDecklistNow } from "@/lib/public-listings";
 import { metaResultFor } from "@/lib/meta-corpus";
 import { fromStoredDetail } from "@/lib/meta-score";
+import { mediaOf } from "@/lib/listing-media";
+import { ListingPhotosForm, PrimerForm } from "@/components/listing-media-forms";
 import { MetaProximityCard } from "@/components/meta-proximity";
 import { LISTING_COLUMNS, PUBLIC_STATUSES, STATUSES, type Listing } from "@/lib/listings";
 import { DeckView } from "@/components/deck-view";
@@ -49,7 +51,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
   if (!data) notFound();
   const listing = data as unknown as Listing;
 
-  const [{ deck, estimate, pricesAsOf }, profile, archetypes, storedMeta] = await Promise.all([
+  const [{ deck, estimate, pricesAsOf }, profile, archetypes, storedMeta, media] = await Promise.all([
     estimateDecklistNow(listing.decklist),
     getProfile(),
     getArchetypes(),
@@ -60,6 +62,13 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
       .eq("id", id)
       .maybeSingle()
       .then(({ data }) => fromStoredDetail((data as { meta_detail?: unknown } | null)?.meta_detail)),
+    // Photos et primer (colonnes absentes tant que le schéma n'est pas à jour : formulaires masqués).
+    supabase
+      .from("listings")
+      .select("photos, primer")
+      .eq("id", id)
+      .maybeSingle()
+      .then(({ data, error }) => (error ? null : mediaOf(data))),
   ]);
   const isPublic = (PUBLIC_STATUSES as readonly string[]).includes(listing.status);
 
@@ -88,7 +97,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
         ) : (
           "Cette annonce n'est pas visible publiquement."
         )}{" "}
-        Tout se modifie ci-dessous : l&apos;annonce, l&apos;état et la langue des cartes, puis la liste.
+        Tout se modifie ci-dessous : l&apos;annonce, les photos et le primer, l&apos;état et la langue des cartes, puis la liste.
       </p>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:items-start">
@@ -98,6 +107,12 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
             listing={listing}
             archetypes={archetypes}
           />
+          {media && (
+            <>
+              <ListingPhotosForm listingId={listing.id} photos={media.photos} />
+              <PrimerForm key={media.primer ?? ""} listingId={listing.id} primer={media.primer} />
+            </>
+          )}
           <CardDetailsForm
             // Repart de zéro quand la liste change : les lignes ne sont plus les mêmes.
             key={listing.decklist}

@@ -2,6 +2,18 @@ import { formatEur, type Estimate } from "@/lib/pricing";
 import { CardList } from "./card-list";
 import { groupAnchor } from "./card-types";
 import { detailsByKey, type CardDetail } from "@/lib/card-details";
+import { typeGroup } from "@/lib/deck-stats";
+import { HandTester, type HandCard } from "./hand-tester";
+
+/** Exemplaires du deck principal pour le testeur de main (une entrée par carte physique). */
+function handCards(estimate: Estimate): HandCard[] {
+  return estimate.lines
+    .filter((l) => l.board === "main")
+    .flatMap((l) => {
+      const card = { name: l.card?.name ?? l.name, imageUrl: l.card?.imageUrl ?? null, land: typeGroup(l.card?.typeLine) === "Land" };
+      return Array.from({ length: l.quantity }, () => card);
+    });
+}
 
 /** Vue d'un deck : valeur du jour, puis deck principal et réserve carte par carte. */
 export function DeckView({
@@ -39,6 +51,7 @@ export function DeckView({
         previewSide="right"
         details={byKey}
         groupByType
+        action={<HandTester cards={handCards(estimate)} />}
       />
       <CardList
         title="Réserve"

@@ -1249,3 +1249,31 @@ create policy "badges : lecture par le membre" on public.user_badges
 -- Rempli à la publication, à chaque changement de liste et par l'import quotidien.
 alter table public.listings
   add column if not exists meta_detail jsonb;
+
+-- 24. Photos réelles du deck et primer (comment jouer le deck), tous deux facultatifs
+-- Photos : adresses publiques des images (6 au plus), dans l'ordre choisi par le vendeur.
+-- Primer : plan de jeu expliqué par le vendeur, en texte simple.
+alter table public.listings
+  add column if not exists photos text[] not null default '{}' check (cardinality(photos) <= 6),
+  add column if not exists primer text check (char_length(primer) <= 6000);
+
+-- Images des photos : lisibles par tous ; chaque membre écrit seulement dans son dossier <id>/.
+-- Elles sont réduites dans le navigateur avant l'envoi (1 600 px, WebP) : 2 Mo suffisent.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('listing-photos', 'listing-photos', true, 2097152, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do nothing;
+
+drop policy if exists "photos d'annonce : envoi dans son dossier" on storage.objects;
+create policy "photos d'annonce : envoi dans son dossier" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'listing-photos' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+drop policy if exists "photos d'annonce : suppression dans son dossier" on storage.objects;
+create policy "photos d'annonce : suppression dans son dossier" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'listing-photos' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+drop policy if exists "photos d'annonce : lecture de son dossier" on storage.objects;
+create policy "photos d'annonce : lecture de son dossier" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'listing-photos' and (storage.foldername(name))[1] = (select auth.uid())::text);

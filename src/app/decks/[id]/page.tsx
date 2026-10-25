@@ -25,6 +25,7 @@ import { deckProductJsonLd, jsonLdScript } from "@/lib/structured-data";
 import { siteUrl } from "@/lib/site-url";
 import { getUserBadges } from "@/lib/badges-server";
 import { DeckPageSkeleton } from "@/components/deck-skeleton";
+import { DeckMedia } from "@/components/deck-media";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -120,6 +121,7 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
             <Suspense fallback={<div className="mt-2 h-10 animate-pulse rounded-xl bg-sunken" />}>
               <DeckFavorite listingId={listing.id} sellerId={listing.seller?.id ?? null} />
             </Suspense>
+            <DeckMedia title={listing.title} photos={listing.media.photos} primer={listing.media.primer} />
             <DeckShare listingId={listing.id} title={listing.title} decklistText={formatDecklist(parseDecklist(listing.decklist))} />
           </ListingAside>
         </div>

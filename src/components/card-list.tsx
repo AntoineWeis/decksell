@@ -31,6 +31,7 @@ export function CardList({
   details,
   groupByType = false,
   id,
+  action,
 }: {
   title: string;
   lines: PricedLine[];
@@ -43,6 +44,8 @@ export function CardList({
   groupByType?: boolean;
   /** Ancre de la section (ex. « type-side » pour la réserve). */
   id?: string;
+  /** Bouton dans l'en-tête, à côté du total (ex. « Tester une main »). */
+  action?: React.ReactNode;
 }) {
   if (lines.length === 0) return null;
   const count = lines.reduce((n, l) => n + l.quantity, 0);
@@ -91,7 +94,10 @@ export function CardList({
         <h2 className="text-lg font-semibold">
           {title} <span className="ml-1 text-sm font-normal text-muted">{count} cartes</span>
         </h2>
-        <span className="font-semibold tabular-nums">{formatEur(totalCents)}</span>
+        <span className="flex items-center gap-3">
+          {action}
+          <span className="font-semibold tabular-nums">{formatEur(totalCents)}</span>
+        </span>
       </header>
       <div className="flex items-center gap-3 border-y border-line bg-sunken px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted sm:px-5">
         <span className="w-6 text-right">Qté</span>

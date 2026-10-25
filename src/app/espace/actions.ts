@@ -257,6 +257,11 @@ export async function deleteListing(id: string): Promise<FormState> {
   const supabase = await createSupabaseServer();
   const { error } = await supabase.from("listings").delete().eq("id", id).eq("seller_id", user.id);
   if (error) return { status: "error", message: "Suppression impossible. Réessaie." };
+  // Photos réelles du deck : supprimées avec l'annonce (dossier <membre>/<annonce>/).
+  const photos = supabase.storage.from("listing-photos");
+  const folder = `${user.id}/${id}`;
+  const { data: files } = await photos.list(folder);
+  if (files?.length) await photos.remove(files.map((f) => `${folder}/${f.name}`));
   refresh();
   return { status: "saved" };
 }
