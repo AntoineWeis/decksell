@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Réinitialise ton mot de passe</title>
+</head>
+<body style="margin:0;padding:0;background-color:#eef1f6;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Choisis un nouveau mot de passe pour ton compte decksell.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef1f6;">
+<tr><td align="center" style="padding:32px 12px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+<tr><td style="background-color:#0f1830;border-radius:14px 14px 0 0;padding:20px 28px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="vertical-align:middle;padding-right:8px;"><img src="{{ .SiteURL }}/email-logo.png" width="32" height="32" alt="" style="display:block;border:0;"></td>
+<td style="vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:bold;letter-spacing:-0.5px;color:#f3f6fc;">deck<span style="color:#7fa8ff;">sell</span></td>
+</tr></table>
+</td></tr>
+<tr><td style="background-color:#ffffff;border-radius:0 0 14px 14px;padding:32px 28px 28px;font-family:Arial,Helvetica,sans-serif;">
+<p style="margin:0;font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#6f7dff;">Mot de passe oublié</p>
+<h1 style="margin:8px 0 0;font-size:24px;line-height:1.3;font-weight:bold;color:#111827;">Choisis un nouveau mot de passe</h1>
+<p style="margin:16px 0 0;font-size:15px;line-height:1.6;color:#374151;">Une demande de réinitialisation a été faite pour le compte <strong style="color:#111827;">{{ .Email }}</strong>. Clique sur le bouton pour choisir un nouveau mot de passe.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;"><tr>
+<td align="center" bgcolor="#6f7dff" style="border-radius:10px;">
+<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/nouveau-mot-de-passe" style="display:block;padding:14px 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:10px;">Choisir un nouveau mot de passe</a>
+</td></tr></table>
+<p style="margin:24px 0 0;font-size:15px;line-height:1.6;color:#374151;">Ce lien ne sert qu'une fois et expire au bout d'une heure. Passé ce délai, refais une demande depuis la page de connexion.</p>
+<p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #dde3ec;font-size:13px;line-height:1.6;color:#586378;">Le bouton ne marche pas ? Copie ce lien dans ton navigateur :<br><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/nouveau-mot-de-passe" style="color:#2257d6;word-break:break-all;">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery</a></p>
+<p style="margin:12px 0 0;font-size:13px;line-height:1.6;color:#586378;">Tu n'as rien demandé ? Ignore cet email : ton mot de passe reste inchangé et personne n'a accès à ton compte.</p>
+</td></tr>
+<tr><td align="center" style="padding:18px 12px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#8e9ab2;">
+decksell · des decks Modern complets, au juste prix<br>
+<a href="{{ .SiteURL }}" style="color:#8e9ab2;text-decoration:underline;">decksell.fr</a>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>
