@@ -28,8 +28,10 @@ export function SiteHeader() {
             <span className="sm:hidden">Decks</span>
             <span className="hidden sm:inline">Decks en vente</span>
           </Link>
-          <Link href="/estimer" className="hidden whitespace-nowrap rounded-md px-3 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:block">
-            Estimer un deck
+          {/* Sur mobile aussi : c'est l'entrée des vendeurs. */}
+          <Link href="/estimer" className="whitespace-nowrap rounded-md px-2 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:px-3">
+            <span className="sm:hidden">Estimer</span>
+            <span className="hidden sm:inline">Estimer un deck</span>
           </Link>
         </nav>
         <div className="ml-auto flex items-center gap-1.5 text-sm">
@@ -54,12 +56,12 @@ async function UserMenu() {
         >
           Connexion
         </Link>
+        {/* Masqué sur mobile pour laisser la place à « Estimer » : la page de connexion mène à l'inscription. */}
         <Link
           href="/inscription"
-          className="whitespace-nowrap rounded-md bg-accent px-3 py-2 font-semibold text-on-accent transition hover:bg-accent-hover"
+          className="hidden whitespace-nowrap rounded-md bg-accent px-3 py-2 font-semibold text-on-accent transition hover:bg-accent-hover sm:block"
         >
-          <span className="sm:hidden">S&apos;inscrire</span>
-          <span className="hidden sm:inline">Créer un compte</span>
+          Créer un compte
         </Link>
       </>
     );
@@ -77,7 +79,8 @@ async function UserMenu() {
         href="/espace/favoris"
         aria-label="Mes favoris"
         title="Mes favoris"
-        className="flex h-9 w-9 items-center justify-center rounded-md text-banner-muted hover:bg-white/10 hover:text-banner-ink"
+        // Masqué sur mobile pour laisser la place à « Estimer » : les favoris restent dans Mon espace.
+        className="hidden h-9 w-9 items-center justify-center rounded-md text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:flex"
       >
         <StarIcon className="h-[22px] w-[22px]" />
       </Link>

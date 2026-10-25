@@ -90,9 +90,7 @@ export function ListingAside({
         {children}
       </div>
 
-      <div className="space-y-4">
-        {stats}
-
+      {/* Le vendeur juste sous le prix et le contact : c'est ce qui rassure avant d'écrire. */}
         {seller && (
           <div className="rounded-xl border border-line bg-surface p-5">
             <p className="text-sm text-muted">Vendeur</p>
@@ -155,6 +153,9 @@ export function ListingAside({
             )}
           </div>
         )}
+
+      <div className="space-y-4">
+        {stats}
 
         {l.description && (
           <div className="rounded-xl border border-line bg-surface p-5">

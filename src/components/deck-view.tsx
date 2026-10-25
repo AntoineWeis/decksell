@@ -1,4 +1,4 @@
-import { formatEur, type Estimate } from "@/lib/pricing";
+import type { Estimate } from "@/lib/pricing";
 import { CardList } from "./card-list";
 import { groupAnchor } from "./card-types";
 import { detailsByKey, type CardDetail } from "@/lib/card-details";
@@ -29,21 +29,18 @@ export function DeckView({
   const byKey = details?.length ? detailsByKey(details) : undefined;
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 rounded-xl border border-line bg-surface px-5 py-4">
-        <p>
-          Valeur du jour : <span className="font-semibold tabular-nums">{formatEur(estimate.totalCents)}</span>
-          {!estimate.complete && (
-            <span className="text-warn">
-              {" "}
-              (hors {estimate.unpricedCardCount} carte{estimate.unpricedCardCount > 1 ? "s" : ""} sans prix)
-            </span>
-          )}
-        </p>
-        <p className="text-xs text-muted">
+      {/* La valeur du jour est dans l'encadré prix : ici, seulement la source, la date et les cartes sans prix. */}
+      <p className="flex flex-wrap gap-x-2 gap-y-1 px-1 text-xs text-muted">
+        <span>
           Prix Cardmarket via Scryfall
           {pricesAsOf && <> · mis à jour le {new Date(pricesAsOf).toLocaleDateString("fr-FR")}</>}
-        </p>
-      </div>
+        </span>
+        {!estimate.complete && (
+          <span className="font-medium text-warn">
+            · {estimate.unpricedCardCount} carte{estimate.unpricedCardCount > 1 ? "s" : ""} sans prix, hors total
+          </span>
+        )}
+      </p>
       <CardList
         title="Deck principal"
         lines={estimate.lines.filter((l) => l.board === "main")}

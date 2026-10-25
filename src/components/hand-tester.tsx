@@ -56,13 +56,15 @@ export function HandTester({ cards }: { cards: HandCard[] }) {
       <button
         type="button"
         onClick={start}
-        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-2.5 text-sm font-medium text-muted transition hover:border-link/50 hover:text-link"
+        aria-label="Tester une main"
+        className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg border border-line px-2.5 text-sm font-medium text-muted transition hover:border-link/50 hover:text-link"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden>
           <rect x="3" y="6" width="9" height="13" rx="1.5" transform="rotate(-8 7.5 12.5)" />
           <rect x="11" y="5" width="9" height="13" rx="1.5" transform="rotate(8 15.5 11.5)" />
         </svg>
-        Tester une main
+        <span className="sm:hidden">Main</span>
+        <span className="hidden sm:inline">Tester une main</span>
       </button>
       <Modal
         open={open}

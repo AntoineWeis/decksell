@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Modal } from "./modal";
 
 const buttonClass =
-  "flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line text-sm font-medium text-muted transition hover:border-link/50 hover:text-link";
+  "flex h-9 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-line px-2 text-sm font-medium text-muted transition hover:border-link/50 hover:text-link";
 
 /** Une photo de la galerie : squelette animé tant qu'elle n'est pas chargée. */
 function Photo({ url, alt, className = "" }: { url: string; alt: string; className?: string }) {
@@ -112,10 +112,20 @@ function PrimerText({ text }: { text: string }) {
 }
 
 /**
- * Boutons sous le prix : photos réelles du deck (toujours, avec une invitation s'il n'y en a pas)
- * et primer du vendeur (seulement s'il l'a écrit), chacun dans sa fenêtre.
+ * Rangée de boutons sous le prix : photos réelles du deck (toujours, avec une invitation s'il n'y
+ * en a pas), primer du vendeur (seulement s'il l'a écrit), puis ce qu'on y ajoute (« Partager »).
  */
-export function DeckMedia({ title, photos, primer }: { title: string; photos: string[]; primer: string | null }) {
+export function DeckMedia({
+  title,
+  photos,
+  primer,
+  children,
+}: {
+  title: string;
+  photos: string[];
+  primer: string | null;
+  children?: React.ReactNode;
+}) {
   const [open, setOpen] = useState<"photos" | "primer" | null>(null);
   const close = () => setOpen(null);
   return (
@@ -126,7 +136,7 @@ export function DeckMedia({ title, photos, primer }: { title: string; photos: st
             <path d="M4 8h3l2-3h6l2 3h3v11H4Z" />
             <circle cx="12" cy="13" r="3.5" />
           </svg>
-          Photos du deck
+          Photos
           {photos.length > 0 && <span className="rounded-full bg-sunken px-1.5 text-xs font-semibold tabular-nums text-foreground">{photos.length}</span>}
         </button>
         {primer && (
@@ -148,6 +158,7 @@ export function DeckMedia({ title, photos, primer }: { title: string; photos: st
             </span>
           </span>
         )}
+        {children}
       </div>
       <Modal
         open={open === "photos"}
