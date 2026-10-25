@@ -59,7 +59,7 @@ export function ListingAside({
     // En mode « prix d'abord », l'encadré s'efface sur mobile : ses blocs deviennent des
     // éléments de la grille de la page, que l'on peut ordonner autour de la liste de cartes.
     <aside className={priceFirstOnMobile ? "contents lg:sticky lg:top-20 lg:block lg:space-y-4" : "space-y-4 lg:sticky lg:top-20"}>
-      <div className={`rounded-xl border border-line bg-surface p-5 ${priceFirstOnMobile ? "order-first lg:order-none" : ""}`}>
+      <div id="prix" className={`scroll-mt-20 rounded-xl border border-line bg-surface p-5 ${priceFirstOnMobile ? "order-first lg:order-none" : ""}`}>
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-muted">Prix demandé</p>
           {l.status !== "active" && (

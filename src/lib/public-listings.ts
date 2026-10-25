@@ -16,9 +16,9 @@ import { LISTING_COLUMNS, PUBLIC_STATUSES, type PublicListing } from "./listings
 // elle Supabase refuse la jointure (plusieurs chemins possibles, erreur PGRST201).
 const SELLER_BASE = "id, display_name, avatar_url, moxfield_url, archidekt_url, created_at";
 // Localisation et suspension (sections 17 et 19 du schéma). Base pas encore migrée : on relit sans.
-const SELECT = `${LISTING_COLUMNS}, meta_score, meta_status, meta_archetype, seller:profiles!listings_seller_id_fkey(${SELLER_BASE}, department, city, suspended_until)`;
+const SELECT = `${LISTING_COLUMNS}, meta_score, meta_status, meta_archetype, photos, seller:profiles!listings_seller_id_fkey(${SELLER_BASE}, department, city, suspended_until)`;
 // Page d'un deck : détail du score méta, badges et nombre de decks en vente du vendeur, en une requête.
-const DETAIL_SELECT = SELECT.replace("meta_archetype,", "meta_archetype, meta_detail, photos, primer,").replace(
+const DETAIL_SELECT = SELECT.replace("photos,", "photos, meta_detail, primer,").replace(
   "suspended_until)",
   "suspended_until, user_badges(badge, level), active:listings!listings_seller_id_fkey(count))",
 );

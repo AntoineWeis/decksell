@@ -9,6 +9,7 @@ import { formatEur } from "@/lib/pricing";
 import { CONDITIONS, PUBLIC_STATUSES, STATUSES, artCrop, type Listing, type ListingStatus } from "@/lib/listings";
 import { LanguageBar } from "./language-bar";
 import { ManaColors } from "./mana";
+import { completeness } from "@/lib/listing-media";
 
 const STATUS_STYLE: Record<ListingStatus, string> = {
   active: "bg-ok-soft text-ok",
@@ -20,7 +21,7 @@ const STATUS_STYLE: Record<ListingStatus, string> = {
 const date = (iso: string) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 
 /** Une annonce dans « Mes annonces » : l'essentiel, le statut en un clic ; le reste se modifie sur sa page. */
-export function ListingCard({ listing: l }: { listing: Listing }) {
+export function ListingCard({ listing: l }: { listing: Listing & { photos?: string[]; primer?: string | null } }) {
   const [deleting, startDelete] = useTransition();
   const [changing, startChange] = useTransition();
   const [status, setStatus] = useState<ListingStatus>(l.status);
@@ -44,6 +45,10 @@ export function ListingCard({ listing: l }: { listing: Listing }) {
     !l.archetype && "l'archétype",
     l.french_percent == null && "la langue des cartes",
   ].filter(Boolean) as string[];
+
+  // Complétude : affichée seulement si les photos et le primer ont pu être lus (schéma à jour).
+  const complete = "photos" in l ? completeness(l) : null;
+  const onSale = status === "active" || status === "reserved";
 
   return (
     <li className={`rounded-xl border border-line bg-surface p-4 sm:p-5 ${deleting ? "opacity-50" : ""}`}>
@@ -84,6 +89,31 @@ export function ListingCard({ listing: l }: { listing: Listing }) {
         </div>
       </div>
 
+      {complete && onSale && (
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-sunken px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-muted">Annonce complète à</span>
+            <span className={`text-sm font-bold tabular-nums ${complete.percent === 100 ? "text-ok" : "text-foreground"}`}>{complete.percent} %</span>
+          </div>
+          <div className="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-line" aria-hidden>
+            <div
+              className={`h-full rounded-full ${complete.percent === 100 ? "bg-ok" : "bg-[linear-gradient(90deg,#5a90ff,#9d84ff)]"}`}
+              style={{ width: `${complete.percent}%` }}
+            />
+          </div>
+          {complete.todo.length > 0 ? (
+            <p className="w-full text-xs text-muted">
+              Pour rassurer les acheteurs :{" "}
+              <Link href={`/espace/annonces/${l.id}`} className="font-medium text-link hover:underline">
+                {complete.todo.join(", ")}
+              </Link>
+              .
+            </p>
+          ) : (
+            <p className="w-full text-xs text-muted">Tout y est : photos, détail des cartes, archétype, couleurs et primer.</p>
+          )}
+        </div>
+      )}
       {missing.length > 0 && l.status !== "sold" && l.status !== "withdrawn" && (
         <p className="hatch mt-4 rounded-lg border border-warn/40 px-3 py-2 text-sm text-warn">
           <strong className="font-semibold">À compléter :</strong> {missing.join(", ")}.{" "}

@@ -16,3 +16,26 @@ export function mediaOf(row: { photos?: unknown; primer?: unknown } | null | und
   const primer = typeof row?.primer === "string" && row.primer.trim() !== "" ? row.primer : null;
   return { photos, primer };
 }
+
+/** Ce qui rend une annonce complète, du plus au moins rassurant pour un acheteur. */
+export type CompletenessInput = {
+  photos?: string[] | null;
+  primer?: string | null;
+  card_details?: unknown[] | null;
+  archetype?: unknown;
+  colors?: unknown[] | null;
+};
+
+const CHECKS: { key: string; todo: string; done: (l: CompletenessInput) => boolean }[] = [
+  { key: "photos", todo: "ajoute des photos des cartes", done: (l) => (l.photos?.length ?? 0) > 0 },
+  { key: "details", todo: "précise l'état et la langue carte par carte", done: (l) => (l.card_details?.length ?? 0) > 0 },
+  { key: "archetype", todo: "choisis l'archétype", done: (l) => !!l.archetype },
+  { key: "colors", todo: "indique les couleurs", done: (l) => (l.colors?.length ?? 0) > 0 },
+  { key: "primer", todo: "écris un primer (comment jouer le deck)", done: (l) => !!l.primer?.trim() },
+];
+
+/** Complétude d'une annonce : pourcentage et ce qu'il reste à faire, dans l'ordre d'importance. */
+export function completeness(l: CompletenessInput): { percent: number; todo: string[] } {
+  const todo = CHECKS.filter((c) => !c.done(l)).map((c) => c.todo);
+  return { percent: Math.round(((CHECKS.length - todo.length) / CHECKS.length) * 100), todo };
+}

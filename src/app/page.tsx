@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import { LatestDecks } from "@/components/latest-decks";
 import { ManaRise } from "@/components/mana-rise";
 import { DeckPreview, DeckPreviewSkeleton } from "@/components/deck-preview";
+import Form from "next/form";
+import { CardSearchInput } from "@/components/card-search-input";
 
 function LatestDecksSkeleton() {
   return (
@@ -35,7 +37,7 @@ const PATHS = [
     title: "Tu vends ton deck",
     steps: [
       ["Colle ta liste", "Depuis MTGO, Arena, Moxfield ou MTGGoldfish, réserve comprise. La valeur tombe en quelques secondes, sans compte."],
-      ["Fixe ton prix", "Tu vois ce que vaut chaque carte. Une carte sans prix ? Indique le tien. Précise l'état et la langue de tes cartes."],
+      ["Fixe ton prix", "Tu vois ce que vaut chaque carte. Précise l'état et la langue de tes cartes, ajoute des photos et, si tu veux, un primer."],
       ["Publie et réponds", "Les acheteurs t'écrivent et te font des offres depuis l'annonce ; tu es prévenu par e-mail. Passe-la en réservé, puis en vendu."],
     ],
     cta: { href: "/estimer", label: "Estimer mon deck →" },
@@ -44,10 +46,54 @@ const PATHS = [
     title: "Tu cherches un deck",
     steps: [
       ["Parcours les decks", "Filtre par couleur, archétype ou carte présente dans la liste, et trie par prix ou par meilleure affaire."],
-      ["Examine la fiche", "Prix demandé face à la valeur du jour, état et langue carte par carte, liste rangée par type, courbe de mana."],
+      ["Examine la fiche", "Prix face à la valeur du jour, photos des vraies cartes, état carte par carte, proximité avec le méta, et une main de départ à tester."],
       ["Écris au vendeur", "Pose tes questions ou fais une offre depuis l'annonce. Garde les decks qui te tentent dans tes favoris."],
     ],
     cta: { href: "/decks", label: "Voir les decks en vente →" },
+  },
+];
+
+/** Ce que chaque fiche apporte en plus de la liste : de quoi acheter en confiance. */
+const FEATURES = [
+  {
+    title: "Les vraies cartes en photo",
+    text: "Le vendeur photographie le deck étalé et les cartes chères de près. Pas de photo ? Tu peux les demander.",
+    icon: (
+      <>
+        <path d="M4 8h3l2-3h6l2 3h3v11H4Z" />
+        <circle cx="12" cy="13" r="3.5" />
+      </>
+    ),
+  },
+  {
+    title: "Proximité avec le méta",
+    text: "Un score de 0 à 100 compare la liste aux résultats récents des tournois MTGO, avec les cartes en plus et en moins.",
+    icon: <path d="M4 19h16M7 15l3-4 3 2 4-6" />,
+  },
+  {
+    title: "Une main à tester",
+    text: "Tire 7 cartes, fais un mulligan, pioche : vérifie que le deck tourne avant d'écrire au vendeur.",
+    icon: (
+      <>
+        <rect x="3" y="6" width="9" height="13" rx="1.5" transform="rotate(-8 7.5 12.5)" />
+        <rect x="11" y="5" width="9" height="13" rx="1.5" transform="rotate(8 15.5 11.5)" />
+      </>
+    ),
+  },
+  {
+    title: "Le primer du vendeur",
+    text: "Plan de jeu, mulligans, réserve contre le méta : le vendeur explique comment jouer son deck.",
+    icon: (
+      <>
+        <path d="M5 4h10a4 4 0 0 1 4 4v12H9a4 4 0 0 1-4-4Z" />
+        <path d="M9 9h6M9 13h4" />
+      </>
+    ),
+  },
+  {
+    title: "Des vendeurs repérables",
+    text: "Badges Réactif, Juste prix ou Ancien : gagnés sur des faits vérifiés par le site, jamais déclarés.",
+    icon: <path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6Z M9 12l2 2 4-4" />,
   },
 ];
 
@@ -123,7 +169,33 @@ export default function Home() {
               Voir les decks en vente
             </Link>
           </div>
-          <p className="mt-4 text-sm text-banner-muted">Estimation gratuite et sans compte · Prix Cardmarket en euros</p>
+          {/* Recherche directe : les decks qui contiennent une carte */}
+          <Form action="/decks" role="search" className="mt-6 flex max-w-xl gap-2">
+            <label htmlFor="home-card-search" className="sr-only">
+              Chercher un deck par carte
+            </label>
+            <div className="relative min-w-0 flex-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden>
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-4-4" />
+              </svg>
+              <CardSearchInput
+                id="home-card-search"
+                type="search"
+                name="carte"
+                placeholder="Un deck avec… Ragavan, Foudre, Urza's Saga"
+                maxLength={60}
+                minLength={3}
+                required
+                autoComplete="off"
+                className="h-11 w-full rounded-lg border border-white/15 bg-surface/95 pl-9 pr-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-link focus:ring-2 focus:ring-link/30"
+              />
+            </div>
+            <button type="submit" className="h-11 shrink-0 rounded-lg px-4 text-sm font-semibold text-banner-ink ring-1 ring-white/25 transition hover:bg-white/10">
+              Chercher
+            </button>
+          </Form>
+          <p className="mt-3 text-sm text-banner-muted">Estimation gratuite et sans compte · Prix Cardmarket en euros</p>
         </div>
       </section>
 
@@ -160,6 +232,25 @@ export default function Home() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Ce que la fiche apporte en plus de la liste */}
+      <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6 sm:pt-20">
+        <h2 className="display max-w-2xl text-3xl sm:text-4xl">Plus qu&apos;une liste de cartes</h2>
+        <p className="mt-3 max-w-2xl leading-relaxed text-muted">
+          Acheter un deck à distance, c&apos;est faire confiance. Chaque fiche donne de quoi juger avant d&apos;écrire.
+        </p>
+        <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {FEATURES.map((f) => (
+            <li key={f.title} className="rounded-xl border border-line bg-surface p-5">
+              <span className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-link">
+                <Icon>{f.icon}</Icon>
+              </span>
+              <p className="mt-4 font-semibold">{f.title}</p>
+              <p className="mt-1 text-sm leading-relaxed text-muted">{f.text}</p>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* Aperçu d'une vraie fiche deck : lu à part, comme les derniers decks. */}

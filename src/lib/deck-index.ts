@@ -8,6 +8,7 @@ export const SORTS = {
   "prix-asc": "Prix croissant",
   "prix-desc": "Prix décroissant",
   affaire: "Meilleures affaires",
+  meta: "Plus proches du méta",
 } as const;
 export type SortKey = keyof typeof SORTS;
 export const DEFAULT_SORT: SortKey = "recent";
@@ -21,6 +22,8 @@ export type DeckQuery = {
   /** Fourchette de prix demandé, en euros entiers (null : pas de borne). */
   min: number | null;
   max: number | null;
+  /** Seulement les decks avec des photos réelles. */
+  photos: boolean;
   /** Page affichée, à partir de 1. */
   page: number;
 };
@@ -32,6 +35,7 @@ export const EMPTY_QUERY: DeckQuery = {
   sort: DEFAULT_SORT,
   min: null,
   max: null,
+  photos: false,
   page: 1,
 };
 
@@ -53,7 +57,7 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 
 /**
  * Lit l'adresse : ?c=UR (couleurs) & a=burn (archétype) & carte=ragavan & tri=prix-asc
- * & min=100 & max=500 (euros) & page=2.
+ * & min=100 & max=500 (euros) & photos=1 & page=2.
  */
 export function readDeckQuery(sp: RawParams): DeckQuery {
   const c = first(sp.c);
@@ -72,6 +76,7 @@ export function readDeckQuery(sp: RawParams): DeckQuery {
     sort: sort && sort in SORTS ? (sort as SortKey) : DEFAULT_SORT,
     min,
     max,
+    photos: first(sp.photos) === "1",
     page: Number.isInteger(page) && page > 1 ? Math.min(page, 10_000) : 1,
   };
 }
@@ -87,6 +92,7 @@ export function decksHref(q: Partial<DeckQuery>): string {
   if (q.card) params.set("carte", q.card);
   if (q.min != null) params.set("min", String(q.min));
   if (q.max != null) params.set("max", String(q.max));
+  if (q.photos) params.set("photos", "1");
   if (q.sort && q.sort !== DEFAULT_SORT) params.set("tri", q.sort);
   if (q.page && q.page > 1) params.set("page", String(q.page));
   const s = params.toString();
@@ -135,6 +141,7 @@ export function filterListings(listings: PublicListing[], q: DeckQuery, aliases:
     if (q.archetype && l.archetype?.slug !== q.archetype) continue;
     if (q.min != null && l.asking_cents < q.min * 100) continue;
     if (q.max != null && l.asking_cents > q.max * 100) continue;
+    if (q.photos && !(l.photos?.length ?? 0)) continue;
     let hits: CardHit[] = [];
     // Recherche trop courte : ignorée (l'interface le signale) plutôt que de tout masquer.
     if (normalizeName(q.card).length >= MIN_CARD_QUERY) {
@@ -160,6 +167,8 @@ export function sortListings<T extends { listing: PublicListing }>(items: T[], s
       if (ga == null || gb == null) return (ga == null ? 1 : 0) - (gb == null ? 1 : 0) || recent(a, b);
       return ga - gb || recent(a, b);
     },
+    // Score méta décroissant ; les decks sans score passent à la fin.
+    meta: (a, b) => (b.listing.meta_score ?? -1) - (a.listing.meta_score ?? -1) || recent(a, b),
   };
   return [...items].sort(by[sort]);
 }

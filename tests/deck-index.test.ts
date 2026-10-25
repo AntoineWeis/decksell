@@ -42,6 +42,7 @@ test("readDeckQuery lit et nettoie l'adresse", () => {
     sort: "prix-asc",
     min: null,
     max: null,
+    photos: false,
     page: 1,
   });
   assert.deepEqual(readDeckQuery({ a: "<script>", tri: "n'importe", min: "abc", page: "-2" }), EMPTY_QUERY);
@@ -113,4 +114,16 @@ test("findCards trouve aussi les traductions d'une recherche en français", () =
     "Fable of the Mirror-Breaker // Reflection of Kiki-Jiki",
   ]);
   assert.deepEqual(findCards(list, "foudre"), [], "sans traduction : rien");
+});
+
+test("filtre « avec photos » et tri par proximité méta", () => {
+  const avec = listing("avec", { photos: ["p.webp"], meta_score: 60 });
+  const sans = listing("sans", { meta_score: 95 });
+  const inconnu = listing("inconnu", { meta_score: null });
+  const q = { ...EMPTY_QUERY, photos: true };
+  assert.deepEqual(filterListings([avec, sans], q).map((x) => x.listing.id), ["avec"]);
+  assert.equal(decksHref(q), "/decks?photos=1");
+  assert.equal(readDeckQuery({ photos: "1" }).photos, true);
+  const sorted = sortListings(filterListings([inconnu, avec, sans], EMPTY_QUERY), "meta").map((x) => x.listing.id);
+  assert.deepEqual(sorted, ["sans", "avec", "inconnu"]);
 });

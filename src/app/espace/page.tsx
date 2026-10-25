@@ -20,11 +20,11 @@ export default function ListingsPage() {
 async function Dashboard() {
   const user = await requireUser("/espace");
   const supabase = await createSupabaseServer();
-  const { data, error } = await supabase
-    .from("listings")
-    .select(`${LISTING_COLUMNS}, sold_cents, sold_at`)
-    .eq("seller_id", user.id)
-    .order("created_at", { ascending: false });
+  const mine = (cols: string) =>
+    supabase.from("listings").select(cols).eq("seller_id", user.id).order("created_at", { ascending: false });
+  // Photos et primer pour la complétude des annonces ; base pas encore à jour : sans.
+  let { data, error } = await mine(`${LISTING_COLUMNS}, sold_cents, sold_at, photos, primer`);
+  if (error) ({ data, error } = await mine(`${LISTING_COLUMNS}, sold_cents, sold_at`));
 
   if (error) {
     return <p className="rounded-xl bg-danger-soft px-5 py-4 text-danger">Impossible de charger tes annonces.</p>;

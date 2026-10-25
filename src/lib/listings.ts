@@ -83,6 +83,8 @@ export type PublicListing = Omit<Listing, "sold_cents" | "sold_at"> & {
   meta_score?: number | null;
   meta_status?: string | null;
   meta_archetype?: string | null;
+  /** Photos réelles du deck (absentes tant que le schéma n'est pas à jour). */
+  photos?: string[];
   seller: {
     id: string;
     display_name: string;

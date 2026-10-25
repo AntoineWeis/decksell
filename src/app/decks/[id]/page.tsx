@@ -26,6 +26,7 @@ import { siteUrl } from "@/lib/site-url";
 import { getUserBadges } from "@/lib/badges-server";
 import { DeckPageSkeleton } from "@/components/deck-skeleton";
 import { DeckMedia } from "@/components/deck-media";
+import { MobileBuyBar } from "@/components/mobile-buy-bar";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -128,6 +129,8 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
           </ListingAside>
         </div>
       </div>
+      {/* Mobile : le prix et le contact restent à portée pendant qu'on parcourt les cartes. */}
+      <MobileBuyBar price={formatEur(listing.asking_cents)} />
     </>
   );
 }
