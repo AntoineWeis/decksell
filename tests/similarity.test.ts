@@ -186,3 +186,20 @@ test("classifyArchetype : une carte signature l'emporte sur un archétype géné
   const goryo = "4 Goryo's Vengeance\n2 Griselbrand\n2 Atraxa, Grand Unifier\n4 Solitude\n4 Prismatic Ending\n2 Force of Negation\n4 Ephemerate\n1 Teferi, Hero of Dominaria\n2 Supreme Verdict";
   assert.equal(classifyArchetype(deck(goryo)), "reanimator");
 });
+
+test("détail du score enregistré : compact, relu à l'identique (verdict recalculé)", async () => {
+  const { toStoredDetail, fromStoredDetail } = await import("../src/lib/meta-score.ts");
+  const corpus = buildCorpus([meta(1, TRON, "Tron"), meta(2, BURN, "Burn")]);
+  const r = matchMeta(deck(BURN), { unknownCards: 0, parseErrors: 0 }, corpus);
+  assert.ok(r.status === "ok" || r.status === "partial");
+  const stored = JSON.parse(JSON.stringify(toStoredDetail(r)));
+  assert.deepEqual(stored.result.best.deck.main, {}); // listes de référence réduites à leur en-tête
+  const back = fromStoredDetail(stored);
+  assert.ok(back && "score" in back && "score" in r);
+  assert.equal(back.score, r.score);
+  assert.equal(back.verdict.key, r.verdict.key);
+  assert.equal(back.best.deck.archetype, "Burn");
+  assert.deepEqual(back.diff.main.shared.slice(0, 3), r.diff.main.shared.slice(0, 3));
+  assert.equal(fromStoredDetail(null), null);
+  assert.equal(fromStoredDetail({ v: 0, result: r }), null); // ancien format : recalcul
+});

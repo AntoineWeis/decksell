@@ -18,7 +18,7 @@ import { META_WINDOW_DAYS } from "../src/lib/meta-config.ts";
 import { boardSize, compareDecks } from "../src/lib/similarity.ts";
 import { buildCorpus, deckCardsFromParsed } from "../src/lib/meta-match.ts";
 import { classifyArchetype } from "../src/lib/archetype-signatures.ts";
-import { metaColumns, scoreDecklist } from "../src/lib/meta-score.ts";
+import { metaColumns, saveListingMeta, scoreDecklist } from "../src/lib/meta-score.ts";
 import { refreshBadges } from "../src/lib/badge-stats.ts";
 
 const args = process.argv.slice(2);
@@ -291,8 +291,8 @@ async function rescoreListings(rows) {
           : `${result.score} (${result.best.deck.archetype ?? "non nommé"})`;
     console.log(`  « ${l.title} » : ${label}`);
     if (!cols || DRY) continue;
-    const { error: e } = await db.from("listings").update(cols).eq("id", l.id);
-    if (e) throw new Error(`Mise à jour de l'annonce ${l.id} impossible : ${e.message}`);
+    const e = await saveListingMeta(db, l.id, cols);
+    if (e) throw new Error(`Mise à jour de l'annonce ${l.id} impossible : ${e}`);
   }
 }
 

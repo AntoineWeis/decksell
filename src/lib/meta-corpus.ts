@@ -3,7 +3,7 @@ import { cacheLife } from "next/cache";
 import { getSupabaseAdmin } from "./supabase-server.ts";
 import { META_WINDOW_DAYS } from "./meta-config.ts";
 import { buildCorpus, type MetaCorpus, type MetaDeck, type MetaResult } from "./meta-match.ts";
-import { metaColumns, scoreDecklist, scoreEstimate } from "./meta-score.ts";
+import { metaColumns, saveListingMeta, scoreDecklist, scoreEstimate } from "./meta-score.ts";
 import type { Estimate } from "./pricing.ts";
 import { refreshUserBadges } from "./badges-server.ts";
 
@@ -81,8 +81,8 @@ export async function refreshListingMeta(listingId: string): Promise<void> {
   if (!data) return;
   const cols = metaColumns(await scoreDecklist(admin, data.decklist, await getMetaCorpus()));
   if (!cols) return;
-  const { error } = await admin.from("listings").update(cols).eq("id", listingId);
-  if (error) console.error("Score méta non enregistré :", error.message);
+  const error = await saveListingMeta(admin, listingId, cols);
+  if (error) console.error("Score méta non enregistré :", error);
   // Le score peut débloquer « Liste méta ».
   await refreshUserBadges(data.seller_id);
 }

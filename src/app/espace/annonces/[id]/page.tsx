@@ -6,6 +6,7 @@ import { getProfile, requireUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { estimateDecklistNow } from "@/lib/public-listings";
 import { metaResultFor } from "@/lib/meta-corpus";
+import { fromStoredDetail } from "@/lib/meta-score";
 import { MetaProximityCard } from "@/components/meta-proximity";
 import { LISTING_COLUMNS, PUBLIC_STATUSES, STATUSES, type Listing } from "@/lib/listings";
 import { DeckView } from "@/components/deck-view";
@@ -48,10 +49,17 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
   if (!data) notFound();
   const listing = data as unknown as Listing;
 
-  const [{ deck, estimate, pricesAsOf }, profile, archetypes] = await Promise.all([
+  const [{ deck, estimate, pricesAsOf }, profile, archetypes, storedMeta] = await Promise.all([
     estimateDecklistNow(listing.decklist),
     getProfile(),
     getArchetypes(),
+    // Détail du score enregistré (colonne absente tant que le schéma n'est pas à jour : null).
+    supabase
+      .from("listings")
+      .select("meta_detail")
+      .eq("id", id)
+      .maybeSingle()
+      .then(({ data }) => fromStoredDetail((data as { meta_detail?: unknown } | null)?.meta_detail)),
   ]);
   const isPublic = (PUBLIC_STATUSES as readonly string[]).includes(listing.status);
 
@@ -114,7 +122,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
           }
           todayCents={estimate.totalCents}
           stats={<>
-            <MetaProximityCard result={await metaResultFor(estimate, deck.errors.length)} />
+            <MetaProximityCard result={storedMeta ?? (await metaResultFor(estimate, deck.errors.length, listing.decklist))} />
             <CardTypesCard counts={cardTypeCounts(estimate)} targets={anchorsFor(estimate)} />
             <ManaCurveCard curve={manaCurve(estimate)} />
           </>}

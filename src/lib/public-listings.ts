@@ -16,8 +16,8 @@ import { LISTING_COLUMNS, PUBLIC_STATUSES, type PublicListing } from "./listings
 const SELLER_BASE = "id, display_name, avatar_url, moxfield_url, archidekt_url, created_at";
 // Localisation et suspension (sections 17 et 19 du schéma). Base pas encore migrée : on relit sans.
 const SELECT = `${LISTING_COLUMNS}, meta_score, meta_status, meta_archetype, seller:profiles!listings_seller_id_fkey(${SELLER_BASE}, department, city, suspended_until)`;
-// Page d'un deck : badges et nombre de decks en vente du vendeur dans la même requête.
-const DETAIL_SELECT = SELECT.replace(
+// Page d'un deck : détail du score méta, badges et nombre de decks en vente du vendeur, en une requête.
+const DETAIL_SELECT = SELECT.replace("meta_archetype,", "meta_archetype, meta_detail,").replace(
   "suspended_until)",
   "suspended_until, user_badges(badge, level), active:listings!listings_seller_id_fkey(count))",
 );
@@ -102,6 +102,8 @@ export type PublicListingDetail = PublicListing & {
   /** Null : non lus (schéma pas à jour) ; l'appelant peut les demander à part. */
   sellerBadges: EarnedBadge[] | null;
   sellerDeckCount: number | null;
+  /** Détail enregistré du score méta (null : à recalculer). */
+  metaDetail: unknown;
 };
 
 type SellerExtras = { user_badges?: { badge: string; level: number }[]; active?: { count: number }[] };
@@ -118,7 +120,9 @@ export const fetchPublicListing = cache(async function fetchPublicListing(id: st
   if (missingColumn(error)) ({ data, error } = await one(SELECT));
   if (missingColumn(error)) ({ data, error } = await one(LEGACY_SELECT));
   if (error) throw new Error(`Lecture de l'annonce impossible : ${error.message}`);
-  const row = data as unknown as (Row & { seller: (Row["seller"] & SellerExtras) | null }) | null;
+  const row = data as unknown as (Row & { meta_detail?: unknown; seller: (Row["seller"] & SellerExtras) | null }) | null;
+  const metaDetail = row?.meta_detail ?? null;
+  if (row) delete row.meta_detail;
   const extras: SellerExtras = { user_badges: row?.seller?.user_badges, active: row?.seller?.active };
   if (row?.seller) {
     delete row.seller.user_badges;
@@ -131,6 +135,7 @@ export const fetchPublicListing = cache(async function fetchPublicListing(id: st
     ...listing,
     sellerBadges: extras.user_badges ? extras.user_badges.map((b) => ({ key: b.badge, level: b.level })) : null,
     sellerDeckCount: extras.active?.[0]?.count ?? null,
+    metaDetail,
   };
 });
 

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { countSellerDecks, estimateDecklistNow, fetchPublicListing } from "@/lib/public-listings";
 import { metaResultFor } from "@/lib/meta-corpus";
+import { fromStoredDetail } from "@/lib/meta-score";
 import { MetaProximityCard } from "@/components/meta-proximity";
 import { DeckBanner } from "@/components/deck-banner";
 import { DeckView } from "@/components/deck-view";
@@ -68,7 +69,9 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
   const estimated = estimateDecklistNow(listing.decklist);
   const [{ estimate, pricesAsOf }, meta, sellerDeckCount, sellerBadges] = await Promise.all([
     estimated,
-    estimated.then(({ deck, estimate }) => metaResultFor(estimate, deck.errors.length, listing.decklist)),
+    // Détail enregistré avec l'annonce ; recalcul (corpus en mémoire) seulement s'il manque.
+    fromStoredDetail(listing.metaDetail) ??
+      estimated.then(({ deck, estimate }) => metaResultFor(estimate, deck.errors.length, listing.decklist)),
     // Déjà lus avec l'annonce ; requêtes à part seulement si la base ne les a pas fournis.
     listing.sellerDeckCount ?? (listing.seller ? countSellerDecks(listing.seller.id) : null),
     listing.sellerBadges ?? (listing.seller ? getUserBadges(listing.seller.id) : []),

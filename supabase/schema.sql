@@ -1242,3 +1242,10 @@ alter table public.user_badges enable row level security;
 drop policy if exists "badges : lecture par le membre" on public.user_badges;
 create policy "badges : lecture par le membre" on public.user_badges
   for select to authenticated using ((select auth.uid()) = user_id);
+
+-- 23. Détail du score méta, enregistré avec l'annonce
+-- Liste de tournoi la plus proche, archétypes voisins et différences de cartes (quelques Ko) :
+-- la page d'un deck les affiche sans recomparer la liste aux ~2 000 listes de tournoi.
+-- Rempli à la publication, à chaque changement de liste et par l'import quotidien.
+alter table public.listings
+  add column if not exists meta_detail jsonb;
