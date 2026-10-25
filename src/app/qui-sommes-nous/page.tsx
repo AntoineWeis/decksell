@@ -4,7 +4,7 @@ import { DataFlowArt, DeckBoxArt, DeckFanArt } from "@/components/about-art";
 
 export const metadata: Metadata = {
   title: "Qui sommes-nous",
-  description: "Pourquoi decksell existe, ses principes, et d'où viennent les prix des cartes.",
+  description: "Pourquoi decksell existe, ses principes, d'où viennent les prix et le score méta, et ce qui arrive ensuite.",
 };
 
 /** Icônes au trait, même épaisseur que le reste du site. */
@@ -38,13 +38,28 @@ const PRINCIPLES = [
     ),
   },
   {
+    title: "Une fiche qui répond avant qu'on demande",
+    text: "Photos des vraies cartes, état et langue carte par carte, liste rangée par type, main de départ à tester : acheter à distance, c'est faire confiance, alors la fiche donne de quoi juger.",
+    icon: (
+      <>
+        <path d="M4 8h3l2-3h6l2 3h3v11H4Z" />
+        <circle cx="12" cy="13" r="3.5" />
+      </>
+    ),
+  },
+  {
+    title: "Récompenser ce qui rassure",
+    text: "Les badges des vendeurs (Réactif, Juste prix, Ancien…) se gagnent sur des faits vérifiés par le site, jamais déclarés. Ils saluent la fiabilité, pas l'activité pour l'activité.",
+    icon: <path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6Z M9 12l2 2 4-4" />,
+  },
+  {
     title: "Rien d'inventé",
     text: "Pas de faux avis, pas de chiffres d'utilisation gonflés. Ce qui n'existe pas encore est marqué comme tel.",
     icon: <path d="m5 12 4.5 4.5L19 7" />,
   },
   {
     title: "Tes données restent à toi",
-    text: "Seul ton compte peut voir, modifier ou supprimer tes annonces et ton profil. Les clés d'accès sensibles ne quittent jamais le serveur.",
+    text: "Seul ton compte peut voir, modifier ou supprimer tes annonces et ton profil. Tes messages restent sur decksell, entre toi et l'autre membre. Les clés d'accès sensibles ne quittent jamais le serveur.",
     icon: (
       <>
         <rect x="5" y="11" width="14" height="9" rx="2" />
@@ -104,6 +119,12 @@ export default function AboutPage() {
               Le principe : tu colles ta liste, tu obtiens sa valeur carte par carte en euros, et tu peux la mettre en
               vente au prix de ton choix. Vendeur et acheteur partent ainsi du même repère.
             </p>
+            <p>
+              Depuis, chaque annonce est devenue une vraie fiche : la jauge du juste prix face à la valeur du jour, les
+              photos des cartes, leur état, la proximité avec le méta des tournois, le primer du vendeur. On écrit au
+              vendeur et on lui fait une offre sans quitter le site, et les decks suivis préviennent quand leur prix
+              baisse.
+            </p>
           </div>
         </div>
       </section>
@@ -137,7 +158,7 @@ export default function AboutPage() {
         <div className="mt-10 overflow-x-auto rounded-xl border border-line bg-sunken p-4 sm:p-6">
           <DataFlowArt className="mx-auto w-full min-w-[520px] max-w-3xl" />
         </div>
-        <dl className="mt-10 grid gap-x-10 gap-y-6 md:grid-cols-3">
+        <dl className="mt-10 grid gap-x-10 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <dt className="font-semibold">Les cartes</dt>
             <dd className="mt-1.5 text-sm leading-relaxed text-muted">
@@ -156,6 +177,17 @@ export default function AboutPage() {
             </dd>
           </div>
           <div>
+            <dt className="font-semibold">Le score méta</dt>
+            <dd className="mt-1.5 text-sm leading-relaxed text-muted">
+              Chaque liste est comparée aux decklists des tournois officiels{" "}
+              <a href="https://www.mtgo.com/decklists" className="font-medium text-link hover:underline">
+                Magic Online
+              </a>{" "}
+              des 30 derniers jours, mises à jour chaque nuit. Le score dit à quel point le deck est proche du méta, pas
+              s&apos;il gagne.
+            </dd>
+          </div>
+          <div>
             <dt className="font-semibold">Ce qu&apos;ils valent</dt>
             <dd className="mt-1.5 text-sm leading-relaxed text-muted">
               Une estimation est un repère, pas une offre de rachat. Le prix de vente reste toujours fixé par le vendeur.
@@ -167,6 +199,39 @@ export default function AboutPage() {
           cartes et ses illustrations sont la propriété de Wizards of the Coast. Les illustrations de cette page ont été
           dessinées pour decksell.
         </p>
+      </section>
+
+      {/* Ce qui arrive */}
+      <section className="border-t border-line bg-surface">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+          <h2 className="display text-3xl sm:text-4xl">Ce qui arrive</h2>
+          <p className="mt-3 max-w-2xl leading-relaxed text-muted">
+            decksell est une vente en ligne, de bout en bout. Les prochaines étapes sont en préparation : elles ne sont pas
+            encore disponibles.
+          </p>
+          <ul className="mt-8 grid gap-4 md:grid-cols-2">
+            <li className="rounded-xl border border-line bg-background p-5">
+              <p className="flex items-center gap-2 font-semibold">
+                Paiement sécurisé
+                <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-link">En préparation</span>
+              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                L&apos;acheteur paie sur decksell, l&apos;argent est retenu par notre prestataire de paiement et
+                n&apos;est versé au vendeur qu&apos;une fois le deck reçu. En cas de problème, la modération tranche.
+              </p>
+            </li>
+            <li className="rounded-xl border border-line bg-background p-5">
+              <p className="flex items-center gap-2 font-semibold">
+                Envoi suivi
+                <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-link">En préparation</span>
+              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                Un envoi avec numéro de suivi pour chaque vente, en point relais ou à domicile avec signature, et une
+                assurance conseillée pour les decks de valeur.
+              </p>
+            </li>
+          </ul>
+        </div>
       </section>
 
       {/* Contact */}
