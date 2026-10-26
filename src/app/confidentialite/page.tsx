@@ -132,8 +132,9 @@ export default function PrivacyPage() {
             <ToComplete>région d&apos;hébergement du projet</ToComplete>
           </li>
           <li>
-            <strong>Vercel</strong> : hébergement du site. Il traite l&apos;adresse IP des visiteurs pour servir les
-            pages.
+            <strong>Vercel</strong> : hébergement du site et mesure d&apos;audience. Il traite l&apos;adresse IP des
+            visiteurs pour servir les pages et compter les visites de façon anonyme (voir « Cookies et stockage
+            local »).
           </li>
           <li>
             <strong>Resend</strong> : envoi des alertes de nouveau message. Il reçoit ton adresse email, le pseudo de
@@ -180,7 +181,13 @@ export default function PrivacyPage() {
             l&apos;estimation.
           </li>
         </ul>
-        <p>Aucun cookie publicitaire, aucun outil de mesure d&apos;audience, aucun traceur de réseau social.</p>
+        <p>
+          <strong>Mesure d&apos;audience</strong> : decksell utilise Vercel Web Analytics pour savoir quelles pages sont
+          consultées (pages vues, pays, type d&apos;appareil, site d&apos;origine). Cet outil ne dépose aucun cookie
+          et ne suit pas les visiteurs d&apos;un jour à l&apos;autre ni d&apos;un site à l&apos;autre : les visites
+          sont comptées de façon agrégée, sans profil individuel.
+        </p>
+        <p>Aucun cookie publicitaire, aucun traceur de réseau social.</p>
       </Section>
 
       <Section n={8} id="securite" title="Sécurité">

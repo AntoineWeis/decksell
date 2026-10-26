@@ -8,6 +8,7 @@ import { Suspense } from "react";
 import { FlashToasts, ToastProvider } from "@/components/toaster";
 import { BadgeUnlock } from "@/components/badge-unlock";
 import { getUser } from "@/lib/auth";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -60,6 +61,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <BadgeUnlockSlot />
           </Suspense>
         </ToastProvider>
+        {/* Mesure d'audience Vercel : sans cookie, pages vues anonymisées (voir /confidentialite). */}
+        <Analytics />
       </body>
     </html>
   );
