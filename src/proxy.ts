@@ -1,9 +1,23 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { GATE_COOKIE, GATE_PATH, gatePassword, gateToken, isGateExempt } from "@/lib/site-gate";
 
-// Rafraîchit la session Supabase (cookies) avant chaque page.
+// 1. Verrou « Bientôt » : sans le bon cookie, toute page renvoie vers /bientot (voir lib/site-gate.ts).
+// 2. Rafraîchit la session Supabase (cookies) avant chaque page.
 // Ce n'est pas une protection : chaque page et action revérifie le membre côté serveur.
 export async function proxy(request: NextRequest) {
+  const password = gatePassword();
+  if (password) {
+    const { pathname, search } = request.nextUrl;
+    const unlocked = request.cookies.get(GATE_COOKIE)?.value === (await gateToken(password));
+    if (!unlocked && !isGateExempt(pathname)) {
+      const url = new URL(GATE_PATH, request.url);
+      if (pathname !== "/") url.searchParams.set("next", pathname + search);
+      return NextResponse.redirect(url);
+    }
+    if (unlocked && pathname === GATE_PATH) return NextResponse.redirect(new URL("/", request.url));
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
