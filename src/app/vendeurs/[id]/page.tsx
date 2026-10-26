@@ -10,6 +10,8 @@ import { ListingTile } from "@/components/listing-tile";
 import { favoriteStateOf, getFavoriteIds } from "@/lib/favorites";
 import { getUserBadges } from "@/lib/badges-server";
 import { SellerBadges } from "@/components/badge-list";
+import { breadcrumbJsonLd, jsonLdScript } from "@/lib/structured-data";
+import { siteUrl } from "@/lib/site-url";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -58,6 +60,18 @@ async function SellerContent({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLdScript(
+            breadcrumbJsonLd([
+              ["Accueil", `${siteUrl()}/`],
+              ["Decks en vente", `${siteUrl()}/decks`],
+              [seller.display_name, `${siteUrl()}/vendeurs/${seller.id}`],
+            ]),
+          ),
+        }}
+      />
       <section className="bg-banner text-banner-ink">
         <div className="mx-auto max-w-6xl px-4 pb-10 pt-8 sm:px-6 sm:pt-10">
           <Link href="/decks" className="text-sm text-banner-muted hover:text-banner-ink">

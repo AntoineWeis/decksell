@@ -5,6 +5,7 @@ import { DataFlowArt, DeckBoxArt, DeckFanArt } from "@/components/about-art";
 export const metadata: Metadata = {
   title: "Qui sommes-nous",
   description: "Pourquoi decksell existe, ses principes, d'où viennent les prix et le score méta, et ce qui arrive ensuite.",
+  alternates: { canonical: "/qui-sommes-nous" },
 };
 
 /** Icônes au trait, même épaisseur que le reste du site. */

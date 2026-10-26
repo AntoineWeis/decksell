@@ -21,7 +21,7 @@ import { formatDecklist, parseDecklist } from "@/lib/decklist";
 
 import { CONDITIONS, FORMATS, normalizeFormat } from "@/lib/listings";
 import { formatEur } from "@/lib/pricing";
-import { deckProductJsonLd, jsonLdScript } from "@/lib/structured-data";
+import { breadcrumbJsonLd, deckProductJsonLd, jsonLdScript } from "@/lib/structured-data";
 import { siteUrl } from "@/lib/site-url";
 import { getUserBadges } from "@/lib/badges-server";
 import { DeckPageSkeleton } from "@/components/deck-skeleton";
@@ -81,10 +81,22 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <>
-      {/* Fiche produit pour Google : prix, disponibilité, état. */}
+      {/* Fiche produit pour Google (prix, disponibilité, état) et fil d'Ariane. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdScript(deckProductJsonLd(listing, `${siteUrl()}/decks/${listing.id}`)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLdScript(
+            breadcrumbJsonLd([
+              ["Accueil", `${siteUrl()}/`],
+              ["Decks en vente", `${siteUrl()}/decks`],
+              [listing.title, `${siteUrl()}/decks/${listing.id}`],
+            ]),
+          ),
+        }}
       />
       <DeckBanner
         title={listing.title}

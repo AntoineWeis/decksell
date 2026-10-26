@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { EspaceTabs } from "@/components/espace-tabs";
 import { signOut } from "@/app/auth-actions";
@@ -5,6 +6,9 @@ import { getUnreadCount } from "@/lib/messaging";
 import { isAdmin, isSuspendedNow, openReportCount } from "@/lib/moderation";
 import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
+
+// Espace membre : privé, jamais dans les résultats de recherche.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default function EspaceLayout({ children }: LayoutProps<"/espace">) {
   return (

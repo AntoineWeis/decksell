@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { deckProductJsonLd, jsonLdScript } from "../src/lib/structured-data.ts";
+import { breadcrumbJsonLd, deckProductJsonLd, jsonLdScript } from "../src/lib/structured-data.ts";
 import type { PublicListing } from "../src/lib/listings.ts";
 
 const listing = {
@@ -20,4 +20,17 @@ test("deckProductJsonLd décrit le deck comme un produit d'occasion, avec son pr
 
 test("jsonLdScript ne laisse jamais fermer la balise script", () => {
   assert.ok(!jsonLdScript(deckProductJsonLd(listing, "u")).includes("</script>"));
+});
+
+test("deckProductJsonLd prend l'aperçu de partage comme image quand le deck n'a pas de photo", () => {
+  const d = deckProductJsonLd({ ...listing, cover_image_url: null }, "https://decksell.fr/decks/x");
+  assert.equal(d.image, "https://decksell.fr/decks/x/opengraph-image");
+});
+
+test("breadcrumbJsonLd numérote les étapes à partir de 1", () => {
+  const d = breadcrumbJsonLd([["Accueil", "https://decksell.fr/"], ["Decks en vente", "https://decksell.fr/decks"]]) as {
+    itemListElement: { position: number; name: string; item: string }[];
+  };
+  assert.deepEqual(d.itemListElement.map((i) => i.position), [1, 2]);
+  assert.equal(d.itemListElement[1].item, "https://decksell.fr/decks");
 });

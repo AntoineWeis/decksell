@@ -5,6 +5,7 @@ import { LegalPage, LegalSection as Section, ToComplete } from "@/components/leg
 export const metadata: Metadata = {
   title: "Conditions d'utilisation",
   description: "Les règles d'utilisation de decksell : estimation des prix, annonces, comptes et données personnelles.",
+  alternates: { canonical: "/conditions-utilisation" },
 };
 
 const UPDATED = "21 octobre 2026";

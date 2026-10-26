@@ -12,8 +12,11 @@ import { searchFrenchNames } from "@/lib/card-names";
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 export const metadata: Metadata = {
-  title: "Decks en vente",
-  description: "Les decks Modern complets mis en vente par les joueurs, avec leur valeur estimée et la langue des cartes.",
+  title: "Decks Modern complets à vendre",
+  description:
+    "Achète un deck Magic Modern complet entre joueurs : prix comparé à la valeur Cardmarket du jour, état et langue des cartes, photos et score méta.",
+  // Les filtres et le tri ne créent pas de nouvelles pages pour Google : tout pointe vers la liste.
+  alternates: { canonical: "/decks" },
 };
 
 export default function DecksPage({ searchParams }: { searchParams: SearchParams }) {

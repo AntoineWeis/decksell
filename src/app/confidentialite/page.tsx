@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Confidentialité",
   description:
     "Quelles données personnelles decksell traite, pourquoi, combien de temps, et comment exercer tes droits (RGPD).",
+  alternates: { canonical: "/confidentialite" },
 };
 
 const UPDATED = "21 octobre 2026";

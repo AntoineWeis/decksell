@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import Image from "next/image";
+import { jsonLdScript, siteJsonLd } from "@/lib/structured-data";
+import { siteUrl } from "@/lib/site-url";
 import Link from "next/link";
 import { Suspense } from "react";
 import { LatestDecks } from "@/components/latest-decks";
@@ -124,9 +127,15 @@ const TRUST = [
   },
 ];
 
+// Titre et description : ceux du site entier (layout). Ici seulement l'adresse de référence,
+// pour que les variantes avec paramètres (?ref=…, ?utm=…) comptent comme l'accueil.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
 export default function Home() {
   return (
     <main className="flex-1">
+      {/* Site et éditeur pour Google : nom du site dans les résultats, logo. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(siteJsonLd(siteUrl())) }} />
       {/* Bandeau d'accueil */}
       <section className="relative overflow-hidden bg-banner text-banner-ink">
         <div aria-hidden className="pointer-events-none absolute inset-0">

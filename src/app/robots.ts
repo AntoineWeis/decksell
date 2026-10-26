@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // Pages privées ou sans intérêt pour les moteurs de recherche.
-      disallow: ["/espace", "/auth/", "/nouveau-mot-de-passe", "/compte-supprime"],
+      disallow: ["/espace", "/auth/", "/api/", "/nouveau-mot-de-passe", "/compte-supprime"],
     },
     sitemap: `${siteUrl()}/sitemap.xml`,
   };
