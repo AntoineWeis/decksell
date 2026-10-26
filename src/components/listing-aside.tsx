@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatEur } from "@/lib/pricing";
-import { CONDITIONS, STATUSES, type Listing } from "@/lib/listings";
+import { CONDITIONS, STATUSES, artCrop, type Listing } from "@/lib/listings";
 import { Avatar } from "./avatar";
 import { LanguageBar } from "./language-bar";
 import { hasMixedConditions } from "@/lib/card-details";
@@ -35,6 +35,7 @@ export function ListingAside({
   priceFirstOnMobile = false,
   sellerDeckCount = null,
   sellerBadges = [],
+  commanders = [],
 }: {
   listing: Pick<
     Listing,
@@ -54,7 +55,10 @@ export function ListingAside({
   sellerDeckCount?: number | null;
   /** Badges du vendeur : seuls ceux de confiance sont affichés ici, les autres sur son profil. */
   sellerBadges?: EarnedBadge[];
+  /** Commandant(s) d'un deck Commander : leur illustration en médaillon, à droite du prix. */
+  commanders?: { name: string; imageUrl: string | null }[];
 }) {
+  const leaders = commanders.filter((c) => c.imageUrl).slice(0, 2);
   return (
     // En mode « prix d'abord », l'encadré s'efface sur mobile : ses blocs deviennent des
     // éléments de la grille de la page, que l'on peut ordonner autour de la liste de cartes.
@@ -66,7 +70,23 @@ export function ListingAside({
             <span className="rounded-md bg-warn-soft px-2 py-0.5 text-xs font-semibold text-warn">{STATUSES[l.status]}</span>
           )}
         </div>
-        <p className="display mt-1 text-4xl tabular-nums">{formatEur(l.asking_cents)}</p>
+        <div className="mt-1 flex items-center justify-between gap-3">
+          <p className="display text-4xl tabular-nums">{formatEur(l.asking_cents)}</p>
+          {leaders.length > 0 && (
+            <div className="flex shrink-0 -space-x-3" title={`Commandant : ${leaders.map((c) => c.name).join(" et ")}`}>
+              {leaders.map((c) => (
+                // Illustration seule (art crop) recadrée en cercle, centrée vers le haut, là où est le visage.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={c.name}
+                  src={artCrop(c.imageUrl)!}
+                  alt={`Commandant : ${c.name}`}
+                  className="size-14 rounded-full object-cover object-[50%_25%] ring-2 ring-commander ring-offset-2 ring-offset-surface"
+                />
+              ))}
+            </div>
+          )}
+        </div>
         <PriceGauge askingCents={l.asking_cents} valueCents={todayCents} className="mt-3" />
         <dl className="mt-4 space-y-2 text-sm">
           <Row label="Valeur du jour">

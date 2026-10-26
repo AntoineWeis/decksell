@@ -181,6 +181,14 @@ export function starCard(estimate: Estimate): CardPrice | null {
   return star?.card ?? null;
 }
 
+/** Nom et image du ou des commandants, dans l'ordre de la liste (médaillon à côté du prix). */
+export function commanderCards(estimate: Estimate, commanders: string[]): { name: string; imageUrl: string | null }[] {
+  return commanders.flatMap((c) => {
+    const line = estimate.lines.find((l) => l.board === "main" && normalizeName(l.name) === normalizeName(c));
+    return line ? [{ name: line.card?.name ?? line.name, imageUrl: line.card?.imageUrl ?? null }] : [];
+  });
+}
+
 /**
  * Image du deck (vignette de l'index, bandeau de la fiche) : le commandant d'un deck Commander
  * (le premier, s'ils sont deux), sinon la carte la plus chère.

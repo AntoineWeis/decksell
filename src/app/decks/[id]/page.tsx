@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { countSellerDecks, estimateDecklistNow, fetchListingBracket, fetchPublicListing } from "@/lib/public-listings";
 import { commanderBracket } from "@/lib/bracket-view";
+import { commanderCards } from "@/lib/pricing";
 import { BracketCard } from "@/components/bracket-card";
 import { metaResultFor } from "@/lib/meta-corpus";
 import { fromStoredDetail } from "@/lib/meta-score";
@@ -130,6 +131,7 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
         {/* Sur mobile, le prix et le contact passent avant la liste de cartes (voir ListingAside). */}
         <div className="contents lg:block">
           <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents} priceFirstOnMobile sellerDeckCount={sellerDeckCount} sellerBadges={sellerBadges}
+          commanders={modern ? [] : commanderCards(estimate, deck.commanders)}
           stats={<>
             {meta && <MetaProximityCard result={meta} />}
             {power && <BracketCard facts={power.facts} min={power.min} declared={power.declared} />}

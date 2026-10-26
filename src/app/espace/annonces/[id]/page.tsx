@@ -6,6 +6,7 @@ import { getProfile, requireUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { estimateDecklistNow, fetchListingBracket } from "@/lib/public-listings";
 import { commanderBracket } from "@/lib/bracket-view";
+import { commanderCards } from "@/lib/pricing";
 import { BracketCard } from "@/components/bracket-card";
 import { metaResultFor } from "@/lib/meta-corpus";
 import { fromStoredDetail } from "@/lib/meta-score";
@@ -138,6 +139,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
               : null
           }
           todayCents={estimate.totalCents}
+          commanders={listing.format === "commander" ? commanderCards(estimate, deck.commanders) : []}
           stats={<>
             {/* Score méta : comparaison aux listes de tournoi Modern, sans objet en Commander. */}
             {listing.format === "commander" && (
