@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LegalPage, LegalSection as Section, ToComplete } from "@/components/legal";
+import { LegalPage, LegalSection as Section } from "@/components/legal";
 import { EDITOR } from "@/lib/editor";
 
 export const metadata: Metadata = {
@@ -135,7 +135,7 @@ export default function PrivacyPage() {
         <ul>
           <li>
             <strong>Supabase</strong> : base de données, comptes et stockage des photos de profil.{" "}
-            <ToComplete>région d&apos;hébergement du projet</ToComplete>
+            Les données sont hébergées dans l&apos;Union européenne, en Irlande.
           </li>
           <li>
             <strong>Vercel</strong> : hébergement du site et mesure d&apos;audience. Il traite l&apos;adresse IP des
