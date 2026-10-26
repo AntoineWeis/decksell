@@ -38,7 +38,8 @@ export function ListingTile({
         href={`/decks/${l.id}`}
         className="group flex h-full flex-col overflow-hidden rounded-xl border border-line bg-surface transition hover:border-link/50 hover:shadow-md"
       >
-        <div className="relative aspect-[16/9] bg-banner">
+        {/* overflow-hidden : l'image agrandie au survol reste dans le cadre, sous son dégradé. */}
+        <div className="relative aspect-[16/9] overflow-hidden bg-banner">
           {art ? (
             <>
               <Image
