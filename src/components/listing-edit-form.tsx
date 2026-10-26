@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { submitWithoutReset } from "@/lib/form";
 import { updateListing, type FormState } from "@/app/espace/actions";
-import { FORMATS, STATUSES, normalizeFormat, type Archetype, type Listing } from "@/lib/listings";
+import { FORMATS, STATUSES, archetypesFor, normalizeFormat, type Archetype, type Listing } from "@/lib/listings";
 import { ArchetypeSelect, ColorPicker } from "./deck-tags-fields";
 import { useActionToast } from "./toaster";
 
@@ -57,12 +57,10 @@ export function ListingEditForm({ listing: l, archetypes }: { listing: Listing; 
             ))}
           </select>
         </label>
-        {!commander && (
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium">Archétype</span>
-            <ArchetypeSelect archetypes={archetypes} defaultId={l.archetype?.id ?? null} className={fieldClass} />
-          </label>
-        )}
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium">Archétype</span>
+          <ArchetypeSelect archetypes={archetypesFor(archetypes, format)} defaultId={l.archetype?.id ?? null} className={fieldClass} />
+        </label>
       </div>
       {/* Commander : un commandant incolore donne un deck sans couleur. */}
       <ColorPicker defaultColors={l.colors ?? []} required={!commander} />

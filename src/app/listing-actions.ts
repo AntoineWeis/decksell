@@ -5,7 +5,7 @@ import { setFlash } from "@/lib/flash";
 import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
 import { formatDecklist, parseDecklist, withFormat } from "@/lib/decklist";
-import { buildEstimate, parseEur, starCard, type ManualPrices } from "@/lib/pricing";
+import { buildEstimate, coverCard, parseEur, type ManualPrices } from "@/lib/pricing";
 import { lookupDeckPrices } from "@/lib/estimate";
 import { checkDeckQuality } from "@/lib/quality";
 import { CONDITIONS, FORMATS, normalizeColors, normalizeFormat, type Condition } from "@/lib/listings";
@@ -14,6 +14,7 @@ import { after } from "next/server";
 import { refreshListingMeta } from "@/lib/meta-corpus";
 import { refreshUserBadges } from "@/lib/badges-server";
 import { fetchBracketFacts } from "@/lib/bracket-server";
+import { archetypeMatchesFormat } from "@/lib/archetypes";
 import { minBracket, normalizeBracket, toStoredBracket } from "@/lib/bracket";
 
 export type SellState = { status: "idle" } | { status: "error"; message: string } | { status: "auth" };
@@ -62,6 +63,9 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   if (archetypeId != null && !(Number.isInteger(archetypeId) && archetypeId > 0)) {
     return { status: "error", message: "Archétype inconnu." };
   }
+  if (!(await archetypeMatchesFormat(archetypeId, format))) {
+    return { status: "error", message: "Cet archétype ne correspond pas au format du deck." };
+  }
   if (description.length > 2000) return { status: "error", message: "Description trop longue (2000 caractères max)." };
   if (decklist === "" || decklist.length > 20_000) return { status: "error", message: "Decklist invalide." };
 
@@ -98,8 +102,8 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   const quality = checkDeckQuality(estimate, deck);
   if (quality.blocking.length > 0) return { status: "error", message: quality.blocking.join(" ") };
 
-  // Carte phare : la plus chère à l'unité, montrée en vignette dans l'index.
-  const star = starCard(estimate);
+  // Image du deck, montrée en vignette dans l'index : le commandant, sinon la carte la plus chère.
+  const star = coverCard(estimate, deck.commanders);
 
   // Commander : niveau de puissance recalculé ici ; le vendeur peut annoncer plus que le minimum.
   let bracketCols = {};
@@ -130,7 +134,7 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
     colors,
     format,
     ...(format === "commander" ? { commanders: deck.commanders } : {}),
-    archetype_id: format === "commander" ? null : archetypeId,
+    archetype_id: archetypeId,
     cover_card_name: star?.name ?? null,
     cover_image_url: star?.imageUrl ?? null,
   };

@@ -5,7 +5,7 @@ import { after } from "next/server";
 import { alertPriceDrop } from "@/lib/price-alerts";
 import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
-import { buildEstimate, parseEur, starCard } from "@/lib/pricing";
+import { buildEstimate, coverCard, parseEur } from "@/lib/pricing";
 import { lookupDeckPrices } from "@/lib/estimate";
 import { checkDeckQuality } from "@/lib/quality";
 import {
@@ -19,6 +19,7 @@ import {
 } from "@/lib/listings";
 import { formatDecklist, parseDecklist, withFormat } from "@/lib/decklist";
 import { fetchBracketFacts } from "@/lib/bracket-server";
+import { archetypeMatchesFormat } from "@/lib/archetypes";
 import { minBracket, toStoredBracket, type BracketLevel } from "@/lib/bracket";
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
 import { isDepartment } from "@/lib/departments";
@@ -84,8 +85,11 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!current) return { status: "error", message: "Annonce introuvable." };
-  // Commander : un commandant incolore donne un deck sans couleur ; pas d'archétype Modern.
+  // Commander : un commandant incolore donne un deck sans couleur. L'archétype suit le format.
   const commander = normalizeFormat(current.format) === "commander";
+  if (!(await archetypeMatchesFormat(archetypeId, normalizeFormat(current.format)))) {
+    return { status: "error", message: "Cet archétype ne correspond pas au format du deck." };
+  }
   if (formData.has("title") && colors.length === 0 && !commander) {
     return { status: "error", message: "Coche au moins une couleur du deck." };
   }
@@ -99,7 +103,7 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
       // Champ absent quand la langue vient du détail carte par carte : on n'y touche pas.
       ...(formData.has("french_percent") ? { french_percent: frenchPercent } : {}),
       colors,
-      archetype_id: commander ? null : archetypeId,
+      archetype_id: archetypeId,
       ...identity,
       ...sold,
       updated_at: new Date().toISOString(),
@@ -255,7 +259,7 @@ export async function updateDecklist(id: string, _prev: DecklistState, formData:
 
   const fallback: Condition = current.condition in CONDITIONS ? (current.condition as Condition) : "near_mint";
   const details = buildDetails(deck, current.card_details ?? [], { condition: fallback, lang: "en" });
-  const star = starCard(estimate);
+  const star = coverCard(estimate, deck.commanders); // commandant d'un deck Commander, sinon la carte la plus chère
 
   const { error } = await supabase
     .from("listings")

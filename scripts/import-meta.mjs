@@ -122,8 +122,8 @@ async function save(records, seenPrints) {
 }
 
 async function importMtgo() {
-  // Noms des archétypes (table archetypes), pour nommer les listes.
-  const { data: archetypes } = await db.from("archetypes").select("slug, name");
+  // Noms des archétypes Modern (table archetypes), pour nommer les listes.
+  const { data: archetypes } = await db.from("archetypes").select("slug, name").eq("format", "modern");
   const archetypeNames = new Map((archetypes ?? []).map((a) => [a.slug, a.name]));
 
   // Déjà importés : événements (par adresse) et empreintes, pour ne relire que le nouveau.
@@ -229,7 +229,7 @@ async function loadCorpus() {
  * modification de archetype-signatures.ts s'applique aussi aux listes déjà importées.
  */
 async function reclassify(rows) {
-  const { data: archetypes } = await db.from("archetypes").select("slug, name");
+  const { data: archetypes } = await db.from("archetypes").select("slug, name").eq("format", "modern");
   const names = new Map((archetypes ?? []).map((a) => [a.slug, a.name]));
   const changes = [];
   for (const r of rows) {

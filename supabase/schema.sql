@@ -1301,3 +1301,33 @@ alter table public.listings
   add column if not exists bracket        smallint check (bracket between 1 and 5),
   add column if not exists bracket_min    smallint check (bracket_min between 1 and 5),
   add column if not exists bracket_detail jsonb;
+
+-- 27. Archétypes Commander (stratégies courantes en Commander), à côté de ceux du Modern
+-- Le préfixe « edh- » évite toute collision avec les archétypes Modern (burn, mill…).
+insert into public.archetypes (slug, name, format) values
+  ('edh-aggro', 'Aggro', 'commander'),
+  ('edh-aristocrats', 'Aristocrats', 'commander'),
+  ('edh-artifacts', 'Artefacts', 'commander'),
+  ('edh-blink', 'Blink', 'commander'),
+  ('edh-chaos', 'Chaos', 'commander'),
+  ('edh-combo', 'Combo', 'commander'),
+  ('edh-counters', 'Compteurs +1/+1', 'commander'),
+  ('edh-control', 'Contrôle', 'commander'),
+  ('edh-enchantress', 'Enchantress', 'commander'),
+  ('edh-lifegain', 'Gain de vie', 'commander'),
+  ('edh-group-hug', 'Group Hug', 'commander'),
+  ('edh-tokens', 'Jetons', 'commander'),
+  ('edh-landfall', 'Landfall', 'commander'),
+  ('edh-mill', 'Meule', 'commander'),
+  ('edh-ramp', 'Ramp / Big Mana', 'commander'),
+  ('edh-reanimator', 'Réanimation', 'commander'),
+  ('edh-spellslinger', 'Spellslinger', 'commander'),
+  ('edh-stax', 'Stax', 'commander'),
+  ('edh-storm', 'Storm', 'commander'),
+  ('edh-superfriends', 'Superfriends', 'commander'),
+  ('edh-treasure', 'Trésors', 'commander'),
+  ('edh-tribal', 'Tribal', 'commander'),
+  ('edh-theft', 'Vol de cartes', 'commander'),
+  ('edh-voltron', 'Voltron', 'commander'),
+  ('edh-wheels', 'Wheels', 'commander')
+on conflict (slug) do nothing;

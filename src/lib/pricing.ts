@@ -180,3 +180,16 @@ export function starCard(estimate: Estimate): CardPrice | null {
     .sort((a, b) => b.unitCents! - a.unitCents!)[0];
   return star?.card ?? null;
 }
+
+/**
+ * Image du deck (vignette de l'index, bandeau de la fiche) : le commandant d'un deck Commander
+ * (le premier, s'ils sont deux), sinon la carte la plus chère.
+ */
+export function coverCard(estimate: Estimate, commanders: string[] = []): CardPrice | null {
+  const keys = commanders.map(normalizeName);
+  for (const key of keys) {
+    const line = estimate.lines.find((l) => l.board === "main" && normalizeName(l.name) === key && l.card?.imageUrl);
+    if (line?.card) return line.card;
+  }
+  return starCard(estimate);
+}

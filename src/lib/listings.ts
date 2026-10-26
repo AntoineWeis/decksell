@@ -74,7 +74,12 @@ export function normalizeColors(values: unknown[]): ManaColor[] {
   return COLOR_ORDER.filter((c) => set.has(c));
 }
 
-export type Archetype = { id: number; slug: string; name: string };
+export type Archetype = { id: number; slug: string; name: string; format?: string };
+
+/** Archétypes proposés pour un format (ceux sans format connu comptent comme Modern). */
+export function archetypesFor(archetypes: Archetype[], format: DeckFormat): Archetype[] {
+  return archetypes.filter((a) => (a.format ?? DEFAULT_FORMAT) === format);
+}
 
 /** Statuts visibles dans l'index public. */
 export const PUBLIC_STATUSES = ["active", "reserved"] as const;

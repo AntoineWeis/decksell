@@ -7,7 +7,7 @@ import { createListing, type SellState } from "@/app/listing-actions";
 import { formatEur, parseEur, type Estimate, type ManualPrices } from "@/lib/pricing";
 import { canLeadDeck, checkDeckQuality, priceGap } from "@/lib/quality";
 import { normalizeName, type DetectedFormat, type ParsedDeck } from "@/lib/decklist";
-import { normalizeColors, type Archetype } from "@/lib/listings";
+import { archetypesFor, normalizeColors, type Archetype } from "@/lib/listings";
 import { BRACKETS, allowedBrackets, type BracketLevel } from "@/lib/bracket";
 import { ArchetypeSelect, ColorPicker } from "./deck-tags-fields";
 import { FormatSelect } from "./format-select";
@@ -169,6 +169,10 @@ export function SellPanel({
               />
             </label>
             <label>
+              <span className="mb-1 block text-sm font-medium">Archétype</span>
+              <ArchetypeSelect key="commander" archetypes={archetypesFor(archetypes, "commander")} className={inputClass} />
+            </label>
+            <label>
               <span className="mb-1 block text-sm font-medium">Niveau de puissance</span>
               {/* Recréé quand le minimum change : il repart du niveau déduit de la liste. */}
               <select key={bracketMin ?? "calcul"} name="bracket" defaultValue={bracketMin ?? ""} disabled={bracketMin == null} className={inputClass}>
@@ -193,7 +197,7 @@ export function SellPanel({
           <>
             <label className="sm:col-span-2">
               <span className="mb-1 block text-sm font-medium">Archétype</span>
-              <ArchetypeSelect archetypes={archetypes} className={inputClass} />
+              <ArchetypeSelect key="modern" archetypes={archetypesFor(archetypes, "modern")} className={inputClass} />
             </label>
             <div className="sm:col-span-3">
               <ColorPicker required />

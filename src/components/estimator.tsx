@@ -332,12 +332,19 @@ function HowItWorks() {
 
 const sumCents = (lines: PricedLine[]) => lines.reduce((n, l) => n + (l.lineCents ?? 0), 0);
 
-/** Le résultat : la carte phare révélée en dernier, et la valeur du deck écrite en toutes lettres. */
+/**
+ * Le résultat : la carte phare révélée en dernier (le commandant pour un deck Commander),
+ * et la valeur du deck écrite en toutes lettres.
+ */
 function Receipt({ estimate, pricesAsOf, deck }: { estimate: Estimate; pricesAsOf: string | null; deck: ParsedDeck }) {
   const commander = deck.format === "commander";
   const priced = estimate.lines.filter((l) => l.lineCents != null);
   const byValue = [...priced].sort((a, b) => b.unitCents! - a.unitCents!);
-  const star = byValue[0];
+  // Deck Commander : le commandant (le premier, s'ils sont deux) prend la place de la carte phare.
+  const leader = commander
+    ? estimate.lines.find((l) => l.board === "main" && isCommander(deck, l.name) && l.card?.imageUrl)
+    : undefined;
+  const star = leader ?? byValue[0];
   const top5 = [...priced].sort((a, b) => b.lineCents! - a.lineCents!).slice(0, 5);
   const topShare =
     estimate.totalCents > 0 ? Math.round((top5.reduce((n, l) => n + l.lineCents!, 0) / estimate.totalCents) * 100) : 0;
@@ -346,13 +353,20 @@ function Receipt({ estimate, pricesAsOf, deck }: { estimate: Estimate; pricesAsO
     <section className="grid gap-6 rounded-xl border border-line bg-surface p-5 sm:p-6 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
       {star?.card?.imageUrl && (
         <figure className="flip-in mx-auto w-[160px] [animation-delay:600ms] sm:w-[180px]">
-          <TiltCard className="relative aspect-[488/680] overflow-hidden rounded-[4.75%/3.5%] shadow-[0_18px_40px_-16px_rgba(0,0,0,0.55)] ring-[3px] ring-reveal">
+          <TiltCard
+            className={`relative aspect-[488/680] overflow-hidden rounded-[4.75%/3.5%] shadow-[0_18px_40px_-16px_rgba(0,0,0,0.55)] ring-[3px] ${
+              leader ? "ring-commander" : "ring-reveal"
+            }`}
+          >
             <Image src={star.card.imageUrl} alt={star.card.name} fill sizes="180px" unoptimized className="object-cover" />
           </TiltCard>
           <figcaption className="mt-3 text-center text-sm">
-            <span className="font-semibold text-reveal">Carte phare</span>
+            <span className={`font-semibold ${leader ? "text-commander" : "text-reveal"}`}>
+              {leader ? "Commandant" : "Carte phare"}
+            </span>
             <span className="block text-muted">
-              {formatEur(star.unitCents!)} l&apos;unité
+              {leader && deck.commanders.length > 1 && <>avec {deck.commanders.find((c) => !isCommander({ commanders: [c] }, star.name)) ?? deck.commanders[1]} · </>}
+              {star.unitCents != null ? <>{formatEur(star.unitCents)} l&apos;unité</> : "Sans prix"}
               {star.card.artist && <> · Ill. {star.card.artist}</>}
             </span>
           </figcaption>

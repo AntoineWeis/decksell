@@ -139,3 +139,24 @@ test("canLeadDeck : créature ou planeswalker légendaire, ou historique", () =>
   assert.equal(canLeadDeck("Creature — Elf"), false);
   assert.equal(canLeadDeck("Legendary Artifact"), false);
 });
+
+test("image du deck : le commandant, sinon la carte la plus chère", async () => {
+  const { coverCard } = await import("../src/lib/pricing.ts");
+  const prices = PRICES.map((p) => ({ ...p, imageUrl: `img/${p.name}` }));
+  prices.find((p) => p.name === "Card 1")!.priceEur = 50;
+  const d = parseDecklist(`Commander\n1 Ezuri, Renegade Leader\n\nDeck\n${BODY}`);
+  const e = buildEstimate(d, prices);
+  assert.equal(coverCard(e, d.commanders)?.name, "Ezuri, Renegade Leader");
+  assert.equal(coverCard(e)?.name, "Card 1");
+});
+
+test("archétypes proposés selon le format", async () => {
+  const { archetypesFor } = await import("../src/lib/listings.ts");
+  const list = [
+    { id: 1, slug: "burn", name: "Burn", format: "modern" },
+    { id: 2, slug: "edh-voltron", name: "Voltron", format: "commander" },
+    { id: 3, slug: "old", name: "Ancien" },
+  ];
+  assert.deepEqual(archetypesFor(list, "commander").map((a) => a.id), [2]);
+  assert.deepEqual(archetypesFor(list, "modern").map((a) => a.id), [1, 3]);
+});
