@@ -10,7 +10,6 @@ import { lookupDeckPrices } from "@/lib/estimate";
 import { checkDeckQuality } from "@/lib/quality";
 import {
   CONDITIONS,
-  FORMATS,
   STATUSES,
   normalizeColors,
   normalizeFormat,
@@ -18,7 +17,7 @@ import {
   type Condition,
   type ListingStatus,
 } from "@/lib/listings";
-import { parseDecklist } from "@/lib/decklist";
+import { formatDecklist, parseDecklist, withFormat } from "@/lib/decklist";
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
 import { isDepartment } from "@/lib/departments";
 import { refreshListingMeta } from "@/lib/meta-corpus";
@@ -66,26 +65,28 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
   if (askingCents == null || askingCents <= 0 || askingCents > 10_000_000) {
     return { status: "error", message: "Prix invalide." };
   }
-  // Nom et format : envoyés par le formulaire complet de la page de l'annonce.
-  const identity: { title?: string; format?: string } = {};
+  // Nom : envoyé par le formulaire complet de la page de l'annonce. Le format, lui, ne change
+  // pas après la publication (ses règles ont été contrôlées sur la liste).
+  const identity: { title?: string } = {};
   if (formData.has("title")) {
     const title = str(formData.get("title"));
     if (title.length < 3 || title.length > 80) return { status: "error", message: "Le nom doit faire entre 3 et 80 caractères." };
-    if (colors.length === 0) return { status: "error", message: "Coche au moins une couleur du deck." };
-    const rawFormat = str(formData.get("format"));
-    if (rawFormat !== "" && !(rawFormat in FORMATS)) return { status: "error", message: "Format de jeu inconnu." };
     identity.title = title;
-    identity.format = normalizeFormat(rawFormat);
   }
 
   const supabase = await createSupabaseServer();
   const { data: current } = await supabase
     .from("listings")
-    .select("status, sold_cents, sold_at, asking_cents, title")
+    .select("status, sold_cents, sold_at, asking_cents, title, format")
     .eq("id", id)
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!current) return { status: "error", message: "Annonce introuvable." };
+  // Commander : un commandant incolore donne un deck sans couleur ; pas d'archétype Modern.
+  const commander = normalizeFormat(current.format) === "commander";
+  if (formData.has("title") && colors.length === 0 && !commander) {
+    return { status: "error", message: "Coche au moins une couleur du deck." };
+  }
   const sold = soldFields(current as SoldInfo, status, askingCents);
 
   const { error } = await supabase
@@ -96,7 +97,7 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
       // Champ absent quand la langue vient du détail carte par carte : on n'y touche pas.
       ...(formData.has("french_percent") ? { french_percent: frenchPercent } : {}),
       colors,
-      archetype_id: archetypeId,
+      archetype_id: commander ? null : archetypeId,
       ...identity,
       ...sold,
       updated_at: new Date().toISOString(),
@@ -198,18 +199,30 @@ export async function updateDecklist(id: string, _prev: DecklistState, formData:
   const decklist = str(formData.get("decklist"));
   if (decklist === "") return { status: "error", message: "La liste est vide." };
   if (decklist.length > 20_000) return { status: "error", message: "Liste trop longue (20 000 caractères max)." };
-  const deck = parseDecklist(decklist);
-  const cardCount = deck.mainCount + deck.sideCount;
-  if (cardCount === 0) return { status: "error", message: "Aucune carte reconnue dans la liste." };
+  const parsed = parseDecklist(decklist);
+  if (parsed.mainCount + parsed.sideCount === 0) return { status: "error", message: "Aucune carte reconnue dans la liste." };
 
   const supabase = await createSupabaseServer();
-  const { data: current } = await supabase
-    .from("listings")
-    .select("condition, card_details")
-    .eq("id", id)
-    .eq("seller_id", user.id)
-    .maybeSingle();
+  // Colonne commanders absente avant la migration (schema.sql, section 25) : relecture sans elle.
+  const readCurrent = (cols: string) =>
+    supabase.from("listings").select(cols).eq("id", id).eq("seller_id", user.id).maybeSingle();
+  let read = await readCurrent("condition, card_details, format, commanders");
+  if (read.error) read = await readCurrent("condition, card_details, format");
+  const current = read.data as {
+    condition: string;
+    card_details: unknown[] | null;
+    format: string;
+    commanders?: string[] | null;
+  } | null;
   if (!current) return { status: "error", message: "Annonce introuvable." };
+  // Le format de l'annonce ne change pas ; en Commander, le commandant est celui de la nouvelle
+  // liste s'il y figure, sinon celui de l'annonce.
+  const format = normalizeFormat(current.format);
+  const deck =
+    format === "commander"
+      ? withFormat(parsed, "commander", parsed.commanders.length > 0 ? parsed.commanders : (current.commanders ?? []))
+      : withFormat(parsed, "modern");
+  const cardCount = deck.mainCount + deck.sideCount;
 
   let estimate;
   try {
@@ -219,8 +232,8 @@ export async function updateDecklist(id: string, _prev: DecklistState, formData:
     console.error("Liste : estimation impossible", e);
     return { status: "error", message: "Les prix sont momentanément indisponibles. Réessaie dans un instant." };
   }
-  // Mêmes règles qu'à la mise en vente : la liste modifiée doit rester jouable en Modern.
-  const quality = checkDeckQuality(estimate);
+  // Mêmes règles qu'à la mise en vente : la liste modifiée doit rester jouable dans son format.
+  const quality = checkDeckQuality(estimate, deck);
   if (quality.blocking.length > 0) return { status: "error", message: quality.blocking.join(" ") };
 
   const fallback: Condition = current.condition in CONDITIONS ? (current.condition as Condition) : "near_mint";
@@ -230,7 +243,8 @@ export async function updateDecklist(id: string, _prev: DecklistState, formData:
   const { error } = await supabase
     .from("listings")
     .update({
-      decklist,
+      decklist: format === "commander" ? formatDecklist(deck) : decklist,
+      ...(format === "commander" ? { commanders: deck.commanders } : {}),
       card_count: cardCount,
       estimated_cents: estimate.totalCents,
       estimate_complete: estimate.complete,
@@ -245,8 +259,8 @@ export async function updateDecklist(id: string, _prev: DecklistState, formData:
     .eq("seller_id", user.id);
   if (error) return { status: "error", message: "Enregistrement impossible. Réessaie." };
 
-  // Nouvelle liste : nouveau score de proximité méta, après la réponse.
-  after(() => refreshListingMeta(id).catch((e) => console.error("Score méta :", e)));
+  // Nouvelle liste : nouveau score de proximité méta (Modern), après la réponse.
+  if (format === "modern") after(() => refreshListingMeta(id).catch((e) => console.error("Score méta :", e)));
   refresh();
   return { status: "saved", ignored: deck.errors.length };
 }

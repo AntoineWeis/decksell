@@ -10,11 +10,12 @@ export const CONDITIONS = {
 export type Condition = keyof typeof CONDITIONS;
 
 /**
- * Formats de jeu proposés. Modern seulement pour l'instant ; pour en ouvrir un autre,
- * l'ajouter ici et dans la contrainte listings_format_check (supabase/schema.sql, section 16).
+ * Formats de jeu proposés. Pour en ouvrir un autre, l'ajouter ici et dans la contrainte
+ * listings_format_check (supabase/schema.sql, section 16).
  */
 export const FORMATS = {
   modern: "Modern",
+  commander: "Commander",
 } as const;
 export type DeckFormat = keyof typeof FORMATS;
 export const DEFAULT_FORMAT: DeckFormat = "modern";
@@ -53,6 +54,7 @@ export type Listing = {
   archetype: Archetype | null; // archétype choisi dans la liste fixe
   card_details: CardDetail[]; // état et langue par ligne de carte ; vide pour les anciennes annonces
   format: DeckFormat; // format de jeu du deck
+  commanders?: string[]; // commandant(s) d'un deck Commander ; absent avant la migration (section 25)
 };
 
 /** Couleurs de Magic, dans l'ordre WUBRG. */

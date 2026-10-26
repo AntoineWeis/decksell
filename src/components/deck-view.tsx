@@ -1,32 +1,43 @@
-import type { Estimate } from "@/lib/pricing";
+import type { Estimate, PricedLine } from "@/lib/pricing";
+import { normalizeName } from "@/lib/decklist";
 import { CardList } from "./card-list";
 import { groupAnchor } from "./card-types";
 import { detailsByKey, type CardDetail } from "@/lib/card-details";
 import { typeGroup } from "@/lib/deck-stats";
 import { HandTester, type HandCard } from "./hand-tester";
 
-/** Exemplaires du deck principal pour le testeur de main (une entrée par carte physique). */
-function handCards(estimate: Estimate): HandCard[] {
-  return estimate.lines
-    .filter((l) => l.board === "main")
-    .flatMap((l) => {
+/** Exemplaires du deck pour le testeur de main (une entrée par carte physique). */
+function handCards(lines: PricedLine[]): HandCard[] {
+  return lines.flatMap((l) => {
       const card = { name: l.card?.name ?? l.name, imageUrl: l.card?.imageUrl ?? null, land: typeGroup(l.card?.typeLine) === "Land" };
       return Array.from({ length: l.quantity }, () => card);
     });
 }
 
-/** Vue d'un deck : valeur du jour, puis deck principal et réserve carte par carte. */
+const sumCents = (lines: PricedLine[]) => lines.reduce((n, l) => n + (l.lineCents ?? 0), 0);
+
+/**
+ * Vue d'un deck : valeur du jour, puis deck principal et réserve carte par carte.
+ * Deck Commander : le ou les commandants à part, en tête (hors du testeur de main).
+ */
 export function DeckView({
   estimate,
   pricesAsOf,
   details,
+  commanders = [],
 }: {
   estimate: Estimate;
   pricesAsOf: string | null;
   /** État et langue de chaque carte, pour une annonce. */
   details?: CardDetail[];
+  /** Commandant(s) d'un deck Commander. */
+  commanders?: string[];
 }) {
   const byKey = details?.length ? detailsByKey(details) : undefined;
+  const keys = new Set(commanders.map(normalizeName));
+  const main = estimate.lines.filter((l) => l.board === "main");
+  const leaders = main.filter((l) => keys.has(normalizeName(l.name)));
+  const deck = main.filter((l) => !keys.has(normalizeName(l.name)));
   return (
     <div className="space-y-6">
       {/* La valeur du jour est dans l'encadré prix : ici, seulement la source, la date et les cartes sans prix. */}
@@ -42,13 +53,20 @@ export function DeckView({
         )}
       </p>
       <CardList
-        title="Deck principal"
-        lines={estimate.lines.filter((l) => l.board === "main")}
-        totalCents={estimate.mainCents}
+        title={leaders.length > 1 ? "Commandants" : "Commandant"}
+        lines={leaders}
+        totalCents={sumCents(leaders)}
+        previewSide="right"
+        details={byKey}
+      />
+      <CardList
+        title={leaders.length > 0 ? "Deck" : "Deck principal"}
+        lines={deck}
+        totalCents={leaders.length > 0 ? sumCents(deck) : estimate.mainCents}
         previewSide="right"
         details={byKey}
         groupByType
-        action={<HandTester cards={handCards(estimate)} />}
+        action={<HandTester cards={handCards(deck)} />}
       />
       <CardList
         title="Réserve"

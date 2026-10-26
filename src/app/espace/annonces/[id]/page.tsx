@@ -120,7 +120,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
             lines={estimate.lines.map(({ board, name, quantity }) => ({ board, name, quantity }))}
             initial={listing.card_details ?? []}
           />
-          <DeckView estimate={estimate} pricesAsOf={pricesAsOf} details={listing.card_details} />
+          <DeckView estimate={estimate} pricesAsOf={pricesAsOf} details={listing.card_details} commanders={listing.format === "commander" ? deck.commanders : []} />
           <DecklistEditor listingId={listing.id} decklist={listing.decklist} />
         </div>
         <ListingAside
@@ -137,7 +137,10 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
           }
           todayCents={estimate.totalCents}
           stats={<>
-            <MetaProximityCard result={storedMeta ?? (await metaResultFor(estimate, deck.errors.length, listing.decklist))} />
+            {/* Score méta : comparaison aux listes de tournoi Modern, sans objet en Commander. */}
+            {listing.format !== "commander" && (
+              <MetaProximityCard result={storedMeta ?? (await metaResultFor(estimate, deck.errors.length, listing.decklist))} />
+            )}
             <CardTypesCard counts={cardTypeCounts(estimate)} targets={anchorsFor(estimate)} />
             <ManaCurveCard curve={manaCurve(estimate)} />
           </>}

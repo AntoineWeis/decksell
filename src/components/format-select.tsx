@@ -1,18 +1,29 @@
 import { DEFAULT_FORMAT, FORMATS, type DeckFormat } from "@/lib/listings";
 
-/** Liste déroulante du format de jeu (champ « format »). D'autres formats s'ajouteront à FORMATS. */
-export function FormatSelect({ defaultFormat = DEFAULT_FORMAT, className }: { defaultFormat?: DeckFormat; className: string }) {
+/**
+ * Liste déroulante du format de jeu (champ « format »). Libre (defaultFormat), ou pilotée
+ * (value et onChange) quand le reste du formulaire dépend du format.
+ */
+export function FormatSelect({
+  defaultFormat = DEFAULT_FORMAT,
+  value,
+  onChange,
+  className,
+}: {
+  defaultFormat?: DeckFormat;
+  value?: DeckFormat;
+  onChange?: (format: DeckFormat) => void;
+  className: string;
+}) {
   const formats = Object.entries(FORMATS) as [DeckFormat, string][];
+  const controlled = value !== undefined ? { value, onChange: (e: React.ChangeEvent<HTMLSelectElement>) => onChange?.(e.target.value as DeckFormat) } : { defaultValue: defaultFormat };
   return (
-    <>
-      <select name="format" defaultValue={defaultFormat} className={className}>
-        {formats.map(([value, label]) => (
-          <option key={value} value={value}>
-            {label}
-          </option>
-        ))}
-      </select>
-      {formats.length === 1 && <span className="mt-1 block text-xs text-muted">D&apos;autres formats arriveront bientôt.</span>}
-    </>
+    <select name="format" {...controlled} className={className}>
+      {formats.map(([v, label]) => (
+        <option key={v} value={v}>
+          {label}
+        </option>
+      ))}
+    </select>
   );
 }

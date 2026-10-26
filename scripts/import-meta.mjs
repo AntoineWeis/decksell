@@ -278,7 +278,8 @@ function calibration(rows) {
 
 async function rescoreListings(rows) {
   const corpus = buildCorpus(rows);
-  const { data: listings, error } = await db.from("listings").select("id, title, decklist");
+  // Decks Modern seulement : le score compare aux listes de tournoi Modern.
+  const { data: listings, error } = await db.from("listings").select("id, title, decklist").eq("format", "modern");
   if (error) throw new Error(`Lecture des annonces impossible : ${error.message}`);
   for (const l of listings) {
     const result = await scoreDecklist(db, l.decklist, corpus);

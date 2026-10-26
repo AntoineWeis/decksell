@@ -33,6 +33,7 @@ type ArchidektDeck = {
  */
 export function archidektToText(deck: ArchidektDeck): string {
   const excluded = new Set((deck.categories ?? []).filter((c) => c.includedInDeck === false).map((c) => c.name));
+  const commander = new Map<string, number>();
   const main = new Map<string, number>();
   const side = new Map<string, number>();
   for (const c of deck.cards ?? []) {
@@ -41,10 +42,16 @@ export function archidektToText(deck: ArchidektDeck): string {
     if (!name || qty < 1) continue;
     const cats = c.categories ?? [];
     if (cats.length > 0 && cats.every((cat) => excluded.has(cat))) continue;
-    const board = cats.some((cat) => /^sideboard$/i.test(cat)) ? side : main;
+    const board = cats.some((cat) => /^commander$/i.test(cat))
+      ? commander
+      : cats.some((cat) => /^sideboard$/i.test(cat))
+        ? side
+        : main;
     board.set(name, (board.get(name) ?? 0) + qty);
   }
-  const lines = [...main].map(([n, q]) => `${q} ${n}`);
-  if (side.size > 0) lines.push("", "Sideboard", ...[...side].map(([n, q]) => `${q} ${n}`));
+  const toLines = (m: Map<string, number>) => [...m].map(([n, q]) => `${q} ${n}`);
+  // Deck Commander : section « Commander » en tête, comme les exports Arena.
+  const lines = commander.size > 0 ? ["Commander", ...toLines(commander), "", "Deck", ...toLines(main)] : toLines(main);
+  if (side.size > 0) lines.push("", "Sideboard", ...toLines(side));
   return lines.join("\n");
 }

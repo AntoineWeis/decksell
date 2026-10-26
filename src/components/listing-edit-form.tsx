@@ -3,9 +3,8 @@
 import { useActionState } from "react";
 import { submitWithoutReset } from "@/lib/form";
 import { updateListing, type FormState } from "@/app/espace/actions";
-import { STATUSES, normalizeFormat, type Archetype, type Listing } from "@/lib/listings";
+import { FORMATS, STATUSES, normalizeFormat, type Archetype, type Listing } from "@/lib/listings";
 import { ArchetypeSelect, ColorPicker } from "./deck-tags-fields";
-import { FormatSelect } from "./format-select";
 import { useActionToast } from "./toaster";
 
 const fieldClass =
@@ -15,6 +14,8 @@ const fieldClass =
 export function ListingEditForm({ listing: l, archetypes }: { listing: Listing; archetypes: Archetype[] }) {
   const [state, action, saving] = useActionState<FormState, FormData>(updateListing.bind(null, l.id), { status: "idle" });
   useActionToast(state, { success: "Annonce enregistrée" });
+  const format = normalizeFormat(l.format);
+  const commander = format === "commander";
 
   return (
     <form onSubmit={submitWithoutReset(action)} className="space-y-4 rounded-xl border border-line bg-surface p-4 sm:p-5">
@@ -24,10 +25,16 @@ export function ListingEditForm({ listing: l, archetypes }: { listing: Listing; 
           <span className="mb-1.5 block text-sm font-medium">Nom du deck</span>
           <input name="title" defaultValue={l.title} required minLength={3} maxLength={80} className={fieldClass} />
         </label>
-        <label className="block">
+        {/* Le format suit la liste (ses règles ont été contrôlées à la publication) : il ne se change pas ici. */}
+        <div>
           <span className="mb-1.5 block text-sm font-medium">Format de jeu</span>
-          <FormatSelect defaultFormat={normalizeFormat(l.format)} className={fieldClass} />
-        </label>
+          <p className={`${fieldClass} flex items-center text-muted`}>
+            {FORMATS[format]}
+            {commander && (l.commanders ?? []).length > 0 && (
+              <span className="ml-1 truncate">· {(l.commanders ?? []).join(" et ")}</span>
+            )}
+          </p>
+        </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <label className="block">
@@ -50,12 +57,15 @@ export function ListingEditForm({ listing: l, archetypes }: { listing: Listing; 
             ))}
           </select>
         </label>
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">Archétype</span>
-          <ArchetypeSelect archetypes={archetypes} defaultId={l.archetype?.id ?? null} className={fieldClass} />
-        </label>
+        {!commander && (
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium">Archétype</span>
+            <ArchetypeSelect archetypes={archetypes} defaultId={l.archetype?.id ?? null} className={fieldClass} />
+          </label>
+        )}
       </div>
-      <ColorPicker defaultColors={l.colors ?? []} required />
+      {/* Commander : un commandant incolore donne un deck sans couleur. */}
+      <ColorPicker defaultColors={l.colors ?? []} required={!commander} />
       {/* Sans détail carte par carte (anciennes annonces), la part de français se saisit ici. */}
       {(l.card_details ?? []).length === 0 && (
         <label className="block max-w-48">

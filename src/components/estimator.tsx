@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
 import { estimateAction, importDeckAction, type EstimateState } from "@/app/actions";
-import { normalizeName } from "@/lib/decklist";
+import { isCommander, normalizeName, withFormat, type DetectedFormat, type ParsedDeck } from "@/lib/decklist";
 import { buildEstimate, formatEur, parseEur, type Estimate, type ManualPrices, type PricedLine } from "@/lib/pricing";
 import { SAMPLE_DECK } from "@/lib/sample-deck";
 import type { Archetype } from "@/lib/listings";
@@ -80,9 +80,24 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
     return out;
   }, [manualInputs]);
 
+  // Format et commandant(s) : ceux lus dans la liste, jusqu'à ce que le vendeur les change.
+  // Le choix est rattaché à l'estimation reçue : une nouvelle estimation repart de la détection.
+  const [choice, setChoice] = useState<{ for: object; format: DetectedFormat; commanders: string[] } | null>(null);
+  const deck = useMemo<ParsedDeck | null>(() => {
+    if (state.status !== "ok") return null;
+    return choice?.for === state ? withFormat(state.deck, choice.format, choice.commanders) : state.deck;
+  }, [state, choice]);
+  // Retour à Commander sans commandant : on reprend celui lu dans la liste.
+  const changeShape = (format: DetectedFormat, commanders: string[]) =>
+    setChoice({
+      for: state,
+      format,
+      commanders: format === "commander" && commanders.length === 0 && state.status === "ok" ? state.deck.commanders : commanders,
+    });
+
   const estimate = useMemo(
-    () => (state.status === "ok" ? buildEstimate(state.deck, state.prices, manual) : null),
-    [state, manual],
+    () => (state.status === "ok" && deck ? buildEstimate(deck, state.prices, manual) : null),
+    [state, deck, manual],
   );
 
   return (
@@ -109,7 +124,7 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
             t&apos;aide à la mettre en vente au juste prix.
           </p>
           <ul className="mt-6 flex flex-wrap gap-2 text-xs font-medium text-banner-ink/90">
-            {["Modern", "Prix Cardmarket en €", "MTGO · Arena · Moxfield · MTGGoldfish"].map((t) => (
+            {["Modern · Commander", "Prix Cardmarket en €", "MTGO · Arena · Moxfield · Archidekt"].map((t) => (
               <li key={t} className="rounded-md bg-white/10 px-2.5 py-1 ring-1 ring-white/10">
                 {t}
               </li>
@@ -183,7 +198,10 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
             placeholder={"4 Lightning Bolt\n4 Ragavan, Nimble Pilferer\n…\n\nSideboard\n2 Engineered Explosives"}
             className="block w-full resize-y rounded-lg border border-line bg-sunken px-3 py-2.5 font-mono text-[13px] leading-6 outline-none placeholder:text-muted/70 focus:border-link focus:ring-2 focus:ring-link/25 max-sm:h-48"
           />
-          <p className="mt-2 text-xs text-muted">Une carte par ligne, avec la réserve à la suite. Ou importe un deck Archidekt par son lien.</p>
+          <p className="mt-2 text-xs text-muted">
+            Une carte par ligne, avec la réserve à la suite (Modern) ou le commandant en tête (Commander). Ou importe un
+            deck Archidekt par son lien.
+          </p>
           <button
             type="submit"
             disabled={pending}
@@ -204,10 +222,17 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
           {!pending && state.status === "error" && (
             <div className="rounded-xl border border-danger/30 bg-danger-soft px-5 py-4 text-danger">{state.message}</div>
           )}
-          {!pending && state.status === "ok" && estimate && (
+          {!pending && state.status === "ok" && estimate && deck && (
             <div key={revealId(state)} className="space-y-6">
-              <Receipt estimate={estimate} pricesAsOf={state.pricesAsOf} />
-              <SellPanel decklist={text} estimate={estimate} manual={manual} archetypes={archetypes} />
+              <Receipt estimate={estimate} pricesAsOf={state.pricesAsOf} deck={deck} />
+              <SellPanel
+                decklist={text}
+                estimate={estimate}
+                manual={manual}
+                archetypes={archetypes}
+                deck={deck}
+                onShapeChange={changeShape}
+              />
               <ParseNotes deck={state.deck} />
               {!estimate.complete || Object.keys(manual).length > 0 ? (
                 <MissingPrices
@@ -217,11 +242,26 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
                   onChange={(key, value) => setManualInputs((m) => ({ ...m, [key]: value }))}
                 />
               ) : null}
-              <CardList
-                title="Deck principal"
-                lines={estimate.lines.filter((l) => l.board === "main")}
-                totalCents={estimate.mainCents}
-              />
+              {deck.format === "commander" ? (
+                <>
+                  <CardList
+                    title={deck.commanders.length > 1 ? "Commandants" : "Commandant"}
+                    lines={estimate.lines.filter((l) => l.board === "main" && isCommander(deck, l.name))}
+                    totalCents={sumCents(estimate.lines.filter((l) => l.board === "main" && isCommander(deck, l.name)))}
+                  />
+                  <CardList
+                    title="Deck"
+                    lines={estimate.lines.filter((l) => l.board === "main" && !isCommander(deck, l.name))}
+                    totalCents={sumCents(estimate.lines.filter((l) => l.board === "main" && !isCommander(deck, l.name)))}
+                  />
+                </>
+              ) : (
+                <CardList
+                  title="Deck principal"
+                  lines={estimate.lines.filter((l) => l.board === "main")}
+                  totalCents={estimate.mainCents}
+                />
+              )}
               <CardList
                 title="Réserve"
                 lines={estimate.lines.filter((l) => l.board === "side")}
@@ -263,8 +303,11 @@ function HowItWorks() {
   );
 }
 
+const sumCents = (lines: PricedLine[]) => lines.reduce((n, l) => n + (l.lineCents ?? 0), 0);
+
 /** Le résultat : la carte phare révélée en dernier, et la valeur du deck écrite en toutes lettres. */
-function Receipt({ estimate, pricesAsOf }: { estimate: Estimate; pricesAsOf: string | null }) {
+function Receipt({ estimate, pricesAsOf, deck }: { estimate: Estimate; pricesAsOf: string | null; deck: ParsedDeck }) {
+  const commander = deck.format === "commander";
   const priced = estimate.lines.filter((l) => l.lineCents != null);
   const byValue = [...priced].sort((a, b) => b.unitCents! - a.unitCents!);
   const star = byValue[0];
@@ -290,13 +333,27 @@ function Receipt({ estimate, pricesAsOf }: { estimate: Estimate; pricesAsOf: str
       )}
 
       <div>
+        <p className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+          <span className="rounded-md bg-banner px-1.5 py-0.5 text-[11px] font-bold uppercase leading-none tracking-wide text-banner-ink">
+            {commander ? "Commander" : "Modern"}
+          </span>
+          {commander && (
+            <span className="text-muted">
+              {deck.commanders.length > 0
+                ? `Commandant : ${deck.commanders.join(" et ")}`
+                : "Commandant à indiquer à la mise en vente"}
+            </span>
+          )}
+        </p>
         <p className="text-lg text-muted">Ce deck vaut environ</p>
         <p className="display mt-1 text-[clamp(2.5rem,5vw,3.75rem)] tabular-nums">
           <CountUp cents={estimate.totalCents} />
           {!estimate.complete && <span className="ml-1 text-warn">+</span>}
         </p>
         <p className="mt-4 max-w-[60ch] leading-relaxed">
-          {formatEur(estimate.mainCents)} pour le deck principal et {formatEur(estimate.sideCents)} pour la réserve.
+          {commander
+            ? `${formatEur(estimate.mainCents)} pour les ${deck.mainCount} cartes du deck${estimate.sideCents > 0 ? `, et ${formatEur(estimate.sideCents)} hors du deck` : ""}.`
+            : `${formatEur(estimate.mainCents)} pour le deck principal et ${formatEur(estimate.sideCents)} pour la réserve.`}
           {top5.length > 0 && (
             <>
               {" "}

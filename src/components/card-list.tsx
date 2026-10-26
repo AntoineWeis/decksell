@@ -92,7 +92,7 @@ export function CardList({
       <CardModal items={items} />
       <header className="flex items-baseline justify-between gap-4 px-4 pb-3 pt-4 sm:px-5">
         <h2 className="text-lg font-semibold">
-          {title} <span className="ml-1 text-sm font-normal text-muted">{count} cartes</span>
+          {title} <span className="ml-1 text-sm font-normal text-muted">{count} carte{count > 1 ? "s" : ""}</span>
         </h2>
         <span className="flex items-center gap-3">
           {action}

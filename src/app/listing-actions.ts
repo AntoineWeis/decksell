@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { setFlash } from "@/lib/flash";
 import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
-import { parseDecklist } from "@/lib/decklist";
+import { formatDecklist, parseDecklist, withFormat } from "@/lib/decklist";
 import { buildEstimate, parseEur, starCard, type ManualPrices } from "@/lib/pricing";
 import { lookupDeckPrices } from "@/lib/estimate";
 import { checkDeckQuality } from "@/lib/quality";
@@ -55,14 +55,18 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   if (askingCents == null || askingCents <= 0 || askingCents > 10_000_000) {
     return { status: "error", message: "Indique un prix de vente valide." };
   }
-  if (colors.length === 0) return { status: "error", message: "Coche au moins une couleur du deck." };
+  // Commander : un commandant incolore donne un deck sans couleur.
+  if (colors.length === 0 && format !== "commander") return { status: "error", message: "Coche au moins une couleur du deck." };
   if (archetypeId != null && !(Number.isInteger(archetypeId) && archetypeId > 0)) {
     return { status: "error", message: "Archétype inconnu." };
   }
   if (description.length > 2000) return { status: "error", message: "Description trop longue (2000 caractères max)." };
   if (decklist === "" || decklist.length > 20_000) return { status: "error", message: "Decklist invalide." };
 
-  const deck = parseDecklist(decklist);
+  // Format et commandant(s) choisis par le vendeur, appliqués à la liste (un commandant rangé
+  // en réserve rejoint le deck).
+  const chosen = formData.getAll("commanders").filter((v): v is string => typeof v === "string").slice(0, 2);
+  const deck = withFormat(parseDecklist(decklist), format, chosen);
   const cardCount = deck.mainCount + deck.sideCount;
   if (cardCount === 0) return { status: "error", message: "Aucune carte reconnue dans la liste." };
 
@@ -87,8 +91,9 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
     return { status: "error", message: "Les prix sont momentanément indisponibles. Réessaie dans un instant." };
   }
 
-  // Contrôle qualité : 60 cartes minimum, réserve de 15 au plus, cartes légales en Modern.
-  const quality = checkDeckQuality(estimate);
+  // Contrôle qualité selon le format (Modern : 60 cartes, réserve de 15 ; Commander : 100 cartes,
+  // commandant, un exemplaire par carte, identité de couleur), cartes légales.
+  const quality = checkDeckQuality(estimate, deck);
   if (quality.blocking.length > 0) return { status: "error", message: quality.blocking.join(" ") };
 
   // Carte phare : la plus chère à l'unité, montrée en vignette dans l'index.
@@ -98,7 +103,8 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   const { data: created, error } = await supabase.from("listings").insert({
     seller_id: user.id,
     title,
-    decklist,
+    // Commander : liste réécrite avec sa section « Commander », relue à l'identique ensuite.
+    decklist: format === "commander" ? formatDecklist(deck) : decklist,
     card_count: cardCount,
     estimated_cents: estimate.totalCents,
     estimate_complete: estimate.complete,
@@ -109,7 +115,8 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
     card_details: cardDetails,
     colors,
     format,
-    archetype_id: archetypeId,
+    ...(format === "commander" ? { commanders: deck.commanders } : {}),
+    archetype_id: format === "commander" ? null : archetypeId,
     cover_card_name: star?.name ?? null,
     cover_image_url: star?.imageUrl ?? null,
   }).select("id").single();
@@ -117,8 +124,8 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
     console.error("Mise en vente : écriture impossible", error.message);
     return { status: "error", message: "Impossible d'enregistrer l'annonce. Réessaie dans un instant." };
   }
-  // Score de proximité méta, calculé après la réponse (n'allonge pas la publication).
-  if (created) after(() => refreshListingMeta(created.id).catch((e) => console.error("Score méta :", e)));
+  // Score de proximité méta (Modern), calculé après la réponse (n'allonge pas la publication).
+  if (created && format === "modern") after(() => refreshListingMeta(created.id).catch((e) => console.error("Score méta :", e)));
   // Badges recalculés avant la redirection : l'animation s'affiche dès l'arrivée dans l'espace.
   await refreshUserBadges(user.id);
   await setFlash("success", `Annonce « ${title} » publiée`);

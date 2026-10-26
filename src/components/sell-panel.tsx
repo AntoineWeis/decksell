@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { createListing, type SellState } from "@/app/listing-actions";
 import { formatEur, parseEur, type Estimate, type ManualPrices } from "@/lib/pricing";
-import { checkDeckQuality, priceGap } from "@/lib/quality";
-import type { Archetype } from "@/lib/listings";
+import { canLeadDeck, checkDeckQuality, priceGap } from "@/lib/quality";
+import { normalizeName, type DetectedFormat, type ParsedDeck } from "@/lib/decklist";
+import { normalizeColors, type Archetype } from "@/lib/listings";
 import { ArchetypeSelect, ColorPicker } from "./deck-tags-fields";
 import { FormatSelect } from "./format-select";
 import { CardDetailsEditor } from "./card-details-editor";
@@ -21,20 +22,46 @@ export function SellPanel({
   estimate,
   manual,
   archetypes,
+  deck,
+  onShapeChange,
 }: {
   decklist: string;
   estimate: Estimate;
   manual: ManualPrices;
   archetypes: Archetype[];
+  /** Liste avec le format et le(s) commandant(s) retenus. */
+  deck: ParsedDeck;
+  /** Le vendeur change de format ou de commandant : l'estimation est refaite au-dessus. */
+  onShapeChange: (format: DetectedFormat, commanders: string[]) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState<SellState, FormData>(createListing, { status: "idle" });
   useActionToast(state, {});
   const suggested = (Math.round(estimate.totalCents / 100) || 1).toString();
   const [asking, setAsking] = useState(suggested);
-  const quality = useMemo(() => checkDeckQuality(estimate), [estimate]);
+  const quality = useMemo(() => checkDeckQuality(estimate, deck), [estimate, deck]);
   const gap = priceGap(parseEur(asking), estimate.totalCents);
   const blocked = quality.blocking.length > 0;
+  const commander = deck.format === "commander";
+
+  // Commandants possibles : les créatures et planeswalkers légendaires de la liste (réserve comprise).
+  const candidates = useMemo(() => {
+    const seen = new Set<string>();
+    return estimate.lines
+      .filter((l) => canLeadDeck(l.card?.typeLine) || deck.commanders.some((c) => normalizeName(c) === normalizeName(l.name)))
+      .filter((l) => !seen.has(normalizeName(l.name)) && seen.add(normalizeName(l.name)))
+      .map((l) => l.name)
+      .sort((a, b) => a.localeCompare(b, "fr"));
+  }, [estimate, deck.commanders]);
+
+  // Couleurs proposées en Commander : l'identité de couleur du ou des commandants.
+  const identity = useMemo(() => {
+    if (!commander) return [];
+    const keys = new Set(deck.commanders.map(normalizeName));
+    return normalizeColors(
+      estimate.lines.filter((l) => keys.has(normalizeName(l.name))).flatMap((l) => l.card?.colorIdentity ?? []),
+    );
+  }, [commander, deck.commanders, estimate]);
 
   if (!open) {
     return (
@@ -53,6 +80,13 @@ export function SellPanel({
       </div>
     );
   }
+
+  const setCommander = (index: number, name: string) => {
+    const next = [...deck.commanders];
+    if (name === "") next.splice(index, 1);
+    else next[index] = name;
+    onShapeChange("commander", [...new Set(next.filter(Boolean))]);
+  };
 
   return (
     <form onSubmit={submitWithoutReset(action)} className="rounded-xl border border-link/40 bg-surface p-5">
@@ -81,23 +115,71 @@ export function SellPanel({
 
       <input type="hidden" name="decklist" value={decklist} />
       <input type="hidden" name="manual" value={JSON.stringify(manual)} />
+      {deck.commanders.map((c) => (
+        <input key={c} type="hidden" name="commanders" value={c} />
+      ))}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <label className="sm:col-span-3">
           <span className="mb-1 block text-sm font-medium">Titre de l&apos;annonce</span>
-          <input name="title" required minLength={3} maxLength={80} placeholder="Eldrazi Ramp complet, sleevé" className={inputClass} />
-        </label>
-        <div className="sm:col-span-2">
-          <ColorPicker required />
-        </div>
-        <label>
-          <span className="mb-1 block text-sm font-medium">Archétype</span>
-          <ArchetypeSelect archetypes={archetypes} className={inputClass} />
+          <input
+            name="title"
+            required
+            minLength={3}
+            maxLength={80}
+            placeholder={commander ? "Atraxa Superfriends, sleevé" : "Eldrazi Ramp complet, sleevé"}
+            className={inputClass}
+          />
         </label>
         <label>
           <span className="mb-1 block text-sm font-medium">Format de jeu</span>
-          <FormatSelect className={inputClass} />
+          <FormatSelect
+            className={inputClass}
+            value={deck.format}
+            onChange={(f) => onShapeChange(f, f === "commander" ? deck.commanders : [])}
+          />
         </label>
+        {commander ? (
+          <>
+            <label>
+              <span className="mb-1 block text-sm font-medium">
+                Commandant<span className="text-danger"> *</span>
+              </span>
+              <CommanderSelect
+                value={deck.commanders[0] ?? ""}
+                options={candidates.filter((c) => c !== deck.commanders[1])}
+                placeholder="Choisir…"
+                onChange={(v) => setCommander(0, v)}
+              />
+            </label>
+            <label>
+              <span className="mb-1 block text-sm font-medium">
+                2<sup>e</sup> commandant <span className="font-normal text-muted">(facultatif)</span>
+              </span>
+              <CommanderSelect
+                value={deck.commanders[1] ?? ""}
+                options={candidates.filter((c) => c !== deck.commanders[0])}
+                placeholder="Aucun"
+                disabled={deck.commanders.length === 0}
+                onChange={(v) => setCommander(1, v)}
+              />
+            </label>
+            <div className="sm:col-span-3">
+              {/* Recréé quand les commandants changent : les cases suivent leur identité de couleur. */}
+              <ColorPicker key={identity.join("")} defaultColors={identity} />
+            </div>
+          </>
+        ) : (
+          <>
+            <label className="sm:col-span-2">
+              <span className="mb-1 block text-sm font-medium">Archétype</span>
+              <ArchetypeSelect archetypes={archetypes} className={inputClass} />
+            </label>
+            <div className="sm:col-span-3">
+              <ColorPicker required />
+            </div>
+          </>
+        )}
         <label>
           <span className="mb-1 block text-sm font-medium">Prix demandé</span>
           <span className="relative block">
@@ -163,5 +245,31 @@ export function SellPanel({
         </button>
       </div>
     </form>
+  );
+}
+
+/** Choix d'un commandant parmi les cartes légendaires de la liste. */
+function CommanderSelect({
+  value,
+  options,
+  placeholder,
+  disabled = false,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  placeholder: string;
+  disabled?: boolean;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <select value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} className={inputClass}>
+      <option value="">{placeholder}</option>
+      {options.map((name) => (
+        <option key={name} value={name}>
+          {name}
+        </option>
+      ))}
+    </select>
   );
 }

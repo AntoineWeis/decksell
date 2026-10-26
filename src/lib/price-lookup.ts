@@ -37,13 +37,27 @@ export async function fetchCardPrices(client: SupabaseClient, names: string[]): 
     cmc?: number | string | null;
     type_line?: string | null;
     legal_modern?: boolean | null;
+    legal_commander?: boolean | null;
+    color_identity?: string[] | null;
   };
   const extraById = new Map<string, Extra>();
   const ids = rows.map((r) => r.print_id);
   if (ids.length > 0) {
-    const full = await client.from("cards").select("id, rarity, cmc, type_line, legal_modern").in("id", ids);
-    // Base pas encore migrée (colonnes cmc et type_line absentes) : on garde au moins la rareté.
-    const data = full.error ? (await client.from("cards").select("id, rarity").in("id", ids)).data : full.data;
+    // Du plus complet au plus simple, selon l'avancement des migrations de la base
+    // (section 25 : Commander ; section 10 : courbe de mana) ; au pire, la rareté seule.
+    const selects = [
+      "id, rarity, cmc, type_line, legal_modern, legal_commander, color_identity",
+      "id, rarity, cmc, type_line, legal_modern",
+      "id, rarity",
+    ];
+    let data: unknown[] | null = null;
+    for (const cols of selects) {
+      const res = await client.from("cards").select(cols).in("id", ids);
+      if (!res.error) {
+        data = res.data;
+        break;
+      }
+    }
     for (const r of (data ?? []) as Extra[]) extraById.set(r.id, r);
   }
 
@@ -59,6 +73,8 @@ export async function fetchCardPrices(client: SupabaseClient, names: string[]): 
     cmc: num(extraById.get(r.print_id)?.cmc ?? null),
     typeLine: extraById.get(r.print_id)?.type_line ?? null,
     legalModern: extraById.get(r.print_id)?.legal_modern ?? null,
+    legalCommander: extraById.get(r.print_id)?.legal_commander ?? null,
+    colorIdentity: extraById.get(r.print_id)?.color_identity ?? null,
     priceEur: num(r.price_eur),
     minPriceEurFoil: num(r.min_price_eur_foil),
   }));

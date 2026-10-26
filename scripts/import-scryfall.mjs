@@ -34,6 +34,12 @@ const SKIP_LAYOUTS = new Set([
 ]);
 const BATCH = 500;
 
+// Colonnes Commander (schema.sql, section 25) : écrites seulement si la base les a déjà,
+// pour que l'import quotidien continue de tourner avant la migration.
+const { error: commanderColsError } = await supabase.from("cards").select("legal_commander, color_identity").limit(1);
+const withCommander = !commanderColsError;
+if (!withCommander) console.log("Colonnes Commander absentes (schema.sql, section 25) : légalité et identité de couleur ignorées.");
+
 function toRow(c, now) {
   const image = c.image_uris?.normal ?? c.card_faces?.[0]?.image_uris?.normal ?? null;
   const num = (v) => (v == null || v === "" ? null : Number(v));
@@ -53,6 +59,12 @@ function toRow(c, now) {
     cardmarket_id: c.cardmarket_id ?? null,
     scryfall_uri: c.scryfall_uri ?? null,
     legal_modern: c.legalities?.modern === "legal",
+    ...(withCommander
+      ? {
+          legal_commander: c.legalities?.commander === "legal",
+          color_identity: Array.isArray(c.color_identity) ? c.color_identity : null,
+        }
+      : {}),
     // Plafonnée : la colonne va jusqu'à 999,9 (Gleemax, carte humoristique, coûte 1 000 000).
     cmc: typeof c.cmc === "number" ? Math.min(c.cmc, 999) : null,
     type_line: c.type_line ?? c.card_faces?.[0]?.type_line ?? null,

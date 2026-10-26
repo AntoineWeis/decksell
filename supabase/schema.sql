@@ -1091,14 +1091,14 @@ grant  execute on function public.admin_list_reports(text, bigint)              
 grant  execute on function public.admin_report_messages(bigint)                 to authenticated;
 grant  execute on function public.admin_handle_report(bigint, text, text, boolean, integer) to authenticated;
 
--- 16. Format de jeu des decks. Modern seulement pour l'instant : pour en ouvrir un autre,
+-- 16. Format de jeu des decks (Modern, Commander depuis la section 25). Pour en ouvrir un autre,
 -- ajoute-le à la liste de la contrainte ci-dessous (et dans FORMATS, src/lib/listings.ts).
 alter table public.listings
   add column if not exists format text not null default 'modern';
 
 alter table public.listings drop constraint if exists listings_format_check;
 alter table public.listings
-  add constraint listings_format_check check (format in ('modern'));
+  add constraint listings_format_check check (format in ('modern', 'commander'));
 
 -- 17. Localisation des vendeurs et mode de remise (profil)
 -- Département (code INSEE : 01…95, 2A, 2B, 971…976) et ville libre, affichés sur les annonces ;
@@ -1277,3 +1277,15 @@ drop policy if exists "photos d'annonce : lecture de son dossier" on storage.obj
 create policy "photos d'annonce : lecture de son dossier" on storage.objects
   for select to authenticated
   using (bucket_id = 'listing-photos' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+-- 25. Format Commander
+-- Cartes : légalité en Commander et identité de couleur (règle des couleurs du commandant),
+-- remplies par l'import Scryfall. Après exécution, relancer l'import pour les remplir.
+alter table public.cards
+  add column if not exists legal_commander boolean,
+  add column if not exists color_identity  text[];
+
+-- Annonces : le ou les commandants du deck (2 au plus : « partenaires », ou commandant et
+-- « historique »). Vide pour un deck Modern. Le format est ouvert par la contrainte de la section 16.
+alter table public.listings
+  add column if not exists commanders text[] not null default '{}' check (cardinality(commanders) <= 2);

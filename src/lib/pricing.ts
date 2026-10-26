@@ -24,6 +24,8 @@ export type CardPrice = {
   cmc?: number | null; // valeur de mana (coût converti) ; absente avant la migration de la base
   typeLine?: string | null; // ex. "Creature — Human Wizard", "Instant // Land"
   legalModern?: boolean | null; // légale en Modern (ni interdite, ni hors format) ; absente = inconnue
+  legalCommander?: boolean | null; // légale en Commander ; absente = inconnue
+  colorIdentity?: string[] | null; // identité de couleur (ex. ["U", "G"]) ; absente = inconnue
 };
 
 export type LineStatus =

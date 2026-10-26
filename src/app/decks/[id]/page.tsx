@@ -69,11 +69,15 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
 
   // Tout en parallèle : le score méta part dès que l'estimation est prête.
   const estimated = estimateDecklistNow(listing.decklist);
-  const [{ estimate, pricesAsOf }, meta, sellerDeckCount, sellerBadges] = await Promise.all([
+  // Score méta : comparaison aux listes de tournoi Modern, sans objet pour un autre format.
+  const modern = normalizeFormat(listing.format) === "modern";
+  const [{ deck, estimate, pricesAsOf }, meta, sellerDeckCount, sellerBadges] = await Promise.all([
     estimated,
     // Détail enregistré avec l'annonce ; recalcul (corpus en mémoire) seulement s'il manque.
-    fromStoredDetail(listing.metaDetail) ??
-      estimated.then(({ deck, estimate }) => metaResultFor(estimate, deck.errors.length, listing.decklist)),
+    !modern
+      ? null
+      : (fromStoredDetail(listing.metaDetail) ??
+        estimated.then(({ deck, estimate }) => metaResultFor(estimate, deck.errors.length, listing.decklist))),
     // Déjà lus avec l'annonce ; requêtes à part seulement si la base ne les a pas fournis.
     listing.sellerDeckCount ?? (listing.seller ? countSellerDecks(listing.seller.id) : null),
     listing.sellerBadges ?? (listing.seller ? getUserBadges(listing.seller.id) : []),
@@ -111,7 +115,7 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
       </DeckBanner>
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-20 pt-6 sm:px-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:items-start">
         <div className="min-w-0">
-          <DeckView estimate={estimate} pricesAsOf={pricesAsOf} details={listing.card_details} />
+          <DeckView estimate={estimate} pricesAsOf={pricesAsOf} details={listing.card_details} commanders={modern ? [] : deck.commanders} />
           <div className="mt-4 flex justify-end">
             {/* Lit la session : à part, comme le contact. */}
             <Suspense fallback={null}>
@@ -123,7 +127,7 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
         <div className="contents lg:block">
           <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents} priceFirstOnMobile sellerDeckCount={sellerDeckCount} sellerBadges={sellerBadges}
           stats={<>
-            <MetaProximityCard result={meta} />
+            {meta && <MetaProximityCard result={meta} />}
             <CardTypesCard counts={cardTypeCounts(estimate)} targets={anchorsFor(estimate)} />
             <ManaCurveCard curve={manaCurve(estimate)} />
           </>}>
