@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage, LegalSection as Section, ToComplete } from "@/components/legal";
+import { EDITOR } from "@/lib/editor";
 
 export const metadata: Metadata = {
   title: "Confidentialité",
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/confidentialite" },
 };
 
-const UPDATED = "21 octobre 2026";
+const UPDATED = "26 octobre 2026";
 
 const SECTIONS = [
   { id: "responsable", title: "Responsable du traitement" },
@@ -53,7 +54,12 @@ export default function PrivacyPage() {
       <Section n={1} id="responsable" title="Responsable du traitement">
         <p>
           Le responsable du traitement des données est l&apos;éditeur de decksell :{" "}
-          <ToComplete>nom ou raison sociale, adresse et email de contact</ToComplete>
+          {EDITOR.name}, entrepreneur individuel ({EDITOR.status}), SIREN {EDITOR.siren}, {EDITOR.address}.
+          Contact :{" "}
+          <a href={`mailto:${EDITOR.email}`} className={linkClass}>
+            {EDITOR.email}
+          </a>
+          .
         </p>
       </Section>
 
@@ -227,7 +233,10 @@ export default function PrivacyPage() {
         </ul>
         <p>
           Pour toute demande qui ne se fait pas depuis ton espace, écris à{" "}
-          <ToComplete>email de contact pour les demandes RGPD</ToComplete>. Tu recevras une réponse sous un mois.
+          <a href={`mailto:${EDITOR.email}`} className={linkClass}>
+            {EDITOR.email}
+          </a>
+          . Tu recevras une réponse sous un mois.
         </p>
         <p>
           Si tu estimes que tes droits ne sont pas respectés, tu peux adresser une réclamation à la{" "}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LegalPage, LegalSection as Section, ToComplete } from "@/components/legal";
+import { LegalPage, LegalSection as Section } from "@/components/legal";
+import { EDITOR, HOSTS } from "@/lib/editor";
 
 export const metadata: Metadata = {
   title: "Conditions d'utilisation",
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/conditions-utilisation" },
 };
 
-const UPDATED = "21 octobre 2026";
+const UPDATED = "26 octobre 2026";
 
 const SECTIONS = [
   { id: "objet", title: "Objet" },
@@ -33,11 +34,6 @@ export default function TermsPage() {
       updated={UPDATED}
       sections={SECTIONS}
     >
-      <p className="rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
-        Ces conditions décrivent le fonctionnement actuel de decksell. Elles sont en cours de finalisation : les
-        informations marquées « À compléter » seront ajoutées prochainement.
-      </p>
-
       <Section n={1} id="objet" title="Objet">
         <p>
           decksell est un site qui permet d&apos;estimer la valeur de decks Magic: The Gathering au format Modern,
@@ -50,12 +46,22 @@ export default function TermsPage() {
 
       <Section n={2} id="editeur" title="Éditeur et hébergement">
         <p>
-          Éditeur du site : <ToComplete>nom ou raison sociale, adresse et moyen de contact</ToComplete>
+          Le site est édité par <strong>{EDITOR.name}</strong>, entrepreneur individuel ({EDITOR.status}), SIREN{" "}
+          {EDITOR.siren}, TVA intracommunautaire {EDITOR.vat}, {EDITOR.address}. Contact :{" "}
+          <a href={`mailto:${EDITOR.email}`} className="font-medium text-link hover:underline">
+            {EDITOR.email}
+          </a>
+          .
         </p>
-        <p>
-          Le site est hébergé par Vercel Inc. Les comptes, les annonces et les photos de profil sont stockés chez
-          Supabase Inc. <ToComplete>adresses des hébergeurs</ToComplete>
-        </p>
+        <p>Directeur de la publication : {EDITOR.name}.</p>
+        <p>Hébergeurs :</p>
+        <ul>
+          {HOSTS.map((h) => (
+            <li key={h.name}>
+              <strong>{h.name}</strong> ({h.role}), {h.address}.
+            </li>
+          ))}
+        </ul>
       </Section>
 
       <Section n={3} id="compte" title="Accès au service et compte">
