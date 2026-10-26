@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
-import { estimateAction, importDeckAction, type EstimateState } from "@/app/actions";
-import { isCommander, normalizeName, withFormat, type DetectedFormat, type ParsedDeck } from "@/lib/decklist";
+import { bracketAction, estimateAction, importDeckAction, type BracketState, type EstimateState } from "@/app/actions";
+import { formatDecklist, isCommander, normalizeName, withFormat, type DetectedFormat, type ParsedDeck } from "@/lib/decklist";
+import { BracketCard } from "./bracket-card";
 import { buildEstimate, formatEur, parseEur, type Estimate, type ManualPrices, type PricedLine } from "@/lib/pricing";
 import { SAMPLE_DECK } from "@/lib/sample-deck";
 import type { Archetype } from "@/lib/listings";
@@ -99,6 +100,21 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
     () => (state.status === "ok" && deck ? buildEstimate(deck, state.prices, manual) : null),
     [state, deck, manual],
   );
+
+  // Niveau de puissance (Commander) : demandé au serveur pour la liste et le(s) commandant(s) retenus.
+  const bracketKey = deck?.format === "commander" ? formatDecklist(deck) : null;
+  const [bracket, setBracket] = useState<{ key: string; result: BracketState } | null>(null);
+  useEffect(() => {
+    if (!bracketKey || !deck) return;
+    let alive = true;
+    bracketAction(bracketKey, deck.commanders).then((result) => {
+      if (alive) setBracket({ key: bracketKey, result });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [bracketKey, deck]);
+  const bracketResult = bracket && bracket.key === bracketKey ? bracket.result : null;
 
   return (
     <>
@@ -225,7 +241,18 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
           {!pending && state.status === "ok" && estimate && deck && (
             <div key={revealId(state)} className="space-y-6">
               <Receipt estimate={estimate} pricesAsOf={state.pricesAsOf} deck={deck} />
+              {deck.format === "commander" &&
+                (bracketResult?.status === "ok" ? (
+                  <BracketCard facts={bracketResult.facts} min={bracketResult.min} />
+                ) : bracketResult?.status === "error" ? (
+                  <p className="rounded-xl border border-line bg-surface px-5 py-4 text-sm text-muted">
+                    Niveau de puissance indisponible pour l&apos;instant.
+                  </p>
+                ) : (
+                  <div className="h-40 animate-pulse rounded-xl border border-line bg-surface" aria-label="Calcul du niveau de puissance" />
+                ))}
               <SellPanel
+                bracketMin={bracketResult?.status === "ok" ? bracketResult.min : null}
                 decklist={text}
                 estimate={estimate}
                 manual={manual}

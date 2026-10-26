@@ -220,3 +220,17 @@ export async function countSellerDecks(sellerId: string): Promise<number | null>
     .eq("status", "active");
   return error ? null : count;
 }
+
+/** Niveau de puissance enregistré d'une annonce Commander (null : colonnes absentes ou pas encore calculé). */
+export async function fetchListingBracket(
+  id: string,
+): Promise<{ bracket: number | null; bracketMin: number | null; detail: unknown } | null> {
+  if (!UUID.test(id)) return null;
+  const { data, error } = await getSupabaseAdmin()
+    .from("listings")
+    .select("bracket, bracket_min, bracket_detail")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return { bracket: data.bracket ?? null, bracketMin: data.bracket_min ?? null, detail: data.bracket_detail ?? null };
+}

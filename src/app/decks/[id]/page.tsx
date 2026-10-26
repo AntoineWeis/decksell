@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { countSellerDecks, estimateDecklistNow, fetchPublicListing } from "@/lib/public-listings";
+import { countSellerDecks, estimateDecklistNow, fetchListingBracket, fetchPublicListing } from "@/lib/public-listings";
+import { commanderBracket } from "@/lib/bracket-view";
+import { BracketCard } from "@/components/bracket-card";
 import { metaResultFor } from "@/lib/meta-corpus";
 import { fromStoredDetail } from "@/lib/meta-score";
 import { MetaProximityCard } from "@/components/meta-proximity";
@@ -71,7 +73,7 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
   const estimated = estimateDecklistNow(listing.decklist);
   // Score méta : comparaison aux listes de tournoi Modern, sans objet pour un autre format.
   const modern = normalizeFormat(listing.format) === "modern";
-  const [{ deck, estimate, pricesAsOf }, meta, sellerDeckCount, sellerBadges] = await Promise.all([
+  const [{ deck, estimate, pricesAsOf }, meta, sellerDeckCount, sellerBadges, power] = await Promise.all([
     estimated,
     // Détail enregistré avec l'annonce ; recalcul (corpus en mémoire) seulement s'il manque.
     !modern
@@ -81,6 +83,8 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
     // Déjà lus avec l'annonce ; requêtes à part seulement si la base ne les a pas fournis.
     listing.sellerDeckCount ?? (listing.seller ? countSellerDecks(listing.seller.id) : null),
     listing.sellerBadges ?? (listing.seller ? getUserBadges(listing.seller.id) : []),
+    // Niveau de puissance (Commander) : enregistré avec l'annonce, recalculé s'il manque.
+    modern ? null : Promise.all([estimated, fetchListingBracket(listing.id)]).then(([e, stored]) => commanderBracket(e.deck, e.estimate, stored)),
   ]);
 
   return (
@@ -128,6 +132,7 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
           <ListingAside listing={listing} seller={listing.seller} todayCents={estimate.totalCents} priceFirstOnMobile sellerDeckCount={sellerDeckCount} sellerBadges={sellerBadges}
           stats={<>
             {meta && <MetaProximityCard result={meta} />}
+            {power && <BracketCard facts={power.facts} min={power.min} declared={power.declared} />}
             <CardTypesCard counts={cardTypeCounts(estimate)} targets={anchorsFor(estimate)} />
             <ManaCurveCard curve={manaCurve(estimate)} />
           </>}>

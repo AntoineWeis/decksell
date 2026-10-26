@@ -13,6 +13,8 @@ import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-det
 import { after } from "next/server";
 import { refreshListingMeta } from "@/lib/meta-corpus";
 import { refreshUserBadges } from "@/lib/badges-server";
+import { fetchBracketFacts } from "@/lib/bracket-server";
+import { minBracket, normalizeBracket, toStoredBracket } from "@/lib/bracket";
 
 export type SellState = { status: "idle" } | { status: "error"; message: string } | { status: "auth" };
 
@@ -99,8 +101,20 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
   // Carte phare : la plus chère à l'unité, montrée en vignette dans l'index.
   const star = starCard(estimate);
 
+  // Commander : niveau de puissance recalculé ici ; le vendeur peut annoncer plus que le minimum.
+  let bracketCols = {};
+  if (format === "commander") {
+    const facts = await fetchBracketFacts(deck, estimate);
+    const min = minBracket(facts);
+    bracketCols = {
+      bracket: normalizeBracket(str(formData.get("bracket")), min),
+      bracket_min: min,
+      bracket_detail: toStoredBracket(facts),
+    };
+  }
+
   const supabase = await createSupabaseServer();
-  const { data: created, error } = await supabase.from("listings").insert({
+  const row = {
     seller_id: user.id,
     title,
     // Commander : liste réécrite avec sa section « Commander », relue à l'identique ensuite.
@@ -119,7 +133,13 @@ export async function createListing(_prev: SellState, formData: FormData): Promi
     archetype_id: format === "commander" ? null : archetypeId,
     cover_card_name: star?.name ?? null,
     cover_image_url: star?.imageUrl ?? null,
-  }).select("id").single();
+  };
+  const insert = (values: object) => supabase.from("listings").insert(values).select("id").single();
+  let { data: created, error } = await insert({ ...row, ...bracketCols });
+  // Colonnes du niveau de puissance absentes (schema.sql, section 26) : on publie sans.
+  if (error && Object.keys(bracketCols).length > 0 && /bracket/.test(error.message)) {
+    ({ data: created, error } = await insert(row));
+  }
   if (error) {
     console.error("Mise en vente : écriture impossible", error.message);
     return { status: "error", message: "Impossible d'enregistrer l'annonce. Réessaie dans un instant." };

@@ -39,6 +39,10 @@ const BATCH = 500;
 const { error: commanderColsError } = await supabase.from("cards").select("legal_commander, color_identity").limit(1);
 const withCommander = !commanderColsError;
 if (!withCommander) console.log("Colonnes Commander absentes (schema.sql, section 25) : légalité et identité de couleur ignorées.");
+// Game Changers (section 26), même précaution.
+const { error: gameChangerError } = await supabase.from("cards").select("game_changer").limit(1);
+const withGameChanger = !gameChangerError;
+if (!withGameChanger) console.log("Colonne game_changer absente (schema.sql, section 26) : Game Changers ignorés.");
 
 function toRow(c, now) {
   const image = c.image_uris?.normal ?? c.card_faces?.[0]?.image_uris?.normal ?? null;
@@ -65,6 +69,7 @@ function toRow(c, now) {
           color_identity: Array.isArray(c.color_identity) ? c.color_identity : null,
         }
       : {}),
+    ...(withGameChanger ? { game_changer: c.game_changer === true } : {}),
     // Plafonnée : la colonne va jusqu'à 999,9 (Gleemax, carte humoristique, coûte 1 000 000).
     cmc: typeof c.cmc === "number" ? Math.min(c.cmc, 999) : null,
     type_line: c.type_line ?? c.card_faces?.[0]?.type_line ?? null,

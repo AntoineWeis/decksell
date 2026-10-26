@@ -22,6 +22,9 @@
   --accent-hover: #1d4fd0;
   --on-accent: #ffffff;
   --reveal: #e2511f;
+  /* Commander : le violet de la marque (Modern garde le bleu). */
+  --commander: #6d3fd6;
+  --commander-soft: #efe8ff;
   --gem-common: #2a2d34;
   --gem-uncommon: #8d98a6;
   --gem-rare: #c3961a;
@@ -61,6 +64,8 @@
     --accent-hover: #5a90ff;
     --on-accent: #ffffff;
     --reveal: #ff6a36;
+    --commander: #b39bff;
+    --commander-soft: #2a2048;
     --gem-common: #d4d7de;
     --gem-uncommon: #9aa6b4;
     --gem-rare: #d9aa2b;
@@ -99,6 +104,8 @@
   --color-accent-hover: var(--accent-hover);
   --color-on-accent: var(--on-accent);
   --color-reveal: var(--reveal);
+  --color-commander: var(--commander);
+  --color-commander-soft: var(--commander-soft);
   --color-gem-rare: var(--gem-rare); /* étoile des favoris */
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);

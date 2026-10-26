@@ -26,6 +26,7 @@ export type CardPrice = {
   legalModern?: boolean | null; // légale en Modern (ni interdite, ni hors format) ; absente = inconnue
   legalCommander?: boolean | null; // légale en Commander ; absente = inconnue
   colorIdentity?: string[] | null; // identité de couleur (ex. ["U", "G"]) ; absente = inconnue
+  gameChanger?: boolean | null; // sur la liste des Game Changers (Commander) ; absente = inconnue
 };
 
 export type LineStatus =

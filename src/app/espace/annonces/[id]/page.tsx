@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getProfile, requireUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
-import { estimateDecklistNow } from "@/lib/public-listings";
+import { estimateDecklistNow, fetchListingBracket } from "@/lib/public-listings";
+import { commanderBracket } from "@/lib/bracket-view";
+import { BracketCard } from "@/components/bracket-card";
 import { metaResultFor } from "@/lib/meta-corpus";
 import { fromStoredDetail } from "@/lib/meta-score";
 import { mediaOf } from "@/lib/listing-media";
@@ -138,6 +140,9 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
           todayCents={estimate.totalCents}
           stats={<>
             {/* Score méta : comparaison aux listes de tournoi Modern, sans objet en Commander. */}
+            {listing.format === "commander" && (
+              <BracketView deck={deck} estimate={estimate} listingId={listing.id} />
+            )}
             {listing.format !== "commander" && (
               <MetaProximityCard result={storedMeta ?? (await metaResultFor(estimate, deck.errors.length, listing.decklist))} />
             )}
@@ -148,4 +153,18 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
       </div>
     </div>
   );
+}
+
+/** Niveau de puissance d'une annonce Commander (enregistré, ou recalculé s'il manque). */
+async function BracketView({
+  deck,
+  estimate,
+  listingId,
+}: {
+  deck: Parameters<typeof commanderBracket>[0];
+  estimate: Parameters<typeof commanderBracket>[1];
+  listingId: string;
+}) {
+  const power = await commanderBracket(deck, estimate, await fetchListingBracket(listingId));
+  return <BracketCard facts={power.facts} min={power.min} declared={power.declared} />;
 }

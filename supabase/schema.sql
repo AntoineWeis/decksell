@@ -1289,3 +1289,15 @@ alter table public.cards
 -- « historique »). Vide pour un deck Modern. Le format est ouvert par la contrainte de la section 16.
 alter table public.listings
   add column if not exists commanders text[] not null default '{}' check (cardinality(commanders) <= 2);
+
+-- 26. Niveau de puissance des decks Commander (« brackets » officiels, de 1 à 5)
+-- Cartes : sur la liste des Game Changers (fournie par Scryfall, import quotidien).
+alter table public.cards
+  add column if not exists game_changer boolean;
+
+-- Annonces : niveau annoncé par le vendeur, niveau minimum déduit de la liste, et ce qui le fixe
+-- (Game Changers, combos à deux cartes, tours supplémentaires… : voir src/lib/bracket.ts).
+alter table public.listings
+  add column if not exists bracket        smallint check (bracket between 1 and 5),
+  add column if not exists bracket_min    smallint check (bracket_min between 1 and 5),
+  add column if not exists bracket_detail jsonb;

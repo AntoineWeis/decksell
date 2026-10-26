@@ -8,6 +8,7 @@ import { formatEur, parseEur, type Estimate, type ManualPrices } from "@/lib/pri
 import { canLeadDeck, checkDeckQuality, priceGap } from "@/lib/quality";
 import { normalizeName, type DetectedFormat, type ParsedDeck } from "@/lib/decklist";
 import { normalizeColors, type Archetype } from "@/lib/listings";
+import { BRACKETS, allowedBrackets, type BracketLevel } from "@/lib/bracket";
 import { ArchetypeSelect, ColorPicker } from "./deck-tags-fields";
 import { FormatSelect } from "./format-select";
 import { CardDetailsEditor } from "./card-details-editor";
@@ -24,6 +25,7 @@ export function SellPanel({
   archetypes,
   deck,
   onShapeChange,
+  bracketMin,
 }: {
   decklist: string;
   estimate: Estimate;
@@ -33,6 +35,8 @@ export function SellPanel({
   deck: ParsedDeck;
   /** Le vendeur change de format ou de commandant : l'estimation est refaite au-dessus. */
   onShapeChange: (format: DetectedFormat, commanders: string[]) => void;
+  /** Niveau de puissance minimum (Commander) ; null tant qu'il est en calcul. */
+  bracketMin: BracketLevel | null;
 }) {
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState<SellState, FormData>(createListing, { status: "idle" });
@@ -164,6 +168,22 @@ export function SellPanel({
                 onChange={(v) => setCommander(1, v)}
               />
             </label>
+            <label>
+              <span className="mb-1 block text-sm font-medium">Niveau de puissance</span>
+              {/* Recréé quand le minimum change : il repart du niveau déduit de la liste. */}
+              <select key={bracketMin ?? "calcul"} name="bracket" defaultValue={bracketMin ?? ""} disabled={bracketMin == null} className={inputClass}>
+                {bracketMin == null ? (
+                  <option value="">Calcul…</option>
+                ) : (
+                  allowedBrackets(bracketMin).map((b) => (
+                    <option key={b} value={b}>
+                      {b} · {BRACKETS[b].name}
+                      {b === bracketMin ? " (d'après la liste)" : ""}
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
             <div className="sm:col-span-3">
               {/* Recréé quand les commandants changent : les cases suivent leur identité de couleur. */}
               <ColorPicker key={identity.join("")} defaultColors={identity} />
@@ -235,7 +255,7 @@ export function SellPanel({
       <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="submit"
-          disabled={pending || blocked}
+          disabled={pending || blocked || (commander && bracketMin == null)}
           className="h-10 rounded-xl bg-accent px-4 font-semibold text-on-accent transition hover:brightness-110 disabled:opacity-50"
         >
           {pending ? "Publication…" : "Publier l'annonce"}

@@ -39,6 +39,7 @@ export async function fetchCardPrices(client: SupabaseClient, names: string[]): 
     legal_modern?: boolean | null;
     legal_commander?: boolean | null;
     color_identity?: string[] | null;
+    game_changer?: boolean | null;
   };
   const extraById = new Map<string, Extra>();
   const ids = rows.map((r) => r.print_id);
@@ -46,6 +47,7 @@ export async function fetchCardPrices(client: SupabaseClient, names: string[]): 
     // Du plus complet au plus simple, selon l'avancement des migrations de la base
     // (section 25 : Commander ; section 10 : courbe de mana) ; au pire, la rareté seule.
     const selects = [
+      "id, rarity, cmc, type_line, legal_modern, legal_commander, color_identity, game_changer",
       "id, rarity, cmc, type_line, legal_modern, legal_commander, color_identity",
       "id, rarity, cmc, type_line, legal_modern",
       "id, rarity",
@@ -75,6 +77,7 @@ export async function fetchCardPrices(client: SupabaseClient, names: string[]): 
     legalModern: extraById.get(r.print_id)?.legal_modern ?? null,
     legalCommander: extraById.get(r.print_id)?.legal_commander ?? null,
     colorIdentity: extraById.get(r.print_id)?.color_identity ?? null,
+    gameChanger: extraById.get(r.print_id)?.game_changer ?? null,
     priceEur: num(r.price_eur),
     minPriceEurFoil: num(r.min_price_eur_foil),
   }));

@@ -18,6 +18,8 @@ import {
   type ListingStatus,
 } from "@/lib/listings";
 import { formatDecklist, parseDecklist, withFormat } from "@/lib/decklist";
+import { fetchBracketFacts } from "@/lib/bracket-server";
+import { minBracket, toStoredBracket, type BracketLevel } from "@/lib/bracket";
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
 import { isDepartment } from "@/lib/departments";
 import { refreshListingMeta } from "@/lib/meta-corpus";
@@ -206,13 +208,15 @@ export async function updateDecklist(id: string, _prev: DecklistState, formData:
   // Colonne commanders absente avant la migration (schema.sql, section 25) : relecture sans elle.
   const readCurrent = (cols: string) =>
     supabase.from("listings").select(cols).eq("id", id).eq("seller_id", user.id).maybeSingle();
-  let read = await readCurrent("condition, card_details, format, commanders");
+  let read = await readCurrent("condition, card_details, format, commanders, bracket");
+  if (read.error) read = await readCurrent("condition, card_details, format, commanders");
   if (read.error) read = await readCurrent("condition, card_details, format");
   const current = read.data as {
     condition: string;
     card_details: unknown[] | null;
     format: string;
     commanders?: string[] | null;
+    bracket?: number | null;
   } | null;
   if (!current) return { status: "error", message: "Annonce introuvable." };
   // Le format de l'annonce ne change pas ; en Commander, le commandant est celui de la nouvelle
@@ -236,6 +240,19 @@ export async function updateDecklist(id: string, _prev: DecklistState, formData:
   const quality = checkDeckQuality(estimate, deck);
   if (quality.blocking.length > 0) return { status: "error", message: quality.blocking.join(" ") };
 
+  // Commander : nouveau niveau minimum ; le niveau annoncé remonte s'il passe en dessous.
+  let bracketCols = {};
+  if (format === "commander") {
+    const facts = await fetchBracketFacts(deck, estimate);
+    const min = minBracket(facts);
+    const declared = current.bracket ?? min;
+    bracketCols = {
+      bracket: (declared < min && !(declared === 1 && min === 2) ? min : declared) as BracketLevel,
+      bracket_min: min,
+      bracket_detail: toStoredBracket(facts),
+    };
+  }
+
   const fallback: Condition = current.condition in CONDITIONS ? (current.condition as Condition) : "near_mint";
   const details = buildDetails(deck, current.card_details ?? [], { condition: fallback, lang: "en" });
   const star = starCard(estimate);
@@ -245,6 +262,7 @@ export async function updateDecklist(id: string, _prev: DecklistState, formData:
     .update({
       decklist: format === "commander" ? formatDecklist(deck) : decklist,
       ...(format === "commander" ? { commanders: deck.commanders } : {}),
+      ...("bracket" in current ? bracketCols : {}),
       card_count: cardCount,
       estimated_cents: estimate.totalCents,
       estimate_complete: estimate.complete,

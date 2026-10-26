@@ -1,8 +1,10 @@
 "use server";
 
-import { parseDecklist, type ParsedDeck } from "@/lib/decklist";
-import type { CardPrice } from "@/lib/pricing";
-import { lookupDeckPrices } from "@/lib/estimate";
+import { parseDecklist, withFormat, type ParsedDeck } from "@/lib/decklist";
+import { buildEstimate, type CardPrice } from "@/lib/pricing";
+import { lookupDeckPrices, lookupDeckPricesCached } from "@/lib/estimate";
+import { fetchBracketFacts } from "@/lib/bracket-server";
+import { minBracket, type BracketFacts, type BracketLevel } from "@/lib/bracket";
 import { archidektToText, parseDeckUrl } from "@/lib/deck-import";
 
 export type EstimateState =
@@ -67,5 +69,26 @@ export async function importDeckAction(url: string): Promise<ImportResult> {
     return { status: "ok", text };
   } catch {
     return { status: "error", message: "Archidekt ne répond pas pour l'instant. Réessaie dans un moment." };
+  }
+}
+
+export type BracketState = { status: "ok"; facts: BracketFacts; min: BracketLevel } | { status: "error" };
+
+/**
+ * Niveau de puissance d'une liste Commander, avec le ou les commandants choisis.
+ * Accessible à tous, comme l'estimation : on valide la liste.
+ */
+export async function bracketAction(text: string, commanders: string[]): Promise<BracketState> {
+  if (typeof text !== "string" || text.length === 0 || text.length > MAX_CHARS) return { status: "error" };
+  const names = Array.isArray(commanders) ? commanders.filter((c) => typeof c === "string").slice(0, 2) : [];
+  const deck = withFormat(parseDecklist(text), "commander", names);
+  if (deck.main.length === 0 || deck.main.length > MAX_LINES) return { status: "error" };
+  try {
+    const { prices } = await lookupDeckPricesCached(deck);
+    const facts = await fetchBracketFacts(deck, buildEstimate(deck, prices));
+    return { status: "ok", facts, min: minBracket(facts) };
+  } catch (e) {
+    console.error("Niveau de puissance impossible :", e);
+    return { status: "error" };
   }
 }
