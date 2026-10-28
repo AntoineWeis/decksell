@@ -7,7 +7,6 @@ import { formatEur, type Estimate } from "@/lib/pricing";
 import { CardTypesCard } from "./card-types";
 import { ManaCurveCard } from "./mana-curve";
 import { FormatTag } from "./format-tag";
-import { PriceGauge } from "./price-gauge";
 
 const POINTS = [
   ["Le prix face à la valeur du jour", "L'écart est calculé carte par carte, avec les prix Cardmarket du jour."],
@@ -79,7 +78,6 @@ export async function DeckPreview() {
               </p>
             </div>
           </div>
-          <PriceGauge askingCents={l.asking_cents} valueCents={today} className="mt-4" />
         </Link>
         <CardTypesCard counts={cardTypeCounts(estimate)} />
         <ManaCurveCard curve={manaCurve(estimate)} />

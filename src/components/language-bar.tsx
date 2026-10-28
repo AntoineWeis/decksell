@@ -12,10 +12,13 @@ export function LanguageBar({
   frenchPercent,
   details,
   className = "",
+  textOnly = false,
 }: {
   frenchPercent: number | null;
   details?: CardDetail[] | null;
   className?: string;
+  /** Une ligne de texte seule (« 60 % français, 40 % anglais »), sans barre ni pastilles. */
+  textOnly?: boolean;
 }) {
   const parts = segments(frenchPercent, details);
   if (!parts) {
@@ -24,6 +27,19 @@ export function LanguageBar({
   let other = 0;
   const colored = parts.map((p) => ({ ...p, color: COLOR[p.lang] ?? OTHER[other++ % OTHER.length] }));
   const label = colored.map((p) => `${p.percent} % ${LANGUAGES[p.lang].label.toLowerCase()}`).join(", ");
+
+  if (textOnly) {
+    return (
+      <p className={`text-xs tabular-nums text-muted ${className}`}>
+        {colored.map((p, i) => (
+          <span key={p.lang}>
+            {i > 0 && ", "}
+            <span className="font-semibold text-foreground">{p.percent} %</span> {LANGUAGES[p.lang].label.toLowerCase()}
+          </span>
+        ))}
+      </p>
+    );
+  }
 
   return (
     <div className={className}>

@@ -10,7 +10,6 @@ import { ManaColors } from "./mana";
 import { FavoriteButton } from "./favorite-button";
 import { FormatTag } from "./format-tag";
 import type { FavoriteState } from "@/lib/favorites";
-import { PriceGauge } from "./price-gauge";
 import { MetaBadge } from "./meta-proximity";
 
 /**
@@ -92,7 +91,6 @@ export function ListingTile({
             <p className="text-xl font-bold tabular-nums">{formatEur(l.asking_cents)}</p>
             <p className="text-xs tabular-nums text-muted">Estimé {formatEur(l.estimated_cents)}</p>
           </div>
-          <PriceGauge askingCents={l.asking_cents} valueCents={l.estimated_cents} />
 
           {hits.length > 0 && (
             <p className="rounded-lg bg-brand-soft px-2.5 py-1.5 text-xs text-link">
@@ -107,7 +105,8 @@ export function ListingTile({
             </p>
           )}
 
-          <LanguageBar frenchPercent={l.french_percent} details={l.card_details} />
+          {/* Index : la langue en une ligne de texte, sans barre. */}
+          <LanguageBar frenchPercent={l.french_percent} details={l.card_details} textOnly />
 
           {showSeller && l.seller && (
             <p className="mt-auto flex items-center gap-2 border-t border-line pt-3 text-sm text-muted">

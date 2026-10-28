@@ -7,7 +7,6 @@ import { formatEur } from "@/lib/pricing";
 import { Avatar } from "./avatar";
 import { ManaColors } from "./mana";
 import { FormatTag } from "./format-tag";
-import { PriceGauge } from "./price-gauge";
 
 const SHOWN = 4;
 
@@ -122,7 +121,6 @@ function FeaturedDeck({ listing: l, wide = false }: { listing: PublicListing; wi
           </p>
         </div>
         <div className="mt-auto space-y-4 border-t border-line pt-4">
-        <PriceGauge askingCents={l.asking_cents} valueCents={l.estimated_cents} />
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="display text-3xl tabular-nums">{formatEur(l.asking_cents)}</p>
@@ -169,7 +167,6 @@ function CompactDeck({ listing: l }: { listing: PublicListing }) {
         <p className="mt-1 truncate text-xs text-muted">
           {l.card_count} cartes · {CONDITIONS[l.condition]}
         </p>
-        <PriceGauge askingCents={l.asking_cents} valueCents={l.estimated_cents} label={false} className="mt-2.5" />
         <div className="mt-auto flex items-end justify-between gap-2 pt-2">
           <p className="min-w-0 text-sm font-bold tabular-nums">
             {formatEur(l.asking_cents)}
