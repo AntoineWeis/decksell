@@ -97,7 +97,7 @@ export function ListingCard({ listing: l }: { listing: Listing & { photos?: stri
           </div>
           <div className="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-line" aria-hidden>
             <div
-              className={`h-full rounded-full ${complete.percent === 100 ? "bg-ok" : "bg-[linear-gradient(90deg,#5a90ff,#9d84ff)]"}`}
+              className={`h-full rounded-full ${complete.percent === 100 ? "bg-ok" : "bg-gradient-to-r from-logo-blue to-mana-violet"}`}
               style={{ width: `${complete.percent}%` }}
             />
           </div>

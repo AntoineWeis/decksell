@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { fetchUnseenBadges, markBadgeSeen } from "@/app/badge-actions";
 import { BADGE_BY_KEY, ROMAN, type EarnedBadge } from "@/lib/badges";
 import { BadgeMedal } from "./badge-medal";
+import { BRAND } from "@/lib/brand-colors";
 
 const DURATION = 6500;
 const SPARKS = 10;
@@ -55,7 +56,7 @@ export function BadgeUnlock() {
         key={`${current.key}:${current.level}`}
         role="status"
         aria-live="polite"
-        className="badge-toast pointer-events-auto relative flex w-full max-w-sm items-center gap-4 overflow-hidden rounded-2xl border border-[#9d84ff]/40 bg-surface px-4 py-3.5 shadow-2xl"
+        className="badge-toast pointer-events-auto relative flex w-full max-w-sm items-center gap-4 overflow-hidden rounded-2xl border border-mana-violet/40 bg-surface px-4 py-3.5 shadow-2xl"
       >
         {/* Lueur de fond qui s'éteint doucement */}
         <span aria-hidden className="badge-glow absolute -left-6 top-1/2 size-28 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(157,132,255,0.45),transparent_70%)]" />
@@ -71,7 +72,7 @@ export function BadgeUnlock() {
                   {
                     "--angle": `${(360 / SPARKS) * i}deg`,
                     "--dist": `${30 + (i % 3) * 8}px`,
-                    background: i % 2 ? "#9d84ff" : "#7fb2ff",
+                    background: i % 2 ? BRAND.manaViolet : BRAND.manaBlue,
                     animationDelay: `${180 + (i % 4) * 30}ms`,
                   } as React.CSSProperties
                 }
@@ -85,7 +86,7 @@ export function BadgeUnlock() {
         </span>
 
         <span className="relative min-w-0 flex-1">
-          <span className="block text-xs font-semibold uppercase tracking-wider text-[#9d84ff]">Badge débloqué</span>
+          <span className="block text-xs font-semibold uppercase tracking-wider text-mana-violet">Badge débloqué</span>
           <span className="block font-semibold">{title}</span>
           <span className="mt-0.5 block text-xs leading-snug text-muted">{def.description}</span>
           <Link href="/espace/badges" className="mt-1 inline-block text-xs font-medium text-link hover:underline">

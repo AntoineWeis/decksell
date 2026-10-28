@@ -14,6 +14,9 @@ colors:
   mana-blue: "#7fb2ff"
   mana-violet: "#9d84ff"
   banner-night: "#0f1830"
+  banner-deep: "#16244a"
+  banner-glow: "#1d3a8a"
+  banner-mist-share: "#aab6d6"
   banner-ink: "#f3f6fc"
   banner-mist: "#b4c0d8"
   page: "#f3f5f9"
@@ -152,6 +155,7 @@ Palette restreinte : neutres gris-bleu, un bleu d'action, deux couleurs de forma
 
 ### Neutral
 - **Nuit bandeau** (banner-night), avec **encre bandeau** et **brume bandeau** : barre de navigation, bandeaux et appel final.
+- **Images de partage et icônes** (banner-deep, banner-glow, banner-mist-share) : dégradé de fond et texte secondaire des images générées. Ces valeurs fixes, comme le bleu logo et le dégradé mana, vivent dans `src/lib/brand-colors.ts`.
 - **Page**, **surface**, **creux**, **filet** : fond, panneaux, champs et en-têtes de colonnes, séparateurs. En sombre : #0e121b, #161c28, #1c2331, #283143.
 - **Encre** et **muet** : texte principal et secondaire.
 - **Gemmes** : rareté réelle de l'impression (commune, peu commune, rare, mythique).

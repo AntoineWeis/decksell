@@ -35,17 +35,17 @@ export default function ComingSoonPage() {
         <p className="flex items-center gap-2 font-logo text-[27px] font-bold leading-none">
           <LogoMark size={28} />
           <span>
-            deck<span className="text-[#5a90ff]">sell</span>
+            deck<span className="text-logo-blue">sell</span>
           </span>
         </p>
 
         <div className="flex flex-1 flex-col justify-center py-16">
           <p className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 text-xs font-semibold tracking-wide text-banner-muted uppercase backdrop-blur">
-            <span className="size-1.5 animate-pulse rounded-full bg-[#5a90ff]" />
+            <span className="size-1.5 animate-pulse rounded-full bg-logo-blue" />
             Bientôt en ligne
           </p>
           <h1 className="max-w-2xl font-display text-4xl leading-[1.1] font-semibold tracking-[-0.02em] sm:text-6xl">
-            Achète et vends des decks Modern au juste prix.
+            Achète et vends des decks Modern et Commander au juste prix.
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-banner-muted">
             Estime ton deck carte par carte d’après les prix Cardmarket, mets-le en vente ou trouve un deck complet

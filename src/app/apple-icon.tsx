@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { loadGoogleFont } from "@/lib/og";
+import { BRAND } from "@/lib/brand-colors";
 
 // Icône d'écran d'accueil (iPhone, iPad) : « ds » aux couleurs du logo sur bleu nuit.
 export const size = { width: 180, height: 180 };
@@ -24,7 +25,7 @@ export default async function AppleIcon() {
           paddingBottom: 10,
         }}
       >
-        d<span style={{ color: "#5a90ff" }}>s</span>
+        d<span style={{ color: BRAND.logoBlue }}>s</span>
       </div>
     ),
     { ...size, fonts: font ? [{ name: "Rajdhani", data: font, weight: 700, style: "normal" }] : undefined },

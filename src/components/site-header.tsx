@@ -21,7 +21,7 @@ export function SiteHeader() {
           {/* Fiole de mana : petite inclinaison au survol. */}
           <LogoMark size={24} className="transition-transform duration-500 group-hover:-rotate-12 sm:size-[26px]" />
           <span aria-hidden>
-            deck<span className="text-[#5a90ff]">sell</span>
+            deck<span className="text-logo-blue">sell</span>
           </span>
         </Link>
         <nav className="flex items-center gap-1 text-sm">

@@ -1,8 +1,9 @@
+import { BRAND } from "./brand-colors.ts";
 // Symbole du logo decksell : une fiole de mana inclinée, bouchée, avec deux étincelles,
 // en dégradé bleu → violet. Défini une seule fois : l'en-tête (LogoMark) et les images de
 // partage (data URL) le partagent.
 
-export const LOGO_COLORS = { from: "#5a90ff", to: "#9d84ff" } as const;
+export const LOGO_COLORS = { from: BRAND.logoBlue, to: BRAND.manaViolet } as const;
 
 /** Inclinaison de la fiole autour du centre de sa panse (repère 32 × 32). */
 export const FLASK_TILT = "rotate(42 14.5 19.5)";

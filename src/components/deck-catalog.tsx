@@ -116,6 +116,8 @@ async function ListingGrid({ format, searchParams }: { format: DeckFormat | null
   }
 
   const inFormat = format ? listings.filter((l) => l.format === format) : listings;
+  const other: DeckFormat | null = format === "modern" ? "commander" : format === "commander" ? "modern" : null;
+  const otherCount = other ? listings.filter((l) => l.format === other).length : 0;
   if (inFormat.length === 0) {
     return (
       <div className="space-y-6">
@@ -129,9 +131,17 @@ async function ListingGrid({ format, searchParams }: { format: DeckFormat | null
                 : "Aucun deck en vente pour l'instant"}
           </p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-muted">Sois le premier : estime ton deck, puis mets-le en vente.</p>
-          <Link href="/estimer" className="mt-5 inline-flex font-semibold text-link hover:underline">
-            Estimer mon deck →
-          </Link>
+          <div className="mt-5 flex flex-wrap justify-center gap-x-6 gap-y-2">
+            <Link href="/estimer" className="font-semibold text-link hover:underline">
+              Estimer mon deck →
+            </Link>
+            {/* Pas d'impasse : l'autre format, s'il a des decks. */}
+            {other && otherCount > 0 && (
+              <Link href={catalogPath(other)} className="font-semibold text-link hover:underline">
+                Voir les {otherCount} deck{otherCount > 1 ? "s" : ""} {other === "modern" ? "Modern" : "Commander"} →
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     );

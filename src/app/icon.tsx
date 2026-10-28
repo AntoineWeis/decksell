@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { loadGoogleFont } from "@/lib/og";
+import { BRAND } from "@/lib/brand-colors";
 
 // Icône d'onglet : « ds » aux couleurs du logo (d blanc, s bleu), en Rajdhani, sur bleu nuit.
 export const size = { width: 64, height: 64 };
@@ -25,7 +26,7 @@ export default async function Icon() {
           paddingBottom: 4,
         }}
       >
-        d<span style={{ color: "#5a90ff" }}>s</span>
+        d<span style={{ color: BRAND.logoBlue }}>s</span>
       </div>
     ),
     { ...size, fonts: font ? [{ name: "Rajdhani", data: font, weight: 700, style: "normal" }] : undefined },

@@ -36,7 +36,7 @@ export default function TermsPage() {
     >
       <Section n={1} id="objet" title="Objet">
         <p>
-          decksell est un site qui permet d&apos;estimer la valeur de decks Magic: The Gathering au format Modern,
+          decksell est un site qui permet d&apos;estimer la valeur de decks Magic: The Gathering aux formats Modern et Commander,
           d&apos;après les prix Cardmarket, et de mettre ces decks en vente entre particuliers. Les présentes
           conditions encadrent l&apos;utilisation du site par toute personne qui le consulte (« visiteur ») ou qui
           y crée un compte (« membre »).
