@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-21T14:10:00+02:00",
+  "generatedAt": "2026-10-28T15:00:00+01:00",
   "title": "Design System: decksell",
   "extensions": {
     "colorMeta": {
@@ -43,6 +43,44 @@
       "ink": {
         "role": "neutral",
         "displayName": "Encre"
+      },
+      "logo-blue": {
+        "role": "secondary",
+        "displayName": "Bleu logo"
+      },
+      "modern-solid": {
+        "role": "accent",
+        "displayName": "Modern (plein)"
+      },
+      "commander": {
+        "role": "accent",
+        "displayName": "Commander (texte)",
+        "tonalRamp": [
+          "#3b0b44",
+          "#5c1168",
+          "#86198f",
+          "#a21caf",
+          "#c026d3",
+          "#e879f9",
+          "#f0abfc",
+          "#fae8ff"
+        ]
+      },
+      "commander-soft": {
+        "role": "accent",
+        "displayName": "Commander (fond doux)"
+      },
+      "commander-solid": {
+        "role": "accent",
+        "displayName": "Commander (plein)"
+      },
+      "mana-blue": {
+        "role": "tertiary",
+        "displayName": "Mana bleu"
+      },
+      "mana-violet": {
+        "role": "tertiary",
+        "displayName": "Mana violet"
       }
     },
     "typographyMeta": {
