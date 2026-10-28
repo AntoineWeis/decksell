@@ -9,11 +9,17 @@ export function SiteFooter() {
           <Link href="/qui-sommes-nous" className="text-muted hover:text-foreground">
             Qui sommes-nous
           </Link>
+          <Link href="/faq" className="text-muted hover:text-foreground">
+            Questions fréquentes
+          </Link>
           <Link href="/conditions-utilisation" className="text-muted hover:text-foreground">
             Conditions d&apos;utilisation
           </Link>
           <Link href="/confidentialite" className="text-muted hover:text-foreground">
             Confidentialité
+          </Link>
+          <Link href="/accessibilite" className="text-muted hover:text-foreground">
+            Accessibilité
           </Link>
           {/* Mobile : l'en-tête n'a pas la place pour le bouton de thème. */}
           <ThemeToggle variant="footer" />

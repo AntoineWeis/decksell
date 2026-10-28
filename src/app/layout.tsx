@@ -56,8 +56,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col font-sans">
         <ToastProvider>
+          {/* Lien d'évitement (WCAG 2.4.1) : invisible jusqu'à ce qu'il reçoive le focus au clavier. */}
+          <a
+            href="#contenu"
+            className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:font-semibold focus:text-on-accent"
+          >
+            Aller au contenu
+          </a>
           <SiteHeader />
-          <div className="flex flex-1 flex-col">{children}</div>
+          <div id="contenu" tabIndex={-1} className="flex flex-1 flex-col outline-none">
+            {children}
+          </div>
           <SiteFooter />
           {/* Lit l'adresse courante : à part, pour ne pas bloquer le rendu statique. */}
           <Suspense fallback={null}>
