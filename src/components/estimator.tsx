@@ -209,10 +209,8 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
               <path d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 3.5a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM11.2 14.5H8.8v-1.2h.6V10h-.6V8.8h1.8v4.5h.6v1.2Z" />
             </svg>
             <p>
-              <strong className="font-semibold">Pour un prix juste, importe ton deck.</strong> Le lien Archidekt ou
-              l&apos;export Moxfield (Exporter › Copier pour Moxfield) donnent l&apos;édition, le numéro et le foil de
-              chaque carte : les bons visuels et les bons prix. Sans édition, une carte compte au prix de sa version la
-              moins chère.
+              <strong className="font-semibold">Pour un prix juste, importe ton deck</strong> (lien Archidekt, ou export
+              Moxfield « Copier pour Moxfield ») : chaque carte garde son édition et son foil.
             </p>
           </div>
           <textarea
@@ -252,8 +250,19 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
           )}
           {!pending && state.status === "ok" && estimate && deck && (
             <div key={revealId(state)} className="space-y-6">
+              {/* Ordre : la valeur, puis tout ce qui la corrige (éditions, lignes ignorées, prix à compléter),
+                  le niveau de puissance, et seulement ensuite l'invitation à vendre. */}
               <Receipt estimate={estimate} pricesAsOf={state.pricesAsOf} deck={deck} />
               <MissingEditions lines={estimate.lines} />
+              <ParseNotes deck={state.deck} />
+              {!estimate.complete || Object.keys(manual).length > 0 ? (
+                <MissingPrices
+                  lines={estimate.lines.filter((l) => l.unitCents == null || l.status === "manual")}
+                  complete={estimate.complete}
+                  inputs={manualInputs}
+                  onChange={(key, value) => setManualInputs((m) => ({ ...m, [key]: value }))}
+                />
+              ) : null}
               {deck.format === "commander" &&
                 (bracketResult?.status === "ok" ? (
                   <BracketCard facts={bracketResult.facts} min={bracketResult.min} />
@@ -273,15 +282,6 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
                 deck={deck}
                 onShapeChange={changeShape}
               />
-              <ParseNotes deck={state.deck} />
-              {!estimate.complete || Object.keys(manual).length > 0 ? (
-                <MissingPrices
-                  lines={estimate.lines.filter((l) => l.unitCents == null || l.status === "manual")}
-                  complete={estimate.complete}
-                  inputs={manualInputs}
-                  onChange={(key, value) => setManualInputs((m) => ({ ...m, [key]: value }))}
-                />
-              ) : null}
               {deck.format === "commander" ? (
                 <>
                   <CardList

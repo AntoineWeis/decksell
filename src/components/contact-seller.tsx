@@ -14,10 +14,20 @@ export async function ContactSeller({ listingId, sellerId, title }: { listingId:
   if (!user) {
     return (
       <>
+        {/* Visiteur : le bouton dit ce qu'il fait vraiment (connexion d'abord), puis ramène à l'annonce. */}
         <Link href={`/connexion?next=${encodeURIComponent(`/decks/${listingId}`)}`} className={buttonClass}>
-          Contacter le vendeur
+          Se connecter pour contacter le vendeur
         </Link>
-        <p className="mt-2 text-center text-xs text-muted">Connecte-toi pour écrire au vendeur.</p>
+        <p className="mt-2 text-center text-xs text-muted">
+          Pas encore de compte ?{" "}
+          <Link
+            href={`/inscription?next=${encodeURIComponent(`/decks/${listingId}`)}`}
+            className="font-medium text-link hover:underline"
+          >
+            Inscris-toi en une minute
+          </Link>
+          , tu reviens ensuite sur cette annonce.
+        </p>
       </>
     );
   }
