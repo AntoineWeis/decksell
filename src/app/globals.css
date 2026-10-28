@@ -303,8 +303,9 @@ a {
 }
 
 /* Résultat : les lignes apparaissent de la moins chère à la plus chère, la carte phare se retourne en dernier. */
+/* Départ à 35 % d'opacité, pas 0 : pendant le décalage, la liste n'a jamais l'air vide. */
 @keyframes slide-out {
-  from { opacity: 0; transform: translateY(-6px); }
+  from { opacity: 0.35; transform: translateY(-4px); }
   to { opacity: 1; transform: none; }
 }
 @keyframes flip-in {

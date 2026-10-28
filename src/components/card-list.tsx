@@ -81,7 +81,7 @@ export function CardList({
       // Une même carte peut figurer en deux impressions : l'impression entre dans la clé.
       key={`${l.board}-${l.name}-${l.requested?.set ?? ""}-${l.requested?.number ?? ""}-${l.foil ? "f" : ""}`}
       line={l}
-      delayMs={Math.min(rank.get(l)! * 20, 500)}
+      delayMs={Math.min(rank.get(l)! * 15, 300)}
       previewSide={previewSide}
       detail={details?.get(detailKey(l.board, l.name))}
       modalIndex={modalIndex.get(l)}

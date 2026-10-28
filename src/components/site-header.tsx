@@ -54,7 +54,8 @@ export function SiteHeader() {
         <div className="ml-auto flex items-center gap-1.5 text-sm">
           <ThemeToggle />
           {/* Lit la session : à part, pour ne pas ralentir le reste de la page */}
-          <Suspense fallback={<div className="h-9 w-28 rounded-md bg-white/10" />}>
+          {/* Emplacement à la taille de « Connexion » sur mobile : plus large, il ferait déborder la barre. */}
+          <Suspense fallback={<div className="h-9 w-[5.5rem] rounded-md bg-white/10 sm:w-28" />}>
             <UserMenu />
           </Suspense>
         </div>

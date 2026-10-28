@@ -242,7 +242,7 @@ Coins de 12px pour les panneaux et vignettes, 16px pour les portes et la carte v
 - **Réassurance** : liste à coche verte dans un panneau, chaque point vérifiable dans le produit.
 
 ### Tableau de cartes (signature)
-En-tête de panneau (titre, nombre de cartes, total), ligne d'en-têtes de colonnes (Qté, Carte, Prix) sur fond creux, puis une ligne par carte : quantité, miniature 30×42, gemme, nom, état et langue déclarés, édition et numéro (avec « Foil » et « la moins chère » quand c'est le cas, ou un avertissement si l'édition demandée est introuvable), illustrateur, prix tabulaire. En Commander, un panneau « Commandant » précède le panneau « Deck ». Tri par valeur décroissante ; les lignes apparaissent de la moins chère à la plus chère (320ms, décalage de 20ms, plafond 500ms), et la carte phare se retourne en dernier. Aperçu agrandi au survol, ouvert par-dessus la colonne de gauche.
+En-tête de panneau (titre, nombre de cartes, total), ligne d'en-têtes de colonnes (Qté, Carte, Prix) sur fond creux, puis une ligne par carte : quantité, miniature 30×42, gemme, nom, état et langue déclarés, édition et numéro (avec « Foil » et « la moins chère » quand c'est le cas, ou un avertissement si l'édition demandée est introuvable), illustrateur, prix tabulaire. En Commander, un panneau « Commandant » précède le panneau « Deck ». Tri par valeur décroissante ; les lignes apparaissent de la moins chère à la plus chère (320ms, départ à 35 % d'opacité pour que la liste ne paraisse jamais vide, décalage de 15ms, plafond 300ms), et la carte phare se retourne en dernier. Aperçu agrandi au survol, ouvert par-dessus la colonne de gauche.
 
 ## Do's and Don'ts
 
