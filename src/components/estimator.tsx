@@ -203,6 +203,18 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
               </p>
             )}
           </div>
+          {/* L'édition fixe le prix : les exports Archidekt et Moxfield la donnent, pas les listes tapées à la main. */}
+          <div className="mb-3 flex gap-2.5 rounded-lg border border-link/30 bg-brand-soft px-3 py-2.5 text-xs leading-relaxed text-link">
+            <svg viewBox="0 0 20 20" className="mt-px size-4 shrink-0" fill="currentColor" aria-hidden>
+              <path d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 3.5a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM11.2 14.5H8.8v-1.2h.6V10h-.6V8.8h1.8v4.5h.6v1.2Z" />
+            </svg>
+            <p>
+              <strong className="font-semibold">Pour un prix juste, importe ton deck.</strong> Le lien Archidekt ou
+              l&apos;export Moxfield (Exporter › Copier pour Moxfield) donnent l&apos;édition, le numéro et le foil de
+              chaque carte : les bons visuels et les bons prix. Sans édition, une carte compte au prix de sa version la
+              moins chère.
+            </p>
+          </div>
           <textarea
             id="decklist"
             name="decklist"
@@ -241,6 +253,7 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
           {!pending && state.status === "ok" && estimate && deck && (
             <div key={revealId(state)} className="space-y-6">
               <Receipt estimate={estimate} pricesAsOf={state.pricesAsOf} deck={deck} />
+              <MissingEditions lines={estimate.lines} />
               {deck.format === "commander" &&
                 (bracketResult?.status === "ok" ? (
                   <BracketCard facts={bracketResult.facts} min={bracketResult.min} />
@@ -420,6 +433,25 @@ function Receipt({ estimate, pricesAsOf, deck }: { estimate: Estimate; pricesAsO
         </p>
       </div>
     </section>
+  );
+}
+
+/** Cartes sans édition (hors terrains de base) : comptées au prix de leur version la moins chère. */
+function MissingEditions({ lines }: { lines: PricedLine[] }) {
+  const basic = /^(snow-covered )?(plains|island|swamp|mountain|forest|wastes)$/i;
+  const count = lines
+    .filter((l) => l.printMatch === "cheapest" && l.card && !basic.test(l.name.trim()))
+    .reduce((n, l) => n + l.quantity, 0);
+  if (count === 0) return null;
+  return (
+    <p role="status" className="rounded-xl border border-warn/40 bg-warn-soft px-5 py-3 text-sm text-warn">
+      <strong className="font-semibold">
+        {count} carte{count > 1 ? "s" : ""} sans édition
+      </strong>{" "}
+      : {count > 1 ? "elles comptent" : "elle compte"} au prix de {count > 1 ? "leur" : "sa"} version la moins chère, qui
+      n&apos;est peut-être pas la tienne. Pour un prix juste, importe le deck depuis Archidekt (lien) ou colle l&apos;export
+      Moxfield (Exporter › Copier pour Moxfield).
+    </p>
   );
 }
 

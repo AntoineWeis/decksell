@@ -51,7 +51,8 @@ export async function importDeckAction(url: string): Promise<ImportResult> {
   if (target.site === "moxfield") {
     return {
       status: "error",
-      message: "Moxfield bloque l'import automatique. Sur ton deck Moxfield : Exporter › Copier pour MTGO, puis colle la liste ici.",
+      message:
+        "Moxfield bloque l'import automatique. Sur ton deck Moxfield : Exporter › Copier pour Moxfield (avec les éditions, pour des prix justes), puis colle la liste ici.",
     };
   }
   if (target.site !== "archidekt") {
