@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { countSellerDecks, estimateDecklistNow, fetchListingBracket, fetchPublicListing } from "@/lib/public-listings";
 import { commanderBracket } from "@/lib/bracket-view";
+import { catalogPath } from "@/lib/deck-index";
 import { commanderCards } from "@/lib/pricing";
 import { BracketCard } from "@/components/bracket-card";
 import { metaResultFor } from "@/lib/meta-corpus";
@@ -101,7 +102,7 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
           __html: jsonLdScript(
             breadcrumbJsonLd([
               ["Accueil", `${siteUrl()}/`],
-              ["Decks en vente", `${siteUrl()}/decks`],
+              [modern ? "Decks Modern" : "Decks Commander", `${siteUrl()}${catalogPath(normalizeFormat(listing.format))}`],
               [listing.title, `${siteUrl()}/decks/${listing.id}`],
             ]),
           ),
@@ -112,10 +113,10 @@ async function DeckContent({ params }: { params: Promise<{ id: string }> }) {
         coverImageUrl={listing.cover_image_url}
         coverCardName={listing.cover_card_name}
         format={listing.format}
-        back={{ href: "/decks", label: "Tous les decks en vente" }}
+        back={{ href: catalogPath(normalizeFormat(listing.format)), label: modern ? "Tous les decks Modern" : "Tous les decks Commander" }}
       >
         <div className="mt-4">
-          <DeckTags colors={listing.colors ?? []} archetype={listing.archetype} onDark />
+          <DeckTags colors={listing.colors ?? []} archetype={listing.archetype} format={listing.format} onDark />
         </div>
       </DeckBanner>
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-20 pt-6 sm:px-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:items-start">

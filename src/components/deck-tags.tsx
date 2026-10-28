@@ -1,16 +1,18 @@
 import Link from "next/link";
-import type { Archetype, ManaColor } from "@/lib/listings";
+import { normalizeFormat, type Archetype, type ManaColor } from "@/lib/listings";
 import { ManaColors } from "./mana";
 import { EMPTY_QUERY, decksHref } from "@/lib/deck-index";
 
-/** Couleurs et archétype d'un deck ; l'archétype mène à l'index filtré. */
+/** Couleurs et archétype d'un deck ; l'archétype mène au catalogue de son format, filtré. */
 export function DeckTags({
   colors,
   archetype,
+  format,
   onDark = false,
 }: {
   colors: ManaColor[];
   archetype: Archetype | null;
+  format?: unknown;
   onDark?: boolean;
 }) {
   return (
@@ -18,7 +20,7 @@ export function DeckTags({
       <ManaColors colors={colors} size={22} />
       {archetype && (
         <Link
-          href={decksHref({ ...EMPTY_QUERY, archetype: archetype.slug })}
+          href={decksHref({ ...EMPTY_QUERY, format: format == null ? null : normalizeFormat(format), archetype: archetype.slug })}
           className={
             onDark
               ? "rounded-md bg-white/10 px-2 py-0.5 text-sm font-semibold text-banner-ink ring-1 ring-white/15 hover:bg-white/20"

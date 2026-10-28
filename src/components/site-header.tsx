@@ -24,9 +24,18 @@ export function SiteHeader() {
           </span>
         </Link>
         <nav className="flex items-center gap-1 text-sm">
-          <Link href="/decks" className="whitespace-nowrap rounded-md px-2 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:px-3">
-            <span className="sm:hidden">Decks</span>
-            <span className="hidden sm:inline">Decks en vente</span>
+          {/* Les deux formats à égalité. Sur mobile, faute de place : un seul lien vers tous les decks,
+              dont la page propose les onglets Modern et Commander. */}
+          <Link href="/decks" className="whitespace-nowrap rounded-md px-2 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:hidden">
+            Decks
+          </Link>
+          <Link href="/modern" className="hidden items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:flex">
+            <span aria-hidden className="size-2 rounded-full bg-[#5a90ff]" />
+            Modern
+          </Link>
+          <Link href="/commander" className="hidden items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:flex">
+            <span aria-hidden className="size-2 rounded-full bg-[#a98bff]" />
+            Commander
           </Link>
           {/* Sur mobile aussi : c'est l'entrée des vendeurs. */}
           <Link href="/estimer" className="whitespace-nowrap rounded-md px-2 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:px-3">

@@ -1,7 +1,8 @@
 import Form from "next/form";
 import Link from "next/link";
 import { MANA_COLORS, type ManaColor } from "@/lib/listings";
-import { MIN_CARD_QUERY, SORTS, decksHref, type DeckQuery, type SortKey } from "@/lib/deck-index";
+import { MIN_CARD_QUERY, SORTS, catalogPath, decksHref, sortsFor, type DeckQuery } from "@/lib/deck-index";
+import { BRACKETS, type BracketLevel } from "@/lib/bracket";
 import { ManaSymbol } from "./mana";
 import { FiltersPanel } from "./filters-panel";
 import { CardSearchInput } from "./card-search-input";
@@ -39,7 +40,9 @@ export function DeckFilters({
     (query.archetype ? 1 : 0) +
     (query.card ? 1 : 0) +
     (query.min != null || query.max != null ? 1 : 0) +
-    (query.photos ? 1 : 0);
+    (query.photos ? 1 : 0) +
+    (query.level != null ? 1 : 0);
+  const commander = query.format === "commander";
   const active = activeCount > 0;
   const decks = `${resultCount} deck${resultCount > 1 ? "s" : ""}`;
   const summary = active ? `${activeCount} filtre${activeCount > 1 ? "s" : ""} · ${decks}` : decks;
@@ -52,15 +55,19 @@ export function DeckFilters({
 
   return (
     <FiltersPanel summary={summary}>
-      <Form action="/decks" scroll={false} role="search" className="space-y-3 p-4 sm:p-4">
+      <Form action={catalogPath(query.format)} scroll={false} role="search" className="space-y-3 p-4 sm:p-4">
         <AutoSubmit />
         {query.colors.length > 0 && <input type="hidden" name="c" value={query.colors.join("")} />}
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_13rem_auto_12rem]">
+        <div
+          className={`grid gap-3 sm:grid-cols-2 ${
+            commander ? "lg:grid-cols-[minmax(0,1fr)_11rem_10rem_auto_10rem]" : "lg:grid-cols-[minmax(0,1fr)_13rem_auto_12rem]"
+          }`}
+        >
           {/* Carte : envoyée avec Entrée ou la loupe */}
           <div className="sm:col-span-2 lg:col-span-1">
             <label htmlFor="deck-card-search" className={label}>
-              Carte dans le deck
+              {commander ? "Commandant ou carte" : "Carte dans le deck"}
             </label>
             <div className="relative">
               <CardSearchInput
@@ -68,7 +75,7 @@ export function DeckFilters({
                 type="search"
                 name="carte"
                 defaultValue={query.card}
-                placeholder="Ragavan, Foudre… (anglais ou français)"
+                placeholder={commander ? "Commandant ou carte : Atraxa, Sol Ring…" : "Ragavan, Foudre… (anglais ou français)"}
                 maxLength={60}
                 autoComplete="off"
                 aria-describedby={cardTooShort ? "deck-card-search-hint" : undefined}
@@ -105,6 +112,23 @@ export function DeckFilters({
               ))}
             </select>
           </div>
+
+          {/* Commander : niveau de puissance annoncé par le vendeur (brackets officiels). */}
+          {commander && (
+            <div>
+              <label htmlFor="deck-level" className={label}>
+                Niveau de puissance
+              </label>
+              <select id="deck-level" name="niveau" defaultValue={query.level ?? ""} className={`${field} w-full`}>
+                <option value="">Tous les niveaux</option>
+                {([1, 2, 3, 4, 5] as BracketLevel[]).map((b) => (
+                  <option key={b} value={b}>
+                    {b} · {BRACKETS[b].name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div role="group" aria-labelledby="deck-price-label">
             <p id="deck-price-label" className={label}>
@@ -144,7 +168,7 @@ export function DeckFilters({
               Trier par
             </label>
             <select id="deck-sort" name="tri" defaultValue={query.sort} className={`${field} w-full`}>
-              {(Object.keys(SORTS) as SortKey[]).map((s) => (
+              {sortsFor(query.format).map((s) => (
                 <option key={s} value={s}>
                   {SORTS[s]}
                 </option>
@@ -188,7 +212,7 @@ export function DeckFilters({
               )}
             </span>
             {active && (
-              <Link href={decksHref({ sort: query.sort })} scroll={false} className="font-medium text-link hover:underline">
+              <Link href={decksHref({ format: query.format, sort: query.sort })} scroll={false} className="font-medium text-link hover:underline">
                 Effacer
               </Link>
             )}

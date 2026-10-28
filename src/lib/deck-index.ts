@@ -1,7 +1,7 @@
 // Logique de l'index des decks en vente : lecture de l'adresse, filtres, recherche par carte, tri.
 // Fonctions pures : ni base, ni réseau. Testées dans tests/deck-index.test.ts.
 import { normalizeName, parseDecklist } from "./decklist.ts";
-import { normalizeColors, type ManaColor, type PublicListing } from "./listings.ts";
+import { normalizeColors, type DeckFormat, type ManaColor, type PublicListing } from "./listings.ts";
 
 export const SORTS = {
   recent: "Plus récents",
@@ -9,11 +9,29 @@ export const SORTS = {
   "prix-desc": "Prix décroissant",
   affaire: "Meilleures affaires",
   meta: "Plus proches du méta",
+  puissance: "Plus puissants",
 } as const;
 export type SortKey = keyof typeof SORTS;
 export const DEFAULT_SORT: SortKey = "recent";
 
+/** Tris proposés selon le catalogue : le score méta en Modern, le niveau en Commander. */
+export function sortsFor(format: DeckFormat | null): SortKey[] {
+  const common: SortKey[] = ["recent", "prix-asc", "prix-desc", "affaire"];
+  if (format === "modern") return [...common, "meta"];
+  if (format === "commander") return [...common, "puissance"];
+  return common;
+}
+
+/** Adresse du catalogue d'un format (null : tous les decks). */
+export function catalogPath(format: DeckFormat | null): string {
+  return format === "modern" ? "/modern" : format === "commander" ? "/commander" : "/decks";
+}
+
 export type DeckQuery = {
+  /** Catalogue : fixé par l'adresse (/modern, /commander), jamais par un paramètre. Null : tous. */
+  format: DeckFormat | null;
+  /** Niveau de puissance (Commander, 1 à 5), ou null. */
+  level: number | null;
   colors: ManaColor[];
   archetype: string | null;
   /** Texte cherché dans les noms de cartes, tel que saisi. */
@@ -29,6 +47,8 @@ export type DeckQuery = {
 };
 
 export const EMPTY_QUERY: DeckQuery = {
+  format: null,
+  level: null,
   colors: [],
   archetype: null,
   card: "",
@@ -57,9 +77,10 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 
 /**
  * Lit l'adresse : ?c=UR (couleurs) & a=burn (archétype) & carte=ragavan & tri=prix-asc
- * & min=100 & max=500 (euros) & photos=1 & page=2.
+ * & min=100 & max=500 (euros) & photos=1 & page=2, et en Commander & niveau=3.
+ * Le format vient du catalogue (chemin de la page), pas de l'adresse.
  */
-export function readDeckQuery(sp: RawParams): DeckQuery {
+export function readDeckQuery(sp: RawParams, format: DeckFormat | null = null): DeckQuery {
   const c = first(sp.c);
   const a = first(sp.a);
   const card = (first(sp.carte) ?? "").replace(/\s+/g, " ").trim().slice(0, 60);
@@ -69,11 +90,14 @@ export function readDeckQuery(sp: RawParams): DeckQuery {
   // Bornes inversées (« de 500 à 100 ») : on les remet dans l'ordre.
   if (min != null && max != null && min > max) [min, max] = [max, min];
   const page = Number(first(sp.page));
+  const level = Number(first(sp.niveau));
   return {
+    format,
+    level: format === "commander" && Number.isInteger(level) && level >= 1 && level <= 5 ? level : null,
     colors: normalizeColors(typeof c === "string" ? c.toUpperCase().split("") : []),
     archetype: typeof a === "string" && /^[a-z0-9-]{1,60}$/.test(a) ? a : null,
     card,
-    sort: sort && sort in SORTS ? (sort as SortKey) : DEFAULT_SORT,
+    sort: sort && (sortsFor(format) as string[]).includes(sort) ? (sort as SortKey) : DEFAULT_SORT,
     min,
     max,
     photos: first(sp.photos) === "1",
@@ -93,10 +117,12 @@ export function decksHref(q: Partial<DeckQuery>): string {
   if (q.min != null) params.set("min", String(q.min));
   if (q.max != null) params.set("max", String(q.max));
   if (q.photos) params.set("photos", "1");
+  if (q.level != null && q.format === "commander") params.set("niveau", String(q.level));
   if (q.sort && q.sort !== DEFAULT_SORT) params.set("tri", q.sort);
   if (q.page && q.page > 1) params.set("page", String(q.page));
   const s = params.toString();
-  return s ? `/decks?${s}` : "/decks";
+  const path = catalogPath(q.format ?? null);
+  return s ? `${path}?${s}` : path;
 }
 
 export type CardHit = { name: string; quantity: number };
@@ -136,6 +162,8 @@ export type IndexedListing = { listing: PublicListing; hits: CardHit[] };
 export function filterListings(listings: PublicListing[], q: DeckQuery, aliases: string[] = []): IndexedListing[] {
   const out: IndexedListing[] = [];
   for (const l of listings) {
+    if (q.format && l.format !== q.format) continue;
+    if (q.level != null && l.bracket !== q.level) continue;
     const colors = l.colors ?? [];
     if (!q.colors.every((c) => colors.includes(c))) continue;
     if (q.archetype && l.archetype?.slug !== q.archetype) continue;
@@ -169,6 +197,8 @@ export function sortListings<T extends { listing: PublicListing }>(items: T[], s
     },
     // Score méta décroissant ; les decks sans score passent à la fin.
     meta: (a, b) => (b.listing.meta_score ?? -1) - (a.listing.meta_score ?? -1) || recent(a, b),
+    // Niveau décroissant ; les decks sans niveau passent à la fin.
+    puissance: (a, b) => (b.listing.bracket ?? -1) - (a.listing.bracket ?? -1) || recent(a, b),
   };
   return [...items].sort(by[sort]);
 }

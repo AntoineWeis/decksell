@@ -36,6 +36,8 @@ function listing(id: string, extra: Partial<PublicListing> = {}): PublicListing 
 
 test("readDeckQuery lit et nettoie l'adresse", () => {
   assert.deepEqual(readDeckQuery({ c: "ru", a: "burn", carte: "  Ragavan  ", tri: "prix-asc" }), {
+    format: null,
+    level: null,
     colors: ["U", "R"],
     archetype: "burn",
     card: "Ragavan",
@@ -58,6 +60,29 @@ test("decksHref omet les valeurs par défaut", () => {
     "/decks?c=WU&carte=Ragavan&tri=affaire",
   );
   assert.equal(decksHref({ ...EMPTY_QUERY, min: 100, max: 400, page: 2 }), "/decks?min=100&max=400&page=2");
+});
+
+test("catalogues par format : adresse, niveau et tris propres à chaque format", () => {
+  assert.equal(decksHref({ ...EMPTY_QUERY, format: "modern", sort: "meta" }), "/modern?tri=meta");
+  assert.equal(decksHref({ ...EMPTY_QUERY, format: "commander", level: 3 }), "/commander?niveau=3");
+  // Le niveau n'existe qu'en Commander ; le tri par méta qu'en Modern.
+  assert.equal(readDeckQuery({ niveau: "3" }, "modern").level, null);
+  assert.equal(readDeckQuery({ niveau: "3" }, "commander").level, 3);
+  assert.equal(readDeckQuery({ niveau: "9" }, "commander").level, null);
+  assert.equal(readDeckQuery({ tri: "meta" }, "commander").sort, "recent");
+  assert.equal(readDeckQuery({ tri: "puissance" }, "commander").sort, "puissance");
+  assert.equal(readDeckQuery({ tri: "meta" }, "modern").sort, "meta");
+});
+
+test("filtre par format et par niveau, tri par puissance", () => {
+  const deck = (id: string, format: "modern" | "commander", bracket: number | null) =>
+    ({ ...listing(id), format, bracket }) as PublicListing;
+  const all = [deck("m", "modern", null), deck("c2", "commander", 2), deck("c4", "commander", 4)];
+  assert.deepEqual(filterListings(all, { ...EMPTY_QUERY, format: "commander" }).map((x) => x.listing.id), ["c2", "c4"]);
+  assert.deepEqual(filterListings(all, { ...EMPTY_QUERY, format: "commander", level: 4 }).map((x) => x.listing.id), ["c4"]);
+  assert.deepEqual(filterListings(all, { ...EMPTY_QUERY, format: "modern" }).map((x) => x.listing.id), ["m"]);
+  const byPower = sortListings(filterListings(all, EMPTY_QUERY), "puissance").map((x) => x.listing.id);
+  assert.deepEqual(byPower.slice(0, 2), ["c4", "c2"]);
 });
 
 test("findCards ignore la casse, les accents et additionne principal et réserve", () => {

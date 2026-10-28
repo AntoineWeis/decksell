@@ -5,6 +5,7 @@ import { siteUrl } from "@/lib/site-url";
 import Link from "next/link";
 import { Suspense } from "react";
 import { LatestDecks } from "@/components/latest-decks";
+import { FormatDoors, FormatDoorsSkeleton } from "@/components/format-doors";
 import { ManaRise } from "@/components/mana-rise";
 import { DeckPreview, DeckPreviewSkeleton } from "@/components/deck-preview";
 import Form from "next/form";
@@ -115,7 +116,7 @@ const TRUST = [
   },
   {
     title: "Des decks vérifiés avant publication",
-    text: "60 cartes au moins, 15 en réserve au plus, aucune carte interdite en Modern : sinon, l'annonce n'est pas publiée.",
+    text: "Les règles du format sont contrôlées : 60 cartes et 15 en réserve en Modern, 100 cartes en un exemplaire et le commandant en Commander, aucune carte interdite. Sinon, l'annonce n'est pas publiée.",
   },
   {
     title: "L'état et la langue, carte par carte",
@@ -159,10 +160,10 @@ export default function Home() {
           Kamigawa · © Wizards of the Coast
         </p>
         <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pb-24 sm:pt-24">
-          <h1 className="display max-w-3xl text-4xl sm:text-6xl">Des decks Modern complets, au juste prix</h1>
+          <h1 className="display max-w-3xl text-4xl sm:text-6xl">Des decks Magic complets, au juste prix</h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-banner-muted">
-            decksell estime chaque deck carte par carte d&apos;après les prix Cardmarket. Les vendeurs savent quoi
-            demander, les acheteurs comparent avant de faire une offre.
+            Modern ou Commander : decksell estime chaque deck carte par carte d&apos;après les prix Cardmarket. Les
+            vendeurs savent quoi demander, les acheteurs comparent avant de faire une offre.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
@@ -208,6 +209,11 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Les deux formats, à égalité : lus à part, le bandeau s'affiche sans les attendre. */}
+      <Suspense fallback={<FormatDoorsSkeleton />}>
+        <FormatDoors />
+      </Suspense>
+
       {/* Derniers decks en vente : lus à part, le bandeau s'affiche sans les attendre. */}
       <Suspense fallback={<LatestDecksSkeleton />}>
         <LatestDecks />
@@ -217,7 +223,8 @@ export default function Home() {
       <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6 sm:pt-20">
         <h2 className="display max-w-2xl text-3xl sm:text-4xl">Vendre ou acheter, au même endroit</h2>
         <p className="mt-3 max-w-2xl leading-relaxed text-muted">
-          decksell sert à revendre et acheter des decks Modern entiers entre joueurs, sans les découper carte par carte.
+          decksell sert à revendre et acheter des decks Modern et Commander entiers entre joueurs, sans les découper carte
+          par carte.
           L&apos;estimation donne aux deux côtés le même point de départ.
         </p>
         <div className="mt-10 grid gap-6 md:grid-cols-2">

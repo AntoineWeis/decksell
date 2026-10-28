@@ -11,6 +11,7 @@ import { FavoriteButton } from "./favorite-button";
 import { FormatTag } from "./format-tag";
 import type { FavoriteState } from "@/lib/favorites";
 import { MetaBadge } from "./meta-proximity";
+import { BracketBadge } from "./bracket-card";
 
 /**
  * Une annonce dans l'index public : illustration de la carte phare, prix, langue, vendeur.
@@ -83,7 +84,7 @@ export function ListingTile({
               {l.archetype && (
                 <span className="rounded-md bg-brand-soft px-1.5 py-0.5 text-xs font-semibold text-link">{l.archetype.name}</span>
               )}
-              <MetaBadge score={l.meta_score} status={l.meta_status} />
+              {l.format === "commander" ? <BracketBadge level={l.bracket} /> : <MetaBadge score={l.meta_score} status={l.meta_status} />}
             </p>
           </div>
 

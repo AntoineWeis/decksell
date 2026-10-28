@@ -89,7 +89,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
         <span className="rounded-md bg-sunken px-2 py-0.5 text-xs font-semibold text-muted">{STATUSES[listing.status]}</span>
       </div>
       <div className="mt-2">
-        <DeckTags colors={listing.colors ?? []} archetype={listing.archetype} />
+        <DeckTags colors={listing.colors ?? []} archetype={listing.archetype} format={listing.format} />
       </div>
       <p className="mt-2 text-sm text-muted">
         {isPublic ? (
