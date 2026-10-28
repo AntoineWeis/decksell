@@ -52,13 +52,20 @@ export function BracketCard({
         </p>
       </div>
       <Scale level={level} min={min} />
-      <p className="mt-3 text-xs text-muted">
-        {declared == null
-          ? `Niveau ${min} au minimum d'après la liste. Le vendeur peut annoncer plus, selon l'intention du deck.`
-          : declared === min
+      {declared == null ? (
+        // Estimateur : le niveau est déduit de la liste seule ; le vendeur garde la main.
+        <p className="mt-3 rounded-lg bg-commander-soft px-3 py-2 text-xs leading-relaxed text-commander">
+          Niveau indicatif : niveau {min} au minimum d&apos;après les règles officielles des brackets, appliquées à la
+          liste. Ces règles tiennent aussi compte de l&apos;intention du deck : tu pourras choisir ton niveau à la mise
+          en vente, puis le modifier à tout moment depuis ton annonce.
+        </p>
+      ) : (
+        <p className="mt-3 text-xs text-muted">
+          {declared === min
             ? "Niveau annoncé par le vendeur, conforme à la liste."
             : `Niveau annoncé par le vendeur. D'après la liste : niveau ${min} au minimum.`}
-      </p>
+        </p>
+      )}
       <ul className="mt-3 space-y-1.5 text-sm">
         {bracketReasons(facts).map((r) => (
           <li key={r} className="leading-snug">

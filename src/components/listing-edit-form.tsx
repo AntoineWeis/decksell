@@ -6,12 +6,22 @@ import { updateListing, type FormState } from "@/app/espace/actions";
 import { FORMATS, STATUSES, archetypesFor, normalizeFormat, type Archetype, type Listing } from "@/lib/listings";
 import { ArchetypeSelect, ColorPicker } from "./deck-tags-fields";
 import { useActionToast } from "./toaster";
+import { BRACKETS, allowedBrackets, type BracketLevel } from "@/lib/bracket";
 
 const fieldClass =
   "block h-[46px] w-full rounded-xl border border-line bg-sunken px-3 outline-none focus:border-link focus:ring-2 focus:ring-link/25";
 
 /** Tout ce qui décrit l'annonce, au même endroit : nom, format, statut, prix, couleurs, archétype. */
-export function ListingEditForm({ listing: l, archetypes }: { listing: Listing; archetypes: Archetype[] }) {
+export function ListingEditForm({
+  listing: l,
+  archetypes,
+  bracket = null,
+}: {
+  listing: Listing;
+  archetypes: Archetype[];
+  /** Commander : niveau annoncé et minimum déduit de la liste. */
+  bracket?: { declared: BracketLevel | null; min: BracketLevel } | null;
+}) {
   const [state, action, saving] = useActionState<FormState, FormData>(updateListing.bind(null, l.id), { status: "idle" });
   useActionToast(state, { success: "Annonce enregistrée" });
   const format = normalizeFormat(l.format);
@@ -62,6 +72,20 @@ export function ListingEditForm({ listing: l, archetypes }: { listing: Listing; 
           <ArchetypeSelect archetypes={archetypesFor(archetypes, format)} defaultId={l.archetype?.id ?? null} className={fieldClass} />
         </label>
       </div>
+      {commander && bracket && (
+        <label className="block max-w-72">
+          <span className="mb-1.5 block text-sm font-medium">Niveau de puissance</span>
+          <select name="bracket" defaultValue={bracket.declared ?? bracket.min} className={fieldClass}>
+            {allowedBrackets(bracket.min).map((b) => (
+              <option key={b} value={b}>
+                {b} · {BRACKETS[b].name}
+                {b === bracket.min ? " (d'après la liste)" : ""}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1 block text-xs text-muted">Jamais en dessous du minimum imposé par la liste.</span>
+        </label>
+      )}
       {/* Commander : un commandant incolore donne un deck sans couleur. */}
       <ColorPicker defaultColors={l.colors ?? []} required={!commander} />
       {/* Sans détail carte par carte (anciennes annonces), la part de français se saisit ici. */}

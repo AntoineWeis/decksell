@@ -20,7 +20,7 @@ import {
 import { formatDecklist, parseDecklist, withFormat } from "@/lib/decklist";
 import { fetchBracketFacts } from "@/lib/bracket-server";
 import { archetypeMatchesFormat } from "@/lib/archetypes";
-import { minBracket, toStoredBracket, type BracketLevel } from "@/lib/bracket";
+import { minBracket, normalizeBracket, toStoredBracket, type BracketLevel } from "@/lib/bracket";
 import { buildDetails, dominantCondition, frenchPercentOf } from "@/lib/card-details";
 import { isDepartment } from "@/lib/departments";
 import { refreshListingMeta } from "@/lib/meta-corpus";
@@ -78,12 +78,11 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
   }
 
   const supabase = await createSupabaseServer();
-  const { data: current } = await supabase
-    .from("listings")
-    .select("status, sold_cents, sold_at, asking_cents, title, format")
-    .eq("id", id)
-    .eq("seller_id", user.id)
-    .maybeSingle();
+  // bracket_min : colonne absente avant la migration (schema.sql, section 26) ; relecture sans elle.
+  const readListing = (cols: string) => supabase.from("listings").select(cols).eq("id", id).eq("seller_id", user.id).maybeSingle();
+  let readCur = await readListing("status, sold_cents, sold_at, asking_cents, title, format, bracket_min");
+  if (readCur.error) readCur = await readListing("status, sold_cents, sold_at, asking_cents, title, format");
+  const current = readCur.data as (SoldInfo & { asking_cents: number; title: string; format: string; bracket_min?: number | null }) | null;
   if (!current) return { status: "error", message: "Annonce introuvable." };
   // Commander : un commandant incolore donne un deck sans couleur. L'archétype suit le format.
   const commander = normalizeFormat(current.format) === "commander";
@@ -105,6 +104,10 @@ export async function updateListing(id: string, _prev: FormState, formData: Form
       colors,
       archetype_id: archetypeId,
       ...identity,
+      // Niveau annoncé (Commander) : jamais sous le minimum déduit de la liste.
+      ...(commander && formData.has("bracket") && current.bracket_min != null
+        ? { bracket: normalizeBracket(str(formData.get("bracket")), current.bracket_min as BracketLevel) }
+        : {}),
       ...sold,
       updated_at: new Date().toISOString(),
     })

@@ -54,7 +54,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
   if (!data) notFound();
   const listing = data as unknown as Listing;
 
-  const [{ deck, estimate, pricesAsOf }, profile, archetypes, storedMeta, media] = await Promise.all([
+  const [{ deck, estimate, pricesAsOf }, profile, archetypes, storedMeta, media, storedBracket] = await Promise.all([
     estimateDecklistNow(listing.decklist),
     getProfile(),
     getArchetypes(),
@@ -72,7 +72,10 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
       .eq("id", id)
       .maybeSingle()
       .then(({ data, error }) => (error ? null : mediaOf(data))),
+    // Niveau de puissance (Commander) : annoncé et détail enregistrés.
+    listing.format === "commander" ? fetchListingBracket(id) : null,
   ]);
+  const power = listing.format === "commander" ? await commanderBracket(deck, estimate, storedBracket) : null;
   const isPublic = (PUBLIC_STATUSES as readonly string[]).includes(listing.status);
 
   return (
@@ -106,9 +109,10 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:items-start">
         <div className="min-w-0 space-y-6">
           <ListingEditForm
-            key={`${listing.title}|${listing.format}|${listing.status}|${listing.asking_cents}|${(listing.colors ?? []).join("")}|${listing.archetype?.id ?? ""}`}
+            key={`${listing.title}|${listing.format}|${listing.status}|${listing.asking_cents}|${(listing.colors ?? []).join("")}|${listing.archetype?.id ?? ""}|${power?.declared ?? ""}`}
             listing={listing}
             archetypes={archetypes}
+            bracket={power ? { declared: power.declared, min: power.min } : null}
           />
           {media && (
             <>
@@ -142,9 +146,7 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
           commanders={listing.format === "commander" ? commanderCards(estimate, deck.commanders) : []}
           stats={<>
             {/* Score méta : comparaison aux listes de tournoi Modern, sans objet en Commander. */}
-            {listing.format === "commander" && (
-              <BracketView deck={deck} estimate={estimate} listingId={listing.id} />
-            )}
+            {power && <BracketCard facts={power.facts} min={power.min} declared={power.declared} />}
             {listing.format !== "commander" && (
               <MetaProximityCard result={storedMeta ?? (await metaResultFor(estimate, deck.errors.length, listing.decklist))} />
             )}
@@ -157,16 +159,3 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
   );
 }
 
-/** Niveau de puissance d'une annonce Commander (enregistré, ou recalculé s'il manque). */
-async function BracketView({
-  deck,
-  estimate,
-  listingId,
-}: {
-  deck: Parameters<typeof commanderBracket>[0];
-  estimate: Parameters<typeof commanderBracket>[1];
-  listingId: string;
-}) {
-  const power = await commanderBracket(deck, estimate, await fetchListingBracket(listingId));
-  return <BracketCard facts={power.facts} min={power.min} declared={power.declared} />;
-}
