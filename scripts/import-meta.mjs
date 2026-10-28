@@ -53,7 +53,12 @@ async function fetchText(target) {
     lastFetch = start;
     if (start > Date.now()) await sleep(start - Date.now());
     try {
-      const res = await fetch(target, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(45_000) });
+      // Accept : sans lui, MTGO renvoie la page des résultats sans la liste des événements
+      // (constaté le 25/10/2026). L'identité « decksell » reste la même.
+      const res = await fetch(target, {
+        headers: { "User-Agent": UA, Accept: "text/html,application/xhtml+xml", "Accept-Language": "en-US,en;q=0.8" },
+        signal: AbortSignal.timeout(45_000),
+      });
       if (!res.ok) throw new Error(`${res.status} sur ${target}`);
       return await res.text();
     } catch (e) {
