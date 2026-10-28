@@ -90,6 +90,8 @@ export type PublicListing = Omit<Listing, "sold_cents" | "sold_at"> & {
   meta_score?: number | null;
   meta_status?: string | null;
   meta_archetype?: string | null;
+  /** Niveau de puissance annoncé (Commander, 1 à 5) ; absent pour Modern ou avant la migration. */
+  bracket?: number | null;
   /** Photos réelles du deck (absentes tant que le schéma n'est pas à jour). */
   photos?: string[];
   seller: {

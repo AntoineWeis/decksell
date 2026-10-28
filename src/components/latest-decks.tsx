@@ -7,6 +7,13 @@ import { formatEur } from "@/lib/pricing";
 import { Avatar } from "./avatar";
 import { ManaColors } from "./mana";
 import { FormatTag } from "./format-tag";
+import { MetaBadge } from "./meta-proximity";
+import { BracketBadge } from "./bracket-card";
+
+/** Score phare du format : MetaScore en Modern, niveau de puissance en Commander. */
+function DeckScore({ listing: l }: { listing: PublicListing }) {
+  return l.format === "commander" ? <BracketBadge level={l.bracket} /> : <MetaBadge score={l.meta_score} status={l.meta_status} />;
+}
 
 const SHOWN = 4;
 
@@ -115,6 +122,7 @@ function FeaturedDeck({ listing: l, wide = false }: { listing: PublicListing; wi
           <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
             <ManaColors colors={l.colors ?? []} size={18} />
             {l.archetype && <span className="rounded-md bg-brand-soft px-1.5 py-0.5 text-xs font-semibold text-link">{l.archetype.name}</span>}
+            <DeckScore listing={l} />
             <span>
               {l.card_count} cartes · {CONDITIONS[l.condition]}
             </span>
@@ -163,6 +171,7 @@ function CompactDeck({ listing: l }: { listing: PublicListing }) {
           {l.archetype && (
             <span className="truncate rounded bg-brand-soft px-1.5 py-px text-[11px] font-semibold text-link">{l.archetype.name}</span>
           )}
+          <DeckScore listing={l} />
         </p>
         <p className="mt-1 truncate text-xs text-muted">
           {l.card_count} cartes · {CONDITIONS[l.condition]}

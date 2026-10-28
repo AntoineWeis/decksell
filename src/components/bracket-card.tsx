@@ -83,3 +83,17 @@ export function BracketCard({
     </div>
   );
 }
+
+/** Pastille du niveau de puissance (« Niveau 3 · Upgraded »), pour les cartes de deck. */
+export function BracketBadge({ level }: { level: number | null | undefined }) {
+  if (level == null || level < 1 || level > 5) return null;
+  const info = BRACKETS[level as BracketLevel];
+  return (
+    <span
+      className="rounded-md bg-commander-soft px-1.5 py-0.5 text-xs font-semibold tabular-nums text-commander"
+      title={`Niveau de puissance Commander : ${info.summary.toLowerCase()}`}
+    >
+      Niveau {level} · {info.name}
+    </span>
+  );
+}
