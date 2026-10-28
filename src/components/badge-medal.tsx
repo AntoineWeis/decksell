@@ -72,7 +72,7 @@ export function BadgeMedal({ badgeKey, level, size = 40, className = "" }: { bad
       </svg>
       {multi && (
         <span
-          className="absolute -bottom-1 -right-1 rounded-full bg-banner px-1 text-[9px] font-bold leading-[14px] text-banner-ink ring-2 ring-surface"
+          className="absolute -bottom-1 -right-1 rounded-full bg-banner px-1 text-[11px] font-bold leading-[15px] text-banner-ink ring-2 ring-surface"
           style={{ minWidth: 14, textAlign: "center" }}
         >
           {ROMAN[level]}

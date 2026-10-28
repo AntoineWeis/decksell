@@ -77,7 +77,7 @@ export function ListingPhotosForm({ listingId, photos }: { listingId: string; ph
             {/* eslint-disable-next-line @next/next/no-img-element -- image du stockage, déjà réduite */}
             <img src={url} alt={`Photo ${i + 1}`} className="size-full object-cover" loading="lazy" />
             {i === 0 && (
-              <span className="absolute left-1 top-1 rounded bg-banner/85 px-1.5 py-0.5 text-[10px] font-semibold text-banner-ink">
+              <span className="absolute left-1 top-1 rounded bg-banner/85 px-1.5 py-0.5 text-[11px] font-semibold text-banner-ink">
                 Principale
               </span>
             )}

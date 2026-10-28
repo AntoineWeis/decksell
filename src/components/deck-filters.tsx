@@ -17,8 +17,8 @@ const field = "h-9 rounded-lg border border-line bg-sunken px-3 text-sm outline-
 const label = "mb-1 block text-xs font-semibold text-muted";
 
 /**
- * Filtres de l'index, en barre compacte : carte, archétype, prix et tri sur une ligne, couleurs et
- * « avec photos » sur la suivante. Un seul formulaire GET qui s'applique tout seul (menus, prix,
+ * Filtres de l'index : la recherche par carte toujours visible ; archétype, niveau, prix, tri, couleurs et
+ * « avec photos » repliés derrière « Filtres et tri ». Un seul formulaire GET qui s'applique tout seul (menus, prix,
  * case) ; les couleurs sont des liens. Tout se partage par l'adresse et marche sans JavaScript
  * (Entrée envoie le formulaire).
  */
@@ -44,6 +44,8 @@ export function DeckFilters({
     (query.level != null ? 1 : 0);
   const commander = query.format === "commander";
   const active = activeCount > 0;
+  // Filtres repliés (hors recherche, toujours visible) : ouverts d'office si l'un d'eux est actif.
+  const hiddenActive = activeCount - (query.card ? 1 : 0) > 0;
   const decks = `${resultCount} deck${resultCount > 1 ? "s" : ""}`;
   const summary = active ? `${activeCount} filtre${activeCount > 1 ? "s" : ""} · ${decks}` : decks;
   const cardTooShort = query.card !== "" && query.card.length < MIN_CARD_QUERY;
@@ -53,52 +55,50 @@ export function DeckFilters({
       ? [...archetypeCounts, { slug: query.archetype, name: query.archetype, count: 0 }]
       : archetypeCounts;
 
-  return (
-    <FiltersPanel summary={summary}>
-      <Form action={catalogPath(query.format)} scroll={false} role="search" className="space-y-3 p-4 sm:p-4">
-        <AutoSubmit />
-        {query.colors.length > 0 && <input type="hidden" name="c" value={query.colors.join("")} />}
-
-        <div
-          className={`grid gap-3 sm:grid-cols-2 ${
-            commander ? "lg:grid-cols-[minmax(0,1fr)_11rem_10rem_auto_10rem]" : "lg:grid-cols-[minmax(0,1fr)_13rem_auto_12rem]"
-          }`}
+  // Recherche par carte (ou commandant) : toujours visible, envoyée avec Entrée ou la loupe.
+  const search = (
+    <div>
+      <label htmlFor="deck-card-search" className={label}>
+        {commander ? "Commandant ou carte" : "Carte dans le deck"}
+      </label>
+      <div className="relative">
+        <CardSearchInput
+          id="deck-card-search"
+          type="search"
+          name="carte"
+          defaultValue={query.card}
+          placeholder={commander ? "Commandant ou carte : Atraxa, Sol Ring…" : "Ragavan, Foudre… (anglais ou français)"}
+          maxLength={60}
+          autoComplete="off"
+          aria-describedby={cardTooShort ? "deck-card-search-hint" : undefined}
+          className={`${field} w-full pl-3 pr-10`}
+        />
+        <button
+          type="submit"
+          aria-label="Chercher"
+          className="absolute right-1 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted transition hover:bg-surface hover:text-link"
         >
-          {/* Carte : envoyée avec Entrée ou la loupe */}
-          <div className="sm:col-span-2 lg:col-span-1">
-            <label htmlFor="deck-card-search" className={label}>
-              {commander ? "Commandant ou carte" : "Carte dans le deck"}
-            </label>
-            <div className="relative">
-              <CardSearchInput
-                id="deck-card-search"
-                type="search"
-                name="carte"
-                defaultValue={query.card}
-                placeholder={commander ? "Commandant ou carte : Atraxa, Sol Ring…" : "Ragavan, Foudre… (anglais ou français)"}
-                maxLength={60}
-                autoComplete="off"
-                aria-describedby={cardTooShort ? "deck-card-search-hint" : undefined}
-                className={`${field} w-full pl-3 pr-10`}
-              />
-              <button
-                type="submit"
-                aria-label="Chercher"
-                className="absolute right-1 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted transition hover:bg-surface hover:text-link"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden>
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m20 20-4-4" />
-                </svg>
-              </button>
-            </div>
-            {cardTooShort && (
-              <p id="deck-card-search-hint" className="mt-1 text-xs text-warn">
-                Écris au moins {MIN_CARD_QUERY} lettres du nom de la carte.
-              </p>
-            )}
-          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden>
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-4-4" />
+          </svg>
+        </button>
+      </div>
+      {cardTooShort && (
+        <p id="deck-card-search-hint" className="mt-1 text-xs text-warn">
+          Écris au moins {MIN_CARD_QUERY} lettres du nom de la carte.
+        </p>
+      )}
+    </div>
+  );
 
+  return (
+    <Form action={catalogPath(query.format)} scroll={false} role="search">
+      <AutoSubmit />
+      {query.colors.length > 0 && <input type="hidden" name="c" value={query.colors.join("")} />}
+      <FiltersPanel summary={summary} defaultOpen={hiddenActive} search={search}>
+      <div className="space-y-3 p-4">
+        <div className={`grid gap-3 sm:grid-cols-2 ${commander ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
           <div>
             <label htmlFor="deck-archetype" className={label}>
               Archétype
@@ -218,7 +218,8 @@ export function DeckFilters({
             )}
           </p>
         </div>
-      </Form>
-    </FiltersPanel>
+      </div>
+      </FiltersPanel>
+    </Form>
   );
 }

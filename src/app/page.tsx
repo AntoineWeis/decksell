@@ -142,7 +142,7 @@ export default function Home() {
           <div className="absolute inset-x-0 bottom-0 h-16 bg-[linear-gradient(90deg,rgba(80,110,220,0.05),rgba(110,90,230,0.07),rgba(80,110,220,0.05))] [mask-image:linear-gradient(to_top,black,transparent)]" />
           <ManaRise className="absolute inset-0 h-full w-full" />
         </div>
-        <p className="absolute right-4 top-3 z-10 text-[10px] text-white/70 [text-shadow:0_1px_2px_rgba(0,0,0,0.6)] sm:right-6">
+        <p className="absolute right-4 top-3 z-10 text-[11px] text-white/70 [text-shadow:0_1px_2px_rgba(0,0,0,0.6)] sm:right-6">
           Kamigawa · © Wizards of the Coast
         </p>
         <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pb-24 sm:pt-24">
