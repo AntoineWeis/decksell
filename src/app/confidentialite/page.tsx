@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/confidentialite" },
 };
 
-const UPDATED = "26 octobre 2026";
+const UPDATED = "28 octobre 2026";
 
 const SECTIONS = [
   { id: "responsable", title: "Responsable du traitement" },
@@ -39,7 +39,7 @@ export default function PrivacyPage() {
         <p className="!mt-0 font-semibold">En bref</p>
         <ul className="text-muted">
           <li>Estimer un deck ne demande ni compte, ni donnée personnelle.</li>
-          <li>Un compte sert seulement à publier et suivre tes annonces : email, pseudo, photo et liens facultatifs.</li>
+          <li>Un compte sert à publier tes annonces, échanger avec les autres membres et suivre des decks : email, pseudo, et le reste facultatif.</li>
           <li>Aucune publicité, aucun traceur, aucune revente de données.</li>
           <li>
             Tu peux supprimer ton compte toi-même, à tout moment, depuis{" "}
@@ -73,16 +73,27 @@ export default function PrivacyPage() {
         </p>
         <ul>
           <li>ton adresse email et ton mot de passe, stocké sous une forme chiffrée que personne ne peut relire ;</li>
-          <li>ton pseudo et, si tu les ajoutes, ta photo de profil et tes liens Moxfield et Archidekt ;</li>
           <li>
-            tes annonces : decklist, prix, état, langue des cartes, couleurs, archétype, description, statut et, une
-            fois le deck vendu, le prix et la date de la vente ;
+            ton pseudo et, si tu les ajoutes, ta photo de profil, tes liens Moxfield et Archidekt et ton lieu
+            d&apos;expédition (département et ville) ;
+          </li>
+          <li>
+            tes annonces : decklist, prix, état et langue de chaque carte, couleurs, archétype, niveau de puissance
+            (Commander), description, primer, photos du deck, statut et, une fois le deck vendu, le prix et la date de
+            la vente ;
+          </li>
+          <li>
+            tes badges de vendeur, calculés par le site à partir de faits (ancienneté, annonces, délai de réponse aux
+            messages, ventes) ;
           </li>
           <li>
             tes messages avec les autres membres, liés à une annonce, les offres de prix faites et leurs réponses, ainsi
             que les membres que tu bloques et les conversations que tu signales ;
           </li>
-          <li>les annonces que tu mets en favori, que toi seul peux voir ;</li>
+          <li>
+            les annonces que tu mets en favori, que toi seul peux voir, et ton choix de recevoir ou non une alerte quand
+            leur prix baisse ;
+          </li>
           <li>
             des données techniques de connexion (date de création du compte, dernière connexion, adresse IP) conservées
             par le prestataire d&apos;authentification pour sécuriser les comptes.
@@ -108,8 +119,8 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>T&apos;envoyer les emails du service</strong> (confirmation d&apos;inscription, lien de nouveau mot
-            de passe, alerte de nouveau message que tu peux désactiver dans ton profil), jamais d&apos;email
-            commercial : exécution du contrat.
+            de passe, alertes de nouveau message et de baisse de prix d&apos;un favori, que tu peux désactiver dans ton
+            profil), jamais d&apos;email commercial : exécution du contrat.
           </li>
           <li>
             <strong>Sécuriser le site</strong> et prévenir les abus, grâce aux journaux techniques des prestataires :
@@ -120,10 +131,11 @@ export default function PrivacyPage() {
 
       <Section n={4} id="visibilite" title="Ce qui est public">
         <p>
-          Sur une annonce en vente ou réservée, tout visiteur voit son contenu ainsi que ton pseudo, ta photo et tes
-          liens Moxfield et Archidekt. <strong>Ton adresse email n&apos;est jamais affichée</strong>, pas même aux
-          membres avec qui tu échanges des messages. Une annonce
-          retirée ou vendue n&apos;apparaît plus dans la liste publique.
+          Sur une annonce en vente ou réservée et sur ta page de vendeur, tout visiteur voit le contenu de tes annonces
+          (photos et primer compris) ainsi que ton pseudo, ta photo, tes liens Moxfield et Archidekt, ton lieu
+          d&apos;expédition si tu l&apos;as indiqué et tes badges. <strong>Ton adresse email n&apos;est jamais
+          affichée</strong>, pas même aux membres avec qui tu échanges des messages. Une annonce retirée ou vendue
+          n&apos;apparaît plus dans la liste publique.
         </p>
       </Section>
 
@@ -134,7 +146,7 @@ export default function PrivacyPage() {
         </p>
         <ul>
           <li>
-            <strong>Supabase</strong> : base de données, comptes et stockage des photos de profil.{" "}
+            <strong>Supabase</strong> : base de données, comptes et stockage des photos (profil et decks).{" "}
             Les données sont hébergées dans l&apos;Union européenne, en Irlande.
           </li>
           <li>
@@ -143,12 +155,17 @@ export default function PrivacyPage() {
             local »).
           </li>
           <li>
-            <strong>Resend</strong> : envoi des alertes de nouveau message. Il reçoit ton adresse email, le pseudo de
-            l&apos;expéditeur et le titre de l&apos;annonce, jamais le texte des messages.
+            <strong>Resend</strong> : envoi des emails du service (inscription, mot de passe, alertes). Il reçoit ton
+            adresse email et le contenu de l&apos;email : le pseudo de l&apos;expéditeur et le titre de l&apos;annonce
+            pour une alerte de message, jamais le texte des messages.
           </li>
           <li>
             <strong>Scryfall</strong> : les images de cartes et les symboles de mana sont chargés depuis ses serveurs,
             qui reçoivent donc ton adresse IP. Aucune donnée de compte ne lui est envoyée.
+          </li>
+          <li>
+            <strong>Commander Spellbook</strong> : pour un deck Commander, la liste des cartes (sans aucune donnée
+            personnelle) lui est envoyée par le serveur de decksell pour repérer les combos du niveau de puissance.
           </li>
         </ul>
         <p>
@@ -161,8 +178,8 @@ export default function PrivacyPage() {
       <Section n={6} id="conservation" title="Durée de conservation">
         <ul>
           <li>
-            <strong>Compte, profil, photo et annonces</strong> : tant que ton compte existe. Ils sont effacés dès que tu
-            le supprimes.
+            <strong>Compte, profil, photos, annonces, badges et favoris</strong> : tant que ton compte existe. Ils sont
+            effacés dès que tu le supprimes.
           </li>
           <li>
             <strong>Messages</strong> : tant que l&apos;annonce et les comptes des deux participants existent. Ils sont
@@ -204,8 +221,8 @@ export default function PrivacyPage() {
         <ul>
           <li>Les échanges avec le site sont chiffrés (HTTPS).</li>
           <li>
-            Chaque membre ne peut lire et modifier que son propre profil, ses annonces et sa photo. C&apos;est la base
-            de données qui l&apos;impose, pas seulement le site.
+            Chaque membre ne peut lire et modifier que son propre profil, ses annonces, ses photos et ses favoris, et ne
+            lit que ses propres conversations. C&apos;est la base de données qui l&apos;impose, pas seulement le site.
           </li>
           <li>Les clés d&apos;accès sensibles restent sur le serveur et ne sont jamais envoyées au navigateur.</li>
         </ul>

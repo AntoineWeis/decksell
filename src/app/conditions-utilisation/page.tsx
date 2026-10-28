@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/conditions-utilisation" },
 };
 
-const UPDATED = "26 octobre 2026";
+const UPDATED = "28 octobre 2026";
 
 const SECTIONS = [
   { id: "objet", title: "Objet" },
@@ -36,8 +36,8 @@ export default function TermsPage() {
     >
       <Section n={1} id="objet" title="Objet">
         <p>
-          decksell est un site qui permet d&apos;estimer la valeur de decks Magic: The Gathering aux formats Modern et Commander,
-          d&apos;après les prix Cardmarket, et de mettre ces decks en vente entre particuliers. Les présentes
+          decksell est un site qui permet d&apos;estimer la valeur de decks Magic: The Gathering aux formats Modern et
+          Commander, d&apos;après les prix Cardmarket, et de mettre ces decks en vente entre particuliers. Les présentes
           conditions encadrent l&apos;utilisation du site par toute personne qui le consulte (« visiteur ») ou qui
           y crée un compte (« membre »).
         </p>
@@ -105,10 +105,20 @@ export default function TermsPage() {
             Une carte introuvable ou sans prix est signalée et exclue du total. Les prix saisis à la main par un
             utilisateur relèvent de sa seule responsabilité.
           </li>
+          <li>
+            Le <strong>MetaScore</strong> (Modern) compare la liste aux tournois Magic Online récents ; le{" "}
+            <strong>niveau de puissance</strong> (Commander) applique les règles officielles des brackets, avec les
+            combos repérés par Commander Spellbook. Ce sont des repères indicatifs, pas des garanties de jeu.
+          </li>
         </ul>
       </Section>
 
       <Section n={5} id="annonces" title="Annonces">
+        <p>
+          Avant publication, decksell contrôle les règles du format : en Modern, 60 cartes au moins et 15 en réserve au
+          plus ; en Commander, 100 cartes commandant compris, un exemplaire par carte (hors terrains de base) et
+          l&apos;identité de couleur du commandant ; dans les deux cas, aucune carte interdite.
+        </p>
         <p>En publiant une annonce, le vendeur s&apos;engage à ce que :</p>
         <ul>
           <li>il possède les cartes du deck et peut les vendre librement ;</li>
@@ -116,8 +126,11 @@ export default function TermsPage() {
             les cartes sont <strong>authentiques</strong> : les copies, proxies et contrefaçons sont interdits ;
           </li>
           <li>
-            les informations de l&apos;annonce sont exactes : liste, état des cartes, part de cartes en français et
-            en anglais, couleurs, archétype et description ;
+            les informations de l&apos;annonce sont exactes : liste et éditions, état et langue de chaque carte,
+            couleurs, archétype, niveau de puissance annoncé (Commander), description et primer ;
+          </li>
+          <li>
+            les photos montrent les cartes réellement vendues ;
           </li>
           <li>le prix demandé est celui qu&apos;il est prêt à accepter ; il le fixe librement ;</li>
           <li>il tient le statut de l&apos;annonce à jour (en vente, réservé, vendu, retiré).</li>
@@ -142,7 +155,15 @@ export default function TermsPage() {
             Un vendeur qui agit à titre professionnel doit l&apos;indiquer et respecter les obligations qui
             s&apos;imposent aux professionnels, notamment envers les consommateurs.
           </li>
-          <li>La prise de contact entre acheteurs et vendeurs sur decksell est en préparation.</li>
+          <li>
+            Acheteurs et vendeurs échangent par la <strong>messagerie</strong> de decksell, liée à l&apos;annonce, où
+            l&apos;acheteur peut aussi faire une offre. Les messages doivent rester courtois et en rapport avec la
+            vente ; un membre peut en bloquer un autre et signaler une conversation, que l&apos;équipe modère.
+          </li>
+          <li>
+            decksell peut suspendre un membre ou retirer une annonce en cas d&apos;abus, d&apos;arnaque ou de
+            manquement à ces conditions.
+          </li>
         </ul>
       </Section>
 
@@ -163,8 +184,8 @@ export default function TermsPage() {
           <li>Les données et images de cartes sont fournies par Scryfall.</li>
           <li>Le site, son code, sa présentation et ses illustrations originales appartiennent à son éditeur.</li>
           <li>
-            Le membre reste propriétaire de ce qu&apos;il publie (textes, photo de profil). Il autorise decksell à
-            l&apos;afficher sur le site le temps de sa publication.
+            Le membre reste propriétaire de ce qu&apos;il publie (textes, primer, photos du deck, photo de profil). Il
+            autorise decksell à l&apos;afficher sur le site le temps de sa publication.
           </li>
         </ul>
       </Section>
@@ -172,7 +193,10 @@ export default function TermsPage() {
       <Section n={9} id="donnees" title="Données personnelles">
         <p>decksell traite uniquement les données nécessaires au service :</p>
         <ul>
-          <li>pour un membre : email, pseudo, photo de profil, liens Moxfield et Archidekt, annonces ;</li>
+          <li>
+            pour un membre : email, pseudo, photo de profil, liens Moxfield et Archidekt, lieu d&apos;expédition
+            (département et ville, facultatifs), annonces et leurs photos, messages et offres, favoris ;
+          </li>
           <li>
             un cookie de session, indispensable à la connexion, déposé uniquement quand le membre se connecte ;
           </li>
@@ -224,7 +248,11 @@ export default function TermsPage() {
       </Section>
 
       <p className="border-t border-line pt-6 text-sm text-muted">
-        Une question sur ces conditions ? Découvre aussi{" "}
+        Une question sur ces conditions ? Écris à{" "}
+        <a href={`mailto:${EDITOR.email}`} className="font-medium text-link hover:underline">
+          {EDITOR.email}
+        </a>
+        . Découvre aussi{" "}
         <Link href="/qui-sommes-nous" className="font-medium text-link hover:underline">
           qui est derrière decksell
         </Link>{" "}

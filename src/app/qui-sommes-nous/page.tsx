@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DataFlowArt, DeckBoxArt, DeckFanArt } from "@/components/about-art";
+import { EDITOR } from "@/lib/editor";
 
 export const metadata: Metadata = {
   title: "Qui sommes-nous",
-  description: "Pourquoi decksell existe, ses principes, d'où viennent les prix et le score méta, et ce qui arrive ensuite.",
+  description: "Pourquoi decksell existe, ses principes, d'où viennent les prix, le MetaScore et le niveau de puissance, et ce qui arrive ensuite.",
   alternates: { canonical: "/qui-sommes-nous" },
 };
 
@@ -19,6 +20,16 @@ function Icon({ children }: { children: React.ReactNode }) {
 
 const PRINCIPLES = [
   {
+    title: "Deux formats, à égalité",
+    text: "Modern et Commander ont chacun leur catalogue, leurs règles contrôlées à la publication et leur critère phare. Aucun n'est une option de l'autre.",
+    icon: (
+      <>
+        <rect x="3" y="6" width="9" height="13" rx="1.5" />
+        <rect x="12" y="5" width="9" height="13" rx="1.5" />
+      </>
+    ),
+  },
+  {
     title: "Le deck entier est l'unité",
     text: "On estime, on vend et on achète un deck complet. Pas besoin de le découper carte par carte pour lui donner un prix.",
     icon: (
@@ -30,7 +41,7 @@ const PRINCIPLES = [
   },
   {
     title: "Des prix qu'on peut vérifier",
-    text: "Chaque estimation affiche sa source, sa date et sa règle de calcul. Une carte sans prix est signalée, jamais comptée en silence.",
+    text: "Chaque estimation affiche sa source, sa date, l'édition retenue et sa règle de calcul. Une carte sans prix est signalée, jamais comptée en silence. Et rien d'inventé : ni faux avis, ni chiffres gonflés.",
     icon: (
       <>
         <circle cx="11" cy="11" r="7" />
@@ -54,11 +65,6 @@ const PRINCIPLES = [
     icon: <path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6Z M9 12l2 2 4-4" />,
   },
   {
-    title: "Rien d'inventé",
-    text: "Pas de faux avis, pas de chiffres d'utilisation gonflés. Ce qui n'existe pas encore est marqué comme tel.",
-    icon: <path d="m5 12 4.5 4.5L19 7" />,
-  },
-  {
     title: "Tes données restent à toi",
     text: "Seul ton compte peut voir, modifier ou supprimer tes annonces et ton profil. Tes messages restent sur decksell, entre toi et l'autre membre. Les clés d'accès sensibles ne quittent jamais le serveur.",
     icon: (
@@ -79,8 +85,8 @@ export default function AboutPage() {
           <div>
             <h1 className="display text-4xl sm:text-5xl">Qui sommes-nous</h1>
             <p className="mt-4 max-w-xl text-lg leading-relaxed text-banner-muted">
-              decksell est un projet indépendant, pensé pour les joueurs de Modern qui veulent revendre ou acheter un
-              deck complet au juste prix.
+              decksell est un projet indépendant, pensé pour les joueurs de Modern et de Commander qui veulent revendre
+              ou acheter un deck complet au juste prix.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
@@ -108,23 +114,24 @@ export default function AboutPage() {
           <h2 className="display text-3xl sm:text-4xl">L&apos;histoire du projet</h2>
           <div className="mt-5 max-w-[62ch] space-y-4 leading-relaxed text-muted">
             <p>
-              Revendre un deck Modern complet n&apos;est pas simple. Il faut chiffrer 75 cartes une par une, comparer
-              les éditions, puis trouver un acheteur sur des sites pensés pour vendre des cartes à l&apos;unité.
-              Souvent, le deck finit découpé.
+              Revendre un deck complet n&apos;est pas simple. Il faut chiffrer 75 cartes en Modern, ou 100 en
+              Commander, une par une, comparer les éditions, puis trouver un acheteur sur des sites pensés pour vendre
+              des cartes à l&apos;unité. Souvent, le deck finit découpé.
             </p>
             <p>
               Les outils que les joueurs utilisent déjà savent construire un deck ou suivre le prix d&apos;une carte.
               Aucun ne va de la decklist entière jusqu&apos;à la vente du deck. decksell est né pour combler ce trou.
             </p>
             <p>
-              Le principe : tu colles ta liste, tu obtiens sa valeur carte par carte en euros, et tu peux la mettre en
-              vente au prix de ton choix. Vendeur et acheteur partent ainsi du même repère.
+              Le principe : tu colles ou importes ta liste, tu obtiens sa valeur carte par carte en euros, édition par
+              édition, et tu peux la mettre en vente au prix de ton choix. Vendeur et acheteur partent ainsi du même
+              repère.
             </p>
             <p>
               Depuis, chaque annonce est devenue une vraie fiche : la jauge du juste prix face à la valeur du jour, les
-              photos des cartes, leur état, la proximité avec le méta des tournois, le primer du vendeur. On écrit au
-              vendeur et on lui fait une offre sans quitter le site, et les decks suivis préviennent quand leur prix
-              baisse.
+              photos des cartes, leur état, le primer du vendeur, et un critère propre à chaque format : le MetaScore
+              en Modern, le niveau de puissance en Commander. On écrit au vendeur et on lui fait une offre sans quitter
+              le site, et les decks suivis préviennent quand leur prix baisse.
             </p>
           </div>
         </div>
@@ -179,14 +186,19 @@ export default function AboutPage() {
             </dd>
           </div>
           <div>
-            <dt className="font-semibold">Le score méta</dt>
+            <dt className="font-semibold">MetaScore et niveau de puissance</dt>
             <dd className="mt-1.5 text-sm leading-relaxed text-muted">
-              Chaque liste est comparée aux decklists des tournois officiels{" "}
+              En Modern, la liste est comparée aux tournois officiels{" "}
               <a href="https://www.mtgo.com/decklists" className="font-medium text-link hover:underline">
                 Magic Online
               </a>{" "}
-              des 30 derniers jours, mises à jour chaque nuit. Le score dit à quel point le deck est proche du méta, pas
-              s&apos;il gagne.
+              des 30 derniers jours, mis à jour chaque jour : le score dit à quel point le deck est proche du méta, pas
+              s&apos;il gagne. En Commander, le niveau de 1 à 5 suit les règles officielles des brackets, avec les combos
+              repérés par{" "}
+              <a href="https://commanderspellbook.com" className="font-medium text-link hover:underline">
+                Commander Spellbook
+              </a>
+              .
             </dd>
           </div>
           <div>
@@ -242,15 +254,24 @@ export default function AboutPage() {
           <div>
             <h2 className="display text-2xl sm:text-3xl">Nous contacter</h2>
             <p className="mt-2 max-w-xl text-banner-muted">
-              Un moyen de nous écrire arrive bientôt. En attendant, le meilleur retour reste d&apos;utiliser decksell.
+              Une question, une idée, un bug ou un souci avec une annonce ? Écris-nous, on lit et on répond à tous les
+              messages.
+            </p>
+            {/* Adresse en clair : utile si le bouton n'ouvre aucune messagerie, et facile à copier. */}
+            <p className="mt-3 text-sm text-banner-muted">
+              <span className="select-all font-medium text-banner-ink">{EDITOR.email}</span>
             </p>
           </div>
-          <Link
-            href="/estimer"
-            className="inline-flex h-11 items-center rounded-lg bg-accent px-5 font-semibold text-on-accent transition hover:bg-accent-hover"
+          <a
+            href={`mailto:${EDITOR.email}?subject=${encodeURIComponent("Contact decksell")}`}
+            className="inline-flex h-11 items-center gap-2 rounded-lg bg-accent px-5 font-semibold text-on-accent transition hover:bg-accent-hover"
           >
-            Estimer mon deck
-          </Link>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden>
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <path d="m3 7 9 6 9-6" />
+            </svg>
+            Nous écrire
+          </a>
         </div>
       </section>
     </main>
