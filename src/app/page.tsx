@@ -7,7 +7,6 @@ import { Suspense } from "react";
 import { LatestDecks } from "@/components/latest-decks";
 import { FormatDoors, FormatDoorsSkeleton } from "@/components/format-doors";
 import { ManaRise } from "@/components/mana-rise";
-import { DeckPreview, DeckPreviewSkeleton } from "@/components/deck-preview";
 import Form from "next/form";
 import { CardSearchInput } from "@/components/card-search-input";
 
@@ -40,7 +39,7 @@ const PATHS = [
   {
     title: "Tu vends ton deck",
     steps: [
-      ["Colle ta liste", "Depuis MTGO, Arena, Moxfield ou MTGGoldfish, réserve comprise. La valeur tombe en quelques secondes, sans compte."],
+      ["Colle ou importe ta liste", "Export Moxfield, Arena, MTGO ou lien Archidekt, Modern ou Commander. La valeur tombe en quelques secondes, édition par édition, sans compte."],
       ["Fixe ton prix", "Tu vois ce que vaut chaque carte. Précise l'état et la langue de tes cartes, ajoute des photos et, si tu veux, un primer."],
       ["Publie et réponds", "Les acheteurs t'écrivent et te font des offres depuis l'annonce ; tu es prévenu par e-mail. Passe-la en réservé, puis en vendu."],
     ],
@@ -49,8 +48,8 @@ const PATHS = [
   {
     title: "Tu cherches un deck",
     steps: [
-      ["Parcours les decks", "Filtre par couleur, archétype ou carte présente dans la liste, et trie par prix ou par meilleure affaire."],
-      ["Examine la fiche", "Prix face à la valeur du jour, photos des vraies cartes, état carte par carte, proximité avec le méta, et une main de départ à tester."],
+      ["Parcours les decks", "Modern ou Commander : filtre par couleur, archétype, carte ou commandant, niveau de puissance, et trie par prix ou par meilleure affaire."],
+      ["Examine la fiche", "Prix face à la valeur du jour, photos des vraies cartes, état carte par carte, MetaScore ou niveau de puissance, et une main de départ à tester."],
       ["Écris au vendeur", "Pose tes questions ou fais une offre depuis l'annonce. Garde les decks qui te tentent dans tes favoris."],
     ],
     cta: { href: "/decks", label: "Voir les decks en vente →" },
@@ -70,8 +69,8 @@ const FEATURES = [
     ),
   },
   {
-    title: "Proximité avec le méta",
-    text: "Un score de 0 à 100 compare la liste aux résultats récents des tournois MTGO, avec les cartes en plus et en moins.",
+    title: "MetaScore ou niveau de puissance",
+    text: "En Modern, la liste comparée aux tournois MTGO récents (0 à 100). En Commander, son niveau de 1 à 5 selon les règles officielles.",
     icon: <path d="M4 19h16M7 15l3-4 3 2 4-6" />,
   },
   {
@@ -94,21 +93,12 @@ const FEATURES = [
       </>
     ),
   },
-  {
-    title: "Des vendeurs repérables",
-    text: "Badges Réactif, Juste prix ou Ancien : gagnés sur des faits vérifiés par le site, jamais déclarés.",
-    icon: <path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6Z M9 12l2 2 4-4" />,
-  },
 ];
 
 const TRUST = [
   {
-    title: "Une source connue, datée",
-    text: "Les prix viennent de Cardmarket, via Scryfall, en euros. La date de mise à jour est affichée avec chaque estimation.",
-  },
-  {
-    title: "Une règle simple et constante",
-    text: "Chaque carte compte au prix de l'édition indiquée dans ta liste, foil compris, sinon de son impression la moins chère. Pas de moyenne opaque, pas de coefficient caché.",
+    title: "Une source connue, une règle constante",
+    text: "Prix Cardmarket en euros, via Scryfall, datés. Chaque carte compte au prix de l'édition indiquée dans ta liste, foil compris, sinon de son impression la moins chère.",
   },
   {
     title: "Rien n'est compté en silence",
@@ -116,15 +106,11 @@ const TRUST = [
   },
   {
     title: "Des decks vérifiés avant publication",
-    text: "Les règles du format sont contrôlées : 60 cartes et 15 en réserve en Modern, 100 cartes en un exemplaire et le commandant en Commander, aucune carte interdite. Sinon, l'annonce n'est pas publiée.",
-  },
-  {
-    title: "L'état et la langue, carte par carte",
-    text: "Le vendeur les déclare pour chaque carte. Tu sais ce que tu achètes avant d'écrire.",
+    text: "Les règles du format sont contrôlées : 60 cartes et 15 en réserve en Modern, 100 cartes en un exemplaire et le commandant en Commander, aucune carte interdite.",
   },
   {
     title: "Des échanges qui restent sur decksell",
-    text: "Messages et offres passent par la messagerie du site. Une conversation abusive se signale en un clic et l'équipe la modère.",
+    text: "Messages et offres passent par la messagerie du site. Les badges des vendeurs (Réactif, Juste prix…) sont gagnés sur des faits vérifiés, jamais déclarés.",
   },
 ];
 
@@ -171,12 +157,6 @@ export default function Home() {
               className="inline-flex h-11 items-center rounded-lg bg-accent px-5 font-semibold text-on-accent transition hover:bg-accent-hover"
             >
               Estimer mon deck
-            </Link>
-            <Link
-              href="/decks"
-              className="inline-flex h-11 items-center rounded-lg px-5 font-semibold text-banner-ink ring-1 ring-white/25 transition hover:bg-white/10"
-            >
-              Voir les decks en vente
             </Link>
           </div>
           {/* Recherche directe : les decks qui contiennent une carte */}
@@ -250,13 +230,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Ce que la fiche apporte en plus de la liste */}
-      <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6 sm:pt-20">
+      {/* Ce que la fiche apporte en plus de la liste. Marge basse : la section suivante a un fond et un filet propres. */}
+      <section className="mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-20">
         <h2 className="display max-w-2xl text-3xl sm:text-4xl">Plus qu&apos;une liste de cartes</h2>
         <p className="mt-3 max-w-2xl leading-relaxed text-muted">
           Acheter un deck à distance, c&apos;est faire confiance. Chaque fiche donne de quoi juger avant d&apos;écrire.
         </p>
-        <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((f) => (
             <li key={f.title} className="rounded-xl border border-line bg-surface p-5">
               <span className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-link">
@@ -268,11 +248,6 @@ export default function Home() {
           ))}
         </ul>
       </section>
-
-      {/* Aperçu d'une vraie fiche deck : lu à part, comme les derniers decks. */}
-      <Suspense fallback={<DeckPreviewSkeleton />}>
-        <DeckPreview />
-      </Suspense>
 
       {/* Confiance : les prix, les annonces, les échanges */}
       <section className="border-y border-line bg-surface">

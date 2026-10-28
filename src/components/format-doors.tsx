@@ -2,12 +2,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
 import { fetchPublicListings } from "@/lib/public-listings";
-import { artCrop, type DeckFormat, type PublicListing } from "@/lib/listings";
+import type { DeckFormat, PublicListing } from "@/lib/listings";
 import { catalogPath } from "@/lib/deck-index";
 
 // Les deux portes de l'accueil, de même poids : une par format, avec son critère phare.
-const DOORS: Record<DeckFormat, { tagline: string; points: string[]; cta: string; ring: string; text: string }> = {
+// Illustration fixe par format, choisie par l'équipe (Scryfall, art crop) ; l'illustrateur est crédité.
+const DOORS: Record<
+  DeckFormat,
+  { tagline: string; points: string[]; cta: string; ring: string; text: string; art: string; credit: string }
+> = {
   modern: {
+    art: "https://cards.scryfall.io/art_crop/front/b/c/bc95af55-d1dd-4fe6-adb0-3ad6db20d986.jpg?1783911293",
+    credit: "Consign to Memory, par Ben Hill",
     tagline: "Des decks de tournoi, 60 cartes et leur réserve.",
     points: [
       "MetaScore : la liste comparée aux listes de tournoi récentes",
@@ -18,6 +24,8 @@ const DOORS: Record<DeckFormat, { tagline: string; points: string[]; cta: string
     text: "text-link",
   },
   commander: {
+    art: "https://cards.scryfall.io/art_crop/front/1/0/10d42b35-844f-4a64-9981-c6118d45e826.jpg?1783915607",
+    credit: "The Ur-Dragon, par Jaime Jones",
     tagline: "Des decks de 100 cartes, menés par leur commandant.",
     points: [
       "Niveau de puissance de 1 à 5, selon les règles officielles",
@@ -29,7 +37,7 @@ const DOORS: Record<DeckFormat, { tagline: string; points: string[]; cta: string
   },
 };
 
-/** Les deux formats côte à côte, avec le nombre de decks en vente et l'illustration du dernier publié. */
+/** Les deux formats côte à côte, avec leur illustration et le nombre de decks en vente. */
 export async function FormatDoors() {
   // Hors du try : ce signal de Next (lecture au moment de la requête) ne doit pas être intercepté.
   await connection();
@@ -59,25 +67,24 @@ export function FormatDoorsView({ listings }: { listings: PublicListing[] }) {
 function Door({ format, listings }: { format: DeckFormat; listings: PublicListing[] }) {
   const door = DOORS[format];
   const onSale = listings.filter((l) => l.status === "active").length;
-  // Illustration du dernier deck publié de ce format (la liste est triée du plus récent au plus ancien).
-  const art = artCrop(listings.find((l) => l.cover_image_url)?.cover_image_url ?? null);
   return (
     <Link
       href={catalogPath(format)}
       className={`group flex flex-col overflow-hidden rounded-2xl border border-line bg-surface transition hover:shadow-lg ${door.ring}`}
     >
       <div className="relative aspect-[16/7] overflow-hidden bg-banner">
-        {art && (
-          <Image
-            src={art}
+        <Image
+            src={door.art}
             alt=""
             fill
             unoptimized
             sizes="(min-width: 768px) 560px, 100vw"
             className="object-cover object-[50%_30%] opacity-80 transition duration-500 group-hover:scale-[1.04]"
           />
-        )}
         <div className="absolute inset-0 bg-gradient-to-t from-banner via-banner/50 to-transparent" />
+        <p className="absolute right-3 top-2.5 text-[11px] text-white/75 [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]">
+          Illustration : {door.credit}
+        </p>
         <p className="display absolute bottom-4 left-5 right-5 text-3xl text-banner-ink sm:text-4xl">
           {format === "modern" ? "Modern" : "Commander"}
         </p>

@@ -47,15 +47,15 @@ export function SiteHeader() {
           </Link>
           {/* Sur mobile aussi : c'est l'entrée des vendeurs. */}
           <Link href="/estimer" className="whitespace-nowrap rounded-md px-2 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:px-3">
-            <span className="sm:hidden">Estimer</span>
-            <span className="hidden sm:inline">Estimer un deck</span>
+            <span className="lg:hidden">Estimer</span>
+            <span className="hidden lg:inline">Estimer un deck</span>
           </Link>
         </nav>
         <div className="ml-auto flex items-center gap-1.5 text-sm">
           <ThemeToggle />
           {/* Lit la session : à part, pour ne pas ralentir le reste de la page */}
           {/* Emplacement à la taille de « Connexion » sur mobile : plus large, il ferait déborder la barre. */}
-          <Suspense fallback={<div className="h-9 w-[5.5rem] rounded-md bg-white/10 sm:w-28" />}>
+          <Suspense fallback={<div className="h-9 w-[5.5rem] rounded-md bg-white/10 lg:w-56" />}>
             <UserMenu />
           </Suspense>
         </div>
@@ -75,10 +75,10 @@ async function UserMenu() {
         >
           Connexion
         </Link>
-        {/* Masqué sur mobile pour laisser la place à « Estimer » : la page de connexion mène à l'inscription. */}
+        {/* Masqué sous 1024 px pour laisser la place aux formats : la page de connexion mène à l'inscription. */}
         <Link
           href="/inscription"
-          className="hidden whitespace-nowrap rounded-md bg-accent px-3 py-2 font-semibold text-on-accent transition hover:bg-accent-hover sm:block"
+          className="hidden whitespace-nowrap rounded-md bg-accent px-3 py-2 font-semibold text-on-accent transition hover:bg-accent-hover lg:block"
         >
           Créer un compte
         </Link>
@@ -90,7 +90,7 @@ async function UserMenu() {
     <>
       <Link
         href="/espace"
-        className="hidden whitespace-nowrap rounded-md px-3 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:block"
+        className="hidden whitespace-nowrap rounded-md px-3 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink lg:block"
       >
         Mes annonces
       </Link>
@@ -107,10 +107,10 @@ async function UserMenu() {
       <Link
         href="/espace/profil"
         aria-label={`Mon profil (${profile.displayName})`}
-        className="flex items-center gap-2 rounded-full p-1 font-medium hover:bg-white/10 sm:pr-3"
+        className="flex items-center gap-2 rounded-full p-1 font-medium hover:bg-white/10 lg:pr-3"
       >
         <Avatar name={profile.displayName} url={profile.avatarUrl} size={28} />
-        <span className="hidden max-w-32 truncate sm:inline">{profile.displayName}</span>
+        <span className="hidden max-w-32 truncate lg:inline">{profile.displayName}</span>
       </Link>
     </>
   );

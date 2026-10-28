@@ -221,7 +221,7 @@ Coins de 12px pour les panneaux et vignettes, 16px pour les portes et la carte v
 - **Étiquette de format** (tag-modern, tag-commander) : capitales 11px grasses, texte blanc sur la couleur pleine du format, coins 8px ; anneau blanc à 25 % sur fond nuit.
 - **Pastille de score** : « Méta 59 » aux couleurs du verdict (Modern) ; « Niveau 3 · Upgraded » en magenta doux (chip-bracket, Commander).
 - **Onglets de catalogue** : 40px de haut ; l'onglet actif prend la couleur pleine de son format (Tous : contour encre) ; les autres montrent un carré de 10px de leur couleur et leur nombre de decks.
-- **Porte de format (accueil)** : carte 16px de coins, illustration du dernier deck publié du format (16/7) sous un dégradé nuit avec le nom du format en display, accroche, deux points du critère phare, nombre de decks et lien coloré.
+- **Porte de format (accueil)** : carte 16px de coins, illustration fixe du format (16/7 : Consign to Memory pour Modern, The Ur-Dragon pour Commander, illustrateur crédité) sous un dégradé nuit avec le nom du format en display, accroche, deux points du critère phare, nombre de decks et lien coloré.
 
 ### Cards / Containers
 - **Panneau** : fond surface, filet de 1px, coins 12px, 20px de marge intérieure.
