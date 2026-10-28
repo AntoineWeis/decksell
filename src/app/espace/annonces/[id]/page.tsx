@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getProfile, requireUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-auth";
-import { estimateDecklistNow, fetchListingBracket } from "@/lib/public-listings";
+import { estimateDecklistNow } from "@/lib/public-listings";
 import { commanderBracket } from "@/lib/bracket-view";
 import { commanderCards } from "@/lib/pricing";
 import { BracketCard } from "@/components/bracket-card";
@@ -73,7 +73,19 @@ async function SellerListing({ params }: { params: Promise<{ id: string }> }) {
       .maybeSingle()
       .then(({ data, error }) => (error ? null : mediaOf(data))),
     // Niveau de puissance (Commander) : annoncé et détail enregistrés.
-    listing.format === "commander" ? fetchListingBracket(id) : null,
+    // Lu avec le client du membre : l'annonce peut ne pas être publique (brouillon, vendue).
+    listing.format === "commander"
+      ? supabase
+          .from("listings")
+          .select("bracket, bracket_min, bracket_detail")
+          .eq("id", id)
+          .maybeSingle()
+          .then(({ data, error }) =>
+            error || !data
+              ? null
+              : { bracket: data.bracket ?? null, bracketMin: data.bracket_min ?? null, detail: data.bracket_detail ?? null },
+          )
+      : null,
   ]);
   const power = listing.format === "commander" ? await commanderBracket(deck, estimate, storedBracket) : null;
   const isPublic = (PUBLIC_STATUSES as readonly string[]).includes(listing.status);

@@ -6,6 +6,7 @@ import { lookupDeckPrices, lookupDeckPricesCached } from "@/lib/estimate";
 import { fetchBracketFacts } from "@/lib/bracket-server";
 import { minBracket, type BracketFacts, type BracketLevel } from "@/lib/bracket";
 import { archidektToText, parseDeckUrl } from "@/lib/deck-import";
+import { LIMITS, RATE_LIMIT_MESSAGE, underLimit } from "@/lib/rate-limit";
 
 export type EstimateState =
   | { status: "idle" }
@@ -33,6 +34,7 @@ export async function estimateAction(_prev: EstimateState, formData: FormData): 
   if (lineCount > MAX_LINES) {
     return { status: "error", message: "Trop de cartes différentes pour un deck." };
   }
+  if (!(await underLimit(LIMITS.estimate))) return { status: "error", message: RATE_LIMIT_MESSAGE };
 
   try {
     const { prices, pricesAsOf } = await lookupDeckPrices(deck);
@@ -58,6 +60,7 @@ export async function importDeckAction(url: string): Promise<ImportResult> {
   if (target.site !== "archidekt") {
     return { status: "error", message: "Lien non reconnu. Colle l'adresse d'un deck Archidekt (archidekt.com/decks/…)." };
   }
+  if (!(await underLimit(LIMITS.import))) return { status: "error", message: RATE_LIMIT_MESSAGE };
   try {
     const res = await fetch(`https://archidekt.com/api/decks/${target.id}/`, {
       headers: { "User-Agent": "decksell/1.0 (https://decksell.fr)", Accept: "application/json" },
@@ -84,6 +87,7 @@ export async function bracketAction(text: string, commanders: string[]): Promise
   const names = Array.isArray(commanders) ? commanders.filter((c) => typeof c === "string").slice(0, 2) : [];
   const deck = withFormat(parseDecklist(text), "commander", names);
   if (deck.main.length === 0 || deck.main.length > MAX_LINES) return { status: "error" };
+  if (!(await underLimit(LIMITS.bracket))) return { status: "error" };
   try {
     const { prices } = await lookupDeckPricesCached(deck);
     const facts = await fetchBracketFacts(deck, buildEstimate(deck, prices));

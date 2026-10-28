@@ -16,6 +16,10 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(url);
     }
     if (unlocked && pathname === GATE_PATH) return NextResponse.redirect(new URL("/", request.url));
+  } else if (request.nextUrl.pathname === GATE_PATH) {
+    // Site ouvert : la page d'attente n'existe plus. Redirection permanente, pour que les moteurs
+    // de recherche oublient cette adresse (marquée « noindex ») au profit de l'accueil.
+    return NextResponse.redirect(new URL("/", request.url), 308);
   }
 
   let response = NextResponse.next({ request });

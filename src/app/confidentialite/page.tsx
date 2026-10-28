@@ -123,8 +123,9 @@ export default function PrivacyPage() {
             profil), jamais d&apos;email commercial : exécution du contrat.
           </li>
           <li>
-            <strong>Sécuriser le site</strong> et prévenir les abus, grâce aux journaux techniques des prestataires :
-            intérêt légitime.
+            <strong>Sécuriser le site</strong> et prévenir les abus, grâce aux journaux techniques des prestataires
+            et à une limite du nombre d&apos;estimations par visiteur, qui compte les demandes sous une empreinte
+            chiffrée de l&apos;adresse IP (jamais l&apos;adresse elle-même) : intérêt légitime.
           </li>
         </ul>
       </Section>
@@ -188,6 +189,9 @@ export default function PrivacyPage() {
           <li>
             <strong>Journaux techniques</strong> des prestataires : selon leurs propres durées, limitées à ce qui est
             nécessaire à la sécurité.
+          </li>
+          <li>
+            <strong>Compteurs de la limite d&apos;estimations</strong> : une journée au plus.
           </li>
         </ul>
       </Section>

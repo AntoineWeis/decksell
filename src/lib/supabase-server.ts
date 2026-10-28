@@ -13,3 +13,18 @@ export function getSupabaseAdmin() {
 
   return createClient(url, secretKey, { auth: { persistSession: false } });
 }
+
+/**
+ * Client Supabase avec la clé publique, sans session : pour les lectures publiques (vues
+ * public_listings, public_sellers…), soumises aux mêmes droits qu'un visiteur anonyme.
+ */
+export function getSupabasePublic() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!url || !key) {
+    throw new Error("Variables Supabase manquantes : NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.");
+  }
+
+  return createClient(url, key, { auth: { persistSession: false } });
+}

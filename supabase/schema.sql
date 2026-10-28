@@ -1331,3 +1331,71 @@ insert into public.archetypes (slug, name, format) values
   ('edh-voltron', 'Voltron', 'commander'),
   ('edh-wheels', 'Wheels', 'commander')
 on conflict (slug) do nothing;
+
+-- 28. Lecture publique sans la clé secrète
+-- Les pages publiques (accueil, catalogues, fiche d'un deck, page vendeur, sitemap) lisent ces
+-- vues avec la clé publique. Elles ne montrent que les annonces en vente ou réservées de vendeurs
+-- non suspendus, et seulement les colonnes publiques : la base garantit ce tri, pas seulement le
+-- code du site. Vues exécutées avec les droits de leur propriétaire (security_invoker = false) :
+-- c'est voulu, les règles RLS des tables restent réservées au propriétaire de chaque ligne.
+create or replace view public.public_listings with (security_invoker = false) as
+select
+  l.id, l.seller_id, l.title, l.decklist, l.card_count, l.estimated_cents, l.estimate_complete,
+  l.asking_cents, l.condition, l.description, l.status, l.created_at, l.french_percent,
+  l.cover_card_name, l.cover_image_url, l.colors, l.card_details, l.format, l.archetype_id,
+  l.meta_score, l.meta_status, l.meta_archetype, l.meta_detail, l.photos, l.primer,
+  l.commanders, l.bracket, l.bracket_min, l.bracket_detail
+from public.listings l
+join public.profiles p on p.id = l.seller_id
+where l.status in ('active', 'reserved')
+  and (p.suspended_until is null or p.suspended_until <= now());
+
+-- Vendeurs : seulement ceux qui ont au moins une annonce publique, et leurs champs publics.
+create or replace view public.public_sellers with (security_invoker = false) as
+select p.id, p.display_name, p.avatar_url, p.moxfield_url, p.archidekt_url, p.created_at, p.department, p.city
+from public.profiles p
+where exists (select 1 from public.public_listings pl where pl.seller_id = p.id);
+
+-- Badges des vendeurs publics.
+create or replace view public.public_seller_badges with (security_invoker = false) as
+select b.user_id, b.badge, b.level
+from public.user_badges b
+where exists (select 1 from public.public_sellers s where s.id = b.user_id);
+
+revoke all on public.public_listings, public.public_sellers, public.public_seller_badges from public, anon, authenticated;
+grant select on public.public_listings, public.public_sellers, public.public_seller_badges to anon, authenticated;
+
+-- 29. Limite de requêtes (estimateur, niveau de puissance, import par lien)
+-- Compteur par fenêtre de temps. La clé est une empreinte (hachage) de l'adresse IP, jamais l'adresse elle-même,
+-- et les lignes de plus d'un jour sont effacées au fil de l'eau. Lu et écrit seulement par le serveur (clé secrète).
+create table if not exists public.rate_limits (
+  key text not null,
+  window_start timestamptz not null,
+  hits integer not null default 1,
+  primary key (key, window_start)
+);
+alter table public.rate_limits enable row level security;
+revoke all on public.rate_limits from public, anon, authenticated;
+
+-- Compte un passage ; vrai tant que le plafond de la fenêtre n'est pas dépassé.
+create or replace function public.hit_rate_limit(p_key text, p_max integer, p_window_seconds integer)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  w timestamptz := to_timestamp(floor(extract(epoch from now()) / p_window_seconds) * p_window_seconds);
+  n integer;
+begin
+  insert into public.rate_limits (key, window_start, hits) values (p_key, w, 1)
+  on conflict (key, window_start) do update set hits = public.rate_limits.hits + 1
+  returning hits into n;
+  if random() < 0.02 then
+    delete from public.rate_limits where window_start < now() - interval '1 day';
+  end if;
+  return n <= p_max;
+end;
+$$;
+revoke all on function public.hit_rate_limit(text, integer, integer) from public, anon, authenticated;
+grant execute on function public.hit_rate_limit(text, integer, integer) to service_role;

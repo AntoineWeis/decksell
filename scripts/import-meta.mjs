@@ -13,7 +13,9 @@
 
 import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
-import { formatDecklist } from "../src/lib/decklist.ts";
+import { formatDecklist, parseDecklist } from "../src/lib/decklist.ts";
+import { buildEstimate, coverCard, lookupNames } from "../src/lib/pricing.ts";
+import { fetchCardPrices } from "../src/lib/price-lookup.ts";
 import { META_WINDOW_DAYS } from "../src/lib/meta-config.ts";
 import { boardSize, compareDecks } from "../src/lib/similarity.ts";
 import { buildCorpus, deckCardsFromParsed } from "../src/lib/meta-match.ts";
@@ -302,6 +304,28 @@ async function rescoreListings(rows) {
   }
 }
 
+/**
+ * Image du deck des annonces qui n'en ont pas (publiées avant son enregistrement) : calculée ici,
+ * une fois, et non plus à l'affichage des pages publiques (qui ne font que lire).
+ */
+async function fillMissingCovers() {
+  const { data, error } = await db.from("listings").select("id, decklist, commanders").is("cover_image_url", null).limit(500);
+  if (error) throw new Error(`Lecture des annonces sans image impossible : ${error.message}`);
+  let filled = 0;
+  for (const l of data) {
+    const deck = parseDecklist(l.decklist);
+    const card = coverCard(buildEstimate(deck, await fetchCardPrices(db, lookupNames(deck))), l.commanders ?? deck.commanders);
+    if (!card?.imageUrl) continue;
+    const { error: e } = await db
+      .from("listings")
+      .update({ cover_card_name: card.name, cover_image_url: card.imageUrl })
+      .eq("id", l.id)
+      .is("cover_image_url", null);
+    if (!e) filled++;
+  }
+  if (data.length > 0) console.log(`Images de deck : ${filled} ajoutée${filled > 1 ? "s" : ""} sur ${data.length} annonce${data.length > 1 ? "s" : ""} sans image.`);
+}
+
 /** Badges de tous les membres qui ont publié : l'ancienneté et la réactivité évoluent sans action. */
 async function refreshAllBadges() {
   const { data, error } = await db.from("listings").select("seller_id");
@@ -324,6 +348,7 @@ try {
     await reclassify(rows);
     calibration(rows);
     await rescoreListings(rows);
+    await fillMissingCovers();
     await refreshAllBadges();
   }
   console.log(`Terminé en ${Math.round((Date.now() - started) / 1000)} s.`);
