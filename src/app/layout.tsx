@@ -9,6 +9,7 @@ import { FlashToasts, ToastProvider } from "@/components/toaster";
 import { BadgeUnlock } from "@/components/badge-unlock";
 import { getUser } from "@/lib/auth";
 import { Analytics } from "@vercel/analytics/react";
+import { THEME_SCRIPT } from "@/components/theme-toggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,10 +44,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
+    // suppressHydrationWarning : le script de thème pose data-theme sur <html> avant React.
     <html
       lang="fr"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${sora.variable} ${rajdhani.variable} h-full antialiased`}
     >
+      <head>
+        {/* Thème choisi (clair ou sombre) appliqué avant l'affichage : pas de flash. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col font-sans">
         <ToastProvider>
           <SiteHeader />

@@ -186,6 +186,10 @@ export default function PrivacyPage() {
             pas le perdre en changeant de page. Il n&apos;est envoyé nulle part tant que tu ne lances pas
             l&apos;estimation.
           </li>
+          <li>
+            <strong>Ton choix de thème</strong> (clair ou sombre), gardé dans ton navigateur si tu utilises le bouton
+            de l&apos;en-tête. Il n&apos;est envoyé nulle part.
+          </li>
         </ul>
         <p>
           <strong>Mesure d&apos;audience</strong> : decksell utilise Vercel Web Analytics pour savoir quelles pages sont

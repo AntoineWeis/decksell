@@ -71,14 +71,14 @@ export function DeckCatalog({ format, searchParams }: { format: DeckFormat | nul
 /** Onglets Tous · Modern · Commander, avec le nombre de decks de chacun. */
 function FormatTabs({ format, listings }: { format: DeckFormat | null; listings: PublicListing[] }) {
   const count = (f: DeckFormat | null) => (f ? listings.filter((l) => l.format === f).length : listings.length);
-  const tabs: { f: DeckFormat | null; label: string; tone: string }[] = [
-    { f: null, label: "Tous", tone: "border-foreground/70 text-foreground" },
-    { f: "modern", label: "Modern", tone: "border-link bg-brand-soft text-link" },
-    { f: "commander", label: "Commander", tone: "border-commander bg-commander-soft text-commander" },
+  const tabs: { f: DeckFormat | null; label: string; tone: string; dot: string | null }[] = [
+    { f: null, label: "Tous", tone: "border-foreground/70 text-foreground", dot: null },
+    { f: "modern", label: "Modern", tone: "border-modern-solid bg-modern-solid text-white", dot: "bg-modern-solid" },
+    { f: "commander", label: "Commander", tone: "border-commander-solid bg-commander-solid text-white", dot: "bg-commander-solid" },
   ];
   return (
     <nav aria-label="Format" className="flex flex-wrap gap-2">
-      {tabs.map(({ f, label, tone }) => {
+      {tabs.map(({ f, label, tone, dot }) => {
         const current = f === format;
         return (
           <Link
@@ -89,6 +89,7 @@ function FormatTabs({ format, listings }: { format: DeckFormat | null; listings:
               current ? tone : "border-line bg-surface text-muted hover:border-link/40 hover:text-foreground"
             }`}
           >
+            {dot && !current && <span aria-hidden className={`size-2.5 rounded-sm ${dot}`} />}
             {label}
             <span className="tabular-nums font-normal opacity-80">{count(f)}</span>
           </Link>

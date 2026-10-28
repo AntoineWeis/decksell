@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "./theme-toggle";
 
 export function SiteFooter() {
   return (
@@ -14,6 +15,8 @@ export function SiteFooter() {
           <Link href="/confidentialite" className="text-muted hover:text-foreground">
             Confidentialité
           </Link>
+          {/* Mobile : l'en-tête n'a pas la place pour le bouton de thème. */}
+          <ThemeToggle variant="footer" />
         </nav>
         <div className="space-y-1 text-xs text-muted">
           <p>

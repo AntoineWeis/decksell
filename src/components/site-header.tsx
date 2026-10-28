@@ -6,6 +6,7 @@ import { getUnreadCount } from "@/lib/messaging";
 import { MessagesLink } from "./messages-link";
 import { StarIcon } from "./favorite-button";
 import { Avatar } from "./avatar";
+import { ThemeToggle } from "./theme-toggle";
 
 // Barre de navigation façon outil de deck : bleu nuit dans les deux thèmes.
 export function SiteHeader() {
@@ -29,12 +30,19 @@ export function SiteHeader() {
           <Link href="/decks" className="whitespace-nowrap rounded-md px-2 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:hidden">
             Decks
           </Link>
-          <Link href="/modern" className="hidden items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:flex">
-            <span aria-hidden className="size-2 rounded-full bg-[#5a90ff]" />
+          {/* Chaque format garde sa couleur (bleu Modern, magenta Commander), comme ses étiquettes. */}
+          <Link
+            href="/modern"
+            className="hidden items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 font-semibold text-[#a9c4ff] transition hover:bg-white/10 hover:text-white sm:flex"
+          >
+            <span aria-hidden className="size-2.5 rounded-sm bg-modern-solid" />
             Modern
           </Link>
-          <Link href="/commander" className="hidden items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 font-medium text-banner-muted hover:bg-white/10 hover:text-banner-ink sm:flex">
-            <span aria-hidden className="size-2 rounded-full bg-[#a98bff]" />
+          <Link
+            href="/commander"
+            className="hidden items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 font-semibold text-[#f5b4fc] transition hover:bg-white/10 hover:text-white sm:flex"
+          >
+            <span aria-hidden className="size-2.5 rounded-sm bg-commander-solid" />
             Commander
           </Link>
           {/* Sur mobile aussi : c'est l'entrée des vendeurs. */}
@@ -44,6 +52,7 @@ export function SiteHeader() {
           </Link>
         </nav>
         <div className="ml-auto flex items-center gap-1.5 text-sm">
+          <ThemeToggle />
           {/* Lit la session : à part, pour ne pas ralentir le reste de la page */}
           <Suspense fallback={<div className="h-9 w-28 rounded-md bg-white/10" />}>
             <UserMenu />

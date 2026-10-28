@@ -9,7 +9,7 @@ function Scale({ level, min }: { level: BracketLevel; min: BracketLevel }) {
           key={b}
           className={`flex h-8 items-center justify-center rounded-md text-sm font-semibold tabular-nums ${
             b === level
-              ? "bg-commander text-white dark:text-banner"
+              ? "bg-commander-solid text-white"
               : b < min && !(b === 1 && min === 2)
                 ? "bg-sunken text-muted/50"
                 : "bg-commander-soft text-commander"

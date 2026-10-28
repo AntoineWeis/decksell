@@ -7,6 +7,7 @@
    - hachures : la seule marque des cartes sans prix. */
 
 :root {
+  color-scheme: light;
   --background: #f3f5f9;
   --foreground: #111827;
   --surface: #ffffff;
@@ -22,9 +23,12 @@
   --accent-hover: #1d4fd0;
   --on-accent: #ffffff;
   --reveal: #e2511f;
-  /* Commander : le violet de la marque (Modern garde le bleu). */
-  --commander: #6d3fd6;
-  --commander-soft: #efe8ff;
+  /* Commander : magenta, bien distinct du bleu de Modern. */
+  --commander: #a21caf;
+  --commander-soft: #fae8ff;
+  /* Fonds pleins des étiquettes de format (texte blanc), dans les deux thèmes. */
+  --modern-solid: #2563eb;
+  --commander-solid: #c026d3;
   --gem-common: #2a2d34;
   --gem-uncommon: #8d98a6;
   --gem-rare: #c3961a;
@@ -47,8 +51,11 @@
   --hatch: rgba(143, 82, 0, 0.14);
 }
 
+/* Thème sombre : celui du système, sauf choix contraire avec le bouton de l'en-tête
+   (attribut data-theme sur <html>, posé avant l'affichage par le script de layout.tsx). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --background: #0e121b;
     --foreground: #e6ebf4;
     --surface: #161c28;
@@ -64,8 +71,10 @@
     --accent-hover: #5a90ff;
     --on-accent: #ffffff;
     --reveal: #ff6a36;
-    --commander: #b39bff;
-    --commander-soft: #2a2048;
+    --commander: #f0abfc;
+    --commander-soft: #3a1740;
+    --modern-solid: #2f6bff;
+    --commander-solid: #c026d3;
     --gem-common: #d4d7de;
     --gem-uncommon: #9aa6b4;
     --gem-rare: #d9aa2b;
@@ -88,6 +97,57 @@
   }
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0e121b;
+  --foreground: #e6ebf4;
+  --surface: #161c28;
+  --sunken: #1c2331;
+  --line: #283143;
+  --muted: #8e9ab2;
+  --banner: #0b1222;
+  --banner-ink: #f3f6fc;
+  --banner-muted: #aab6cf;
+  --link: #7fa8ff;
+  --brand-soft: #1a2747;
+  --accent: #3b7bff;
+  --accent-hover: #5a90ff;
+  --on-accent: #ffffff;
+  --reveal: #ff6a36;
+  --commander: #f0abfc;
+  --commander-soft: #3a1740;
+  --modern-solid: #2f6bff;
+  --commander-solid: #c026d3;
+  --gem-common: #d4d7de;
+  --gem-uncommon: #9aa6b4;
+  --gem-rare: #d9aa2b;
+  --gem-mythic: #ff6a36;
+  --ok: #6fd28f;
+  --ok-soft: #12291a;
+  --warn: #f3b85c;
+  --warn-soft: #2e2210;
+  --danger: #ff8a80;
+  --danger-soft: #2f1412;
+  --cond-nm: #6fd28f;
+  --cond-nm-soft: #12291a;
+  --cond-ex: #b5d96a;
+  --cond-ex-soft: #1e2a10;
+  --cond-gd: #f3b85c;
+  --cond-gd-soft: #2e2210;
+  --cond-pl: #ff8a80;
+  --cond-pl-soft: #2f1412;
+  --hatch: rgba(243, 184, 92, 0.13);
+}
+
+/* Icônes du bouton de thème : soleil en sombre, lune en clair. */
+.when-dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .when-dark { display: block; }
+  :root:not([data-theme="light"]) .when-light { display: none; }
+}
+:root[data-theme="dark"] .when-dark { display: block; }
+:root[data-theme="dark"] .when-light { display: none; }
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -106,6 +166,8 @@
   --color-reveal: var(--reveal);
   --color-commander: var(--commander);
   --color-commander-soft: var(--commander-soft);
+  --color-modern-solid: var(--modern-solid);
+  --color-commander-solid: var(--commander-solid);
   --color-gem-rare: var(--gem-rare); /* étoile des favoris */
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
