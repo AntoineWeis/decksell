@@ -107,7 +107,7 @@ const TRUST = [
   },
   {
     title: "Une règle simple et constante",
-    text: "Chaque carte compte au prix de son impression non-foil la moins chère. Pas de moyenne opaque, pas de coefficient caché.",
+    text: "Chaque carte compte au prix de l'édition indiquée dans ta liste, foil compris, sinon de son impression la moins chère. Pas de moyenne opaque, pas de coefficient caché.",
   },
   {
     title: "Rien n'est compté en silence",

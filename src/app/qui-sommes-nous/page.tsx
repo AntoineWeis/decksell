@@ -173,8 +173,9 @@ export default function AboutPage() {
           <div>
             <dt className="font-semibold">Les prix</dt>
             <dd className="mt-1.5 text-sm leading-relaxed text-muted">
-              Prix Cardmarket en euros, transmis par Scryfall. Chaque carte compte au prix de son impression non-foil la
-              moins chère. La date des prix est affichée avec chaque estimation.
+              Prix Cardmarket en euros, transmis par Scryfall. Chaque carte compte au prix de l&apos;impression indiquée
+              dans la liste (édition, numéro, foil), sinon de son impression non-foil la moins chère. La date des prix
+              est affichée avec chaque estimation.
             </dd>
           </div>
           <div>

@@ -27,7 +27,19 @@ export type CardPrice = {
   legalCommander?: boolean | null; // légale en Commander ; absente = inconnue
   colorIdentity?: string[] | null; // identité de couleur (ex. ["U", "G"]) ; absente = inconnue
   gameChanger?: boolean | null; // sur la liste des Game Changers (Commander) ; absente = inconnue
+  /** Impression précise demandée par la liste (édition et numéro), et non la moins chère. */
+  exactPrint?: boolean;
+  /** Prix foil de cette impression (impressions précises seulement). */
+  priceEurFoil?: number | null;
 };
+
+/**
+ * Impression retenue pour le prix d'une ligne :
+ * - exact : l'impression indiquée dans la liste (édition, numéro, foil) ;
+ * - cheapest : aucune indiquée, la moins chère (règle par défaut) ;
+ * - fallback : celle indiquée est introuvable ou sans prix, la moins chère à la place.
+ */
+export type PrintMatch = "exact" | "cheapest" | "fallback";
 
 export type LineStatus =
   | "priced" // prix Cardmarket trouvé
@@ -43,6 +55,10 @@ export type PricedLine = {
   card: CardPrice | null;
   unitCents: number | null;
   lineCents: number | null;
+  /** Impression demandée par la liste (absente : aucune précisée). */
+  requested?: { set: string; number: string | null; found: boolean } | null;
+  foil?: boolean;
+  printMatch?: PrintMatch;
 };
 
 export type Estimate = {
@@ -78,6 +94,28 @@ export function lookupNames(deck: ParsedDeck): string[] {
   return [...keys];
 }
 
+/** Impressions demandées par la liste, en « première face|édition » (clé de recherche et de cache). */
+export function printRequests(deck: Pick<ParsedDeck, "main" | "side">): string[] {
+  const keys = new Set<string>();
+  for (const e of [...deck.main, ...deck.side]) if (e.set) keys.add(`${frontKey(e.name)}|${e.set}`);
+  return [...keys];
+}
+
+/** L'impression demandée parmi les impressions précises trouvées (anglaise d'abord). */
+function pickPrint(
+  front: string,
+  set: string,
+  number: string | undefined,
+  foil: boolean,
+  prints: CardPrice[] | undefined,
+): CardPrice | null {
+  const inSet = (prints ?? []).filter((p) => p.setCode.toLowerCase() === set && frontKey(p.name) === front);
+  if (number) return inSet.find((p) => p.collectorNumber.toLowerCase() === number.toLowerCase()) ?? null;
+  // Édition sans numéro (« [MH3] ») : l'impression la moins chère de cette édition.
+  const priceOf = (p: CardPrice) => (foil ? p.priceEurFoil : p.priceEur) ?? Infinity;
+  return [...inSet].sort((a, b) => priceOf(a) - priceOf(b))[0] ?? null;
+}
+
 export function toCents(eur: number): number {
   return Math.round(eur * 100);
 }
@@ -99,12 +137,15 @@ export function buildEstimate(
   prices: CardPrice[],
   manual: ManualPrices = {},
 ): Estimate {
+  // Impressions les moins chères (une par carte) d'un côté, impressions précises de l'autre.
   const byFront = new Map<string, CardPrice[]>();
+  const printsByFront = new Map<string, CardPrice[]>();
   for (const p of prices) {
     const k = frontKey(p.name);
-    const list = byFront.get(k);
+    const index = p.exactPrint ? printsByFront : byFront;
+    const list = index.get(k);
     if (list) list.push(p);
-    else byFront.set(k, [p]);
+    else index.set(k, [p]);
   }
 
   const lines: PricedLine[] = [];
@@ -115,7 +156,17 @@ export function buildEstimate(
 
   for (const [board, entries] of boards) {
     for (const e of entries) {
-      const card = pickCard(e.name, byFront.get(frontKey(e.name)));
+      const front = frontKey(e.name);
+      const foil = e.foil === true;
+      const cheapest = pickCard(e.name, byFront.get(front));
+      // Impression indiquée dans la liste, si elle existe et a un prix dans la finition voulue.
+      const exact = e.set ? pickPrint(front, e.set, e.number, foil, printsByFront.get(front)) : null;
+      const exactEur = exact ? (foil ? exact.priceEurFoil : exact.priceEur) : null;
+      const useExact = exact != null && exactEur != null;
+      const card = useExact ? exact : cheapest;
+      // Sans impression précise : prix foil le plus bas de la carte pour une ligne foil.
+      const eur = useExact ? exactEur : foil ? (cheapest?.minPriceEurFoil ?? cheapest?.priceEur ?? null) : (cheapest?.priceEur ?? null);
+      const printMatch: PrintMatch = useExact ? "exact" : e.set ? "fallback" : "cheapest";
       const manualCents = manual[normalizeName(e.name)];
 
       let status: LineStatus;
@@ -125,11 +176,11 @@ export function buildEstimate(
         unitCents = Math.round(manualCents);
       } else if (!card) {
         status = "not_found";
-      } else if (card.priceEur == null) {
+      } else if (eur == null) {
         status = "no_price";
       } else {
         status = "priced";
-        unitCents = toCents(card.priceEur);
+        unitCents = toCents(eur);
       }
 
       lines.push({
@@ -140,6 +191,9 @@ export function buildEstimate(
         card,
         unitCents,
         lineCents: unitCents == null ? null : unitCents * e.quantity,
+        requested: e.set ? { set: e.set, number: e.number ?? null, found: exact != null } : null,
+        foil,
+        printMatch,
       });
     }
   }

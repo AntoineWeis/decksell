@@ -75,12 +75,23 @@ test("préfixe SB: et fins de ligne Windows", () => {
   assert.equal(d.side[0].name, "Smash to Smithereens");
 });
 
-test("exports avec extension et numéro, marqueur foil, quantité en 4x", () => {
-  const d = parseDecklist("4x Lightning Bolt (MH3) 123\n2 Ragavan, Nimble Pilferer *F*\n");
+test("exports avec extension et numéro, marqueur foil, quantité en 4x : l'impression est gardée", () => {
+  const d = parseDecklist(
+    "4x Lightning Bolt (MH3) 123\n2 Ragavan, Nimble Pilferer *F*\n1 Thoughtseize [THS]\n1 Sol Ring (C21) 263 *F* [Ramp]\n",
+  );
   assert.deepEqual(d.main, [
-    { name: "Lightning Bolt", quantity: 4 },
-    { name: "Ragavan, Nimble Pilferer", quantity: 2 },
+    { name: "Lightning Bolt", quantity: 4, set: "mh3", number: "123" },
+    { name: "Ragavan, Nimble Pilferer", quantity: 2, foil: true },
+    { name: "Thoughtseize", quantity: 1, set: "ths" },
+    { name: "Sol Ring", quantity: 1, foil: true, set: "c21", number: "263" },
   ]);
+});
+
+test("même carte en deux impressions : deux lignes ; même impression : additionnées", () => {
+  const d = parseDecklist("2 Lightning Bolt (MH3) 123\n2 Lightning Bolt (2X2) 117 *F*\n2 Lightning Bolt (MH3) 123\n");
+  assert.equal(d.main.length, 2);
+  assert.deepEqual(d.main.map((e) => e.quantity), [4, 2]);
+  assert.equal(d.mainCount, 6);
 });
 
 test("cartes dupliquées dans la même zone : quantités additionnées", () => {
@@ -125,7 +136,7 @@ test("la section Companion des exports Arena va dans la réserve", () => {
 test("formatDecklist écrit le principal puis la réserve, relisible par parseDecklist", () => {
   const deck = parseDecklist("SB: 2 Blood Moon\n4 Lightning Bolt (M10) 146\n4x Ragavan, Nimble Pilferer");
   const text = formatDecklist(deck);
-  assert.equal(text, "4 Lightning Bolt\n4 Ragavan, Nimble Pilferer\n\nSideboard\n2 Blood Moon\n");
+  assert.equal(text, "4 Lightning Bolt (M10) 146\n4 Ragavan, Nimble Pilferer\n\nSideboard\n2 Blood Moon\n");
   const again = parseDecklist(text);
   assert.deepEqual([again.main, again.side], [deck.main, deck.side]);
 });

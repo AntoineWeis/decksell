@@ -78,7 +78,8 @@ export function CardList({
   });
   const row = (l: PricedLine) => (
     <CardRow
-      key={`${l.board}-${l.name}`}
+      // Une même carte peut figurer en deux impressions : l'impression entre dans la clé.
+      key={`${l.board}-${l.name}-${l.requested?.set ?? ""}-${l.requested?.number ?? ""}-${l.foil ? "f" : ""}`}
       line={l}
       delayMs={Math.min(rank.get(l)! * 20, 500)}
       previewSide={previewSide}
@@ -206,13 +207,23 @@ function CardRow({
         <p className="truncate text-xs text-muted">
           {card ? (
             <>
+              {line.foil && <span className="mr-1 rounded bg-commander-soft px-1 py-px font-semibold text-commander">Foil</span>}
               {card.setCode.toUpperCase()} · {card.collectorNumber}
+              {line.printMatch === "cheapest" && <span className="hidden sm:inline"> · la moins chère</span>}
               {card.artist && <span className="hidden sm:inline"> · Ill. {card.artist}</span>}
             </>
           ) : (
             "Carte introuvable"
           )}
         </p>
+        {/* Impression indiquée dans la liste, mais introuvable ou sans prix : on le dit. */}
+        {line.printMatch === "fallback" && line.requested && (
+          <p className="text-xs text-warn">
+            {line.requested.set.toUpperCase()}
+            {line.requested.number ? ` ${line.requested.number}` : ""}
+            {line.foil ? " foil" : ""} {line.requested.found ? "sans prix" : "introuvable"} : impression la moins chère à la place
+          </p>
+        )}
       </div>
 
       <div className="shrink-0 text-right">

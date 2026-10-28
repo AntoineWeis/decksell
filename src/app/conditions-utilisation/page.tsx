@@ -93,8 +93,8 @@ export default function TermsPage() {
             <a href="https://scryfall.com" className="font-medium text-link hover:underline">
               Scryfall
             </a>
-            . Chaque carte est comptée au prix de son impression non-foil la moins chère, à la date indiquée avec
-            l&apos;estimation.
+            . Chaque carte est comptée au prix de l&apos;impression indiquée dans la liste (édition, numéro, foil),
+            sinon de son impression non-foil la moins chère, à la date indiquée avec l&apos;estimation.
           </li>
           <li>
             Une estimation est un <strong>repère indicatif</strong>. Ce n&apos;est ni une offre d&apos;achat, ni

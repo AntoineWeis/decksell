@@ -121,7 +121,7 @@ export function CardDetailsEditor({
                 </p>
                 <ul className="divide-y divide-line rounded-lg border border-line">
                   {rows.map(({ d, i }) => (
-                    <li key={`${d.board}-${d.name}`} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2">
+                    <li key={`${d.board}-${d.name}-${i}`} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2">
                       <span className="w-6 shrink-0 text-right text-sm tabular-nums text-muted">{d.quantity}</span>
                       <span className="min-w-0 flex-1 truncate text-sm font-medium">{d.name}</span>
                       <span className="flex gap-1.5">

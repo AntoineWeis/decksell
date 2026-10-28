@@ -2,7 +2,7 @@
 // (affichage immédiat) et le serveur (qui revérifie avant d'enregistrer).
 
 import type { Estimate } from "./pricing.ts";
-import { COMMANDER_DECK_SIZE, commanderCopyLimit, normalizeName, type ParsedDeck } from "./decklist.ts";
+import { COMMANDER_DECK_SIZE, commanderCopyLimit, copiesByName, normalizeName, type ParsedDeck } from "./decklist.ts";
 
 export const MODERN_MIN_MAIN = 60;
 export const MODERN_MAX_SIDE = 15;
@@ -99,7 +99,8 @@ function checkCommander(estimate: Estimate, commanders: string[]): QualityReport
     );
   }
 
-  const copies = [...new Set(mainLines.filter((l) => l.quantity > commanderCopyLimit(l.name)).map((l) => l.name))];
+  // Toutes impressions confondues : deux lignes « Sol Ring » (éditions différentes) font deux exemplaires.
+  const copies = [...copiesByName(mainLines).values()].filter((c) => c.quantity > commanderCopyLimit(c.name)).map((c) => c.name);
   if (copies.length > 0) {
     blocking.push(`Un seul exemplaire par carte en Commander (hors terrains de base) : ${listNames(copies)}.`);
   }

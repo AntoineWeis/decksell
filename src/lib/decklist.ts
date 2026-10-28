@@ -1,7 +1,20 @@
 // Lecteur de decklists en texte (formats MTGO, Arena, Moxfield, MTGGoldfish, Archidekt).
 // Fonction pure : ne touche ni à la base ni au réseau.
 
-export type DeckEntry = { name: string; quantity: number };
+/**
+ * Une ligne de la liste. L'impression (édition, numéro de collection, foil) est gardée quand
+ * l'export la donne (Moxfield, Arena, Archidekt, MTGGoldfish) : elle fixe le prix de la carte.
+ */
+export type DeckEntry = {
+  name: string;
+  quantity: number;
+  /** Code d'édition Scryfall, en minuscules (ex. « mh3 »). */
+  set?: string;
+  /** Numéro de collection dans l'édition (ex. « 123 », « 45p »). */
+  number?: string;
+  /** Foil ou etched (« *F* », « *E* ») : prix foil. */
+  foil?: boolean;
+};
 export type ParseIssue = { line: number; text: string; reason: string };
 
 /** Format reconnu d'après la forme de la liste (voir detectFormat). */
@@ -69,11 +82,32 @@ function cleanName(raw: string): string {
     .trim();
 }
 
-function addEntry(list: DeckEntry[], name: string, quantity: number) {
-  const key = normalizeName(name);
-  const existing = list.find((e) => normalizeName(e.name) === key);
+/** Impression lue sur la ligne brute : « (MH3) 123 », « [MH3] », « *F* ». */
+function readPrint(raw: string): Pick<DeckEntry, "set" | "number" | "foil"> {
+  const out: Pick<DeckEntry, "set" | "number" | "foil"> = {};
+  if (/\*[FE]\*/i.test(raw)) out.foil = true;
+  const paren = /\(([A-Za-z0-9]{2,6})\)(?:\s+([A-Za-z0-9★-]+))?/.exec(raw);
+  if (paren) {
+    out.set = paren[1].toLowerCase();
+    if (paren[2]) out.number = paren[2];
+    return out;
+  }
+  // MTGGoldfish, MTGO : « [MH3] ». Les catégories Archidekt (« [Ramp] ») ne sont pas en majuscules.
+  const bracket = /\[([A-Z0-9]{2,5})\]/.exec(raw);
+  if (bracket) out.set = bracket[1].toLowerCase();
+  return out;
+}
+
+/** Même carte et même impression : une seule ligne. */
+const entryKey = (e: Pick<DeckEntry, "name" | "set" | "number" | "foil">) =>
+  [normalizeName(e.name), e.set ?? "", e.number ?? "", e.foil ? "f" : ""].join("|");
+
+function addEntry(list: DeckEntry[], name: string, quantity: number, print: Pick<DeckEntry, "set" | "number" | "foil"> = {}) {
+  const entry: DeckEntry = { name, quantity, ...print };
+  const key = entryKey(entry);
+  const existing = list.find((e) => entryKey(e) === key);
   if (existing) existing.quantity += quantity;
-  else list.push({ name, quantity });
+  else list.push(entry);
 }
 
 export function parseDecklist(text: string): ParsedDeck {
@@ -121,6 +155,7 @@ export function parseDecklist(text: string): ParsedDeck {
     }
     const quantity = Number(m[1]);
     const name = cleanName(m[2]);
+    const print = readPrint(m[2]);
     if (quantity < 1 || name === "") {
       errors.push({ line: lineNo, text: raw, reason: "Quantité ou nom invalide" });
       return;
@@ -129,9 +164,9 @@ export function parseDecklist(text: string): ParsedDeck {
     // Catégorie « Commander » d'Archidekt, sur la ligne elle-même.
     const tagged = /\[[^\]]*\bcommander\b[^\]]*\]/i.test(line);
     if (board === "commander" || tagged) {
-      addEntry(main, name, quantity);
+      addEntry(main, name, quantity, print);
       if (!commanders.some((c) => normalizeName(c) === normalizeName(name))) commanders.push(name);
-    } else addEntry(isSideprefix || board === "side" ? side : main, name, quantity);
+    } else addEntry(isSideprefix || board === "side" ? side : main, name, quantity, print);
   });
 
   const deck = detectFormat({ main, side, commanders, errors });
@@ -149,8 +184,20 @@ export function parseDecklist(text: string): ParsedDeck {
 
 const countOf = (list: DeckEntry[]) => list.reduce((n, e) => n + e.quantity, 0);
 
+/** Exemplaires par carte, toutes impressions confondues. */
+export function copiesByName(list: Pick<DeckEntry, "name" | "quantity">[]): Map<string, { name: string; quantity: number }> {
+  const out = new Map<string, { name: string; quantity: number }>();
+  for (const e of list) {
+    const key = normalizeName(e.name);
+    const known = out.get(key);
+    if (known) known.quantity += e.quantity;
+    else out.set(key, { name: e.name, quantity: e.quantity });
+  }
+  return out;
+}
+
 function isSingleton(list: DeckEntry[]): boolean {
-  return list.every((e) => e.quantity <= commanderCopyLimit(e.name));
+  return [...copiesByName(list).values()].every((e) => e.quantity <= commanderCopyLimit(e.name));
 }
 
 /**
@@ -185,7 +232,7 @@ function detectFormat(input: Pick<ParsedDeck, "main" | "side" | "commanders" | "
     isSingleton(main)
   ) {
     const merged = [...main];
-    for (const e of side) addEntry(merged, e.name, e.quantity);
+    for (const e of side) addEntry(merged, e.name, e.quantity, e);
     return build("commander", merged, [], side.map((e) => e.name));
   }
   if (sideCount === 0 && mainCount === COMMANDER_DECK_SIZE && isSingleton(main)) {
@@ -204,10 +251,12 @@ export function withFormat(deck: ParsedDeck, format: DetectedFormat, chosen: str
   const side: DeckEntry[] = [];
   const wanted = new Set(chosen.map(normalizeName));
   for (const e of deck.side) {
-    if (wanted.has(normalizeName(e.name))) addEntry(main, e.name, e.quantity);
+    if (wanted.has(normalizeName(e.name))) addEntry(main, e.name, e.quantity, e);
     else side.push({ ...e });
   }
-  const commanders = main.filter((e) => wanted.has(normalizeName(e.name))).slice(0, 2).map((e) => e.name);
+  const commanders = [...copiesByName(main.filter((e) => wanted.has(normalizeName(e.name)))).values()]
+    .slice(0, 2)
+    .map((e) => e.name);
   return { ...deck, main, side, mainCount: countOf(main), sideCount: countOf(side), format, commanders };
 }
 
@@ -244,7 +293,9 @@ export function lookupKeys(name: string): string[] {
  */
 export function formatDecklist(deck: Pick<ParsedDeck, "main" | "side"> & { commanders?: string[] }): string {
   const keys = new Set((deck.commanders ?? []).map(normalizeName));
-  const line = (e: DeckEntry) => `${e.quantity} ${e.name}`;
+  // Impression au format Moxfield : « 1 Sol Ring (C21) 263 *F* », relu tel quel.
+  const line = (e: DeckEntry) =>
+    `${e.quantity} ${e.name}${e.set ? ` (${e.set.toUpperCase()})${e.number ? ` ${e.number}` : ""}` : ""}${e.foil ? " *F*" : ""}`;
   const lines: string[] = [];
   if (keys.size > 0) {
     lines.push("Commander", ...deck.main.filter((e) => keys.has(normalizeName(e.name))).map(line), "", "Deck");

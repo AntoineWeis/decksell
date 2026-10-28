@@ -306,7 +306,7 @@ export function Estimator({ archetypes }: { archetypes: Archetype[] }) {
 function HowItWorks() {
   const steps = [
     ["Colle ta liste", "Exportée depuis MTGO, Arena, Moxfield ou MTGGoldfish, telle quelle."],
-    ["Lis le prix", "Chaque carte au prix de son impression la moins chère sur Cardmarket, avec la date des prix."],
+    ["Lis le prix", "Chaque carte au prix Cardmarket de l'édition indiquée (foil compris), sinon de l'impression la moins chère."],
     ["Complète", "Une carte sans prix ? Indique le tien : le total se met à jour."],
     ["Mets-le en vente", "Publie ton deck au prix de ton choix et suis la vente depuis ton espace."],
   ];
@@ -414,7 +414,7 @@ function Receipt({ estimate, pricesAsOf, deck }: { estimate: Estimate; pricesAsO
           )}
         </p>
         <p className="mt-5 text-xs leading-relaxed text-muted">
-          Prix Cardmarket (impression non-foil la moins chère), via Scryfall
+          Prix Cardmarket de l&apos;impression indiquée dans la liste, sinon de la moins chère, via Scryfall
           {pricesAsOf && <> · mis à jour le {new Date(pricesAsOf).toLocaleDateString("fr-FR")}</>}. Indicatif : ce
           n&apos;est pas un prix de revente.
         </p>
@@ -473,7 +473,7 @@ function MissingPrices({
           const foil = l.card?.minPriceEurFoil;
           return (
             <li
-              key={`${l.board}-${l.name}`}
+              key={`${l.board}-${l.name}-${l.requested?.set ?? ""}-${l.requested?.number ?? ""}-${l.foil ? "f" : ""}`}
               className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-surface px-3 py-2.5 ring-1 ring-line"
             >
               <div className="min-w-0 flex-1">
