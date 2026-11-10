@@ -124,8 +124,17 @@ async function save(records, seenPrints) {
   const fresh = records.filter((r) => !seenPrints.has(r.fingerprint) && seenPrints.add(r.fingerprint));
   if (fresh.length === 0 || DRY) return fresh.length;
   const { error } = await db.from("meta_decks").upsert(fresh, { onConflict: "source,source_id", ignoreDuplicates: true });
-  if (error) throw new Error(`Enregistrement impossible : ${error.message}`);
-  return fresh.length;
+  if (!error) return fresh.length;
+  if (error.code !== "23505") throw new Error(`Enregistrement impossible : ${error.message}`);
+  // Une liste du paquet est déjà en base sous une autre empreinte de source : on enregistre une par une,
+  // en ignorant seulement ces doublons.
+  let saved = 0;
+  for (const r of fresh) {
+    const { error: e } = await db.from("meta_decks").upsert(r, { onConflict: "source,source_id", ignoreDuplicates: true });
+    if (!e) saved++;
+    else if (e.code !== "23505") throw new Error(`Enregistrement impossible : ${e.message}`);
+  }
+  return saved;
 }
 
 async function importMtgo() {
@@ -134,8 +143,22 @@ async function importMtgo() {
   const archetypeNames = new Map((archetypes ?? []).map((a) => [a.slug, a.name]));
 
   // Déjà importés : événements (par adresse) et empreintes, pour ne relire que le nouveau.
-  const { data: existing, error } = await db.from("meta_decks").select("source_url, fingerprint").gte("event_date", sinceIso);
-  if (error && !DRY) throw new Error(`Lecture de meta_decks impossible : ${error.message} (exécute supabase/schema.sql)`);
+  // Par paquets : Supabase renvoie 1 000 lignes au plus par requête, et la fenêtre en compte bien plus.
+  const existing = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db
+      .from("meta_decks")
+      .select("source_url, fingerprint")
+      .gte("event_date", sinceIso)
+      .order("id")
+      .range(from, from + 999);
+    if (error) {
+      if (DRY) break;
+      throw new Error(`Lecture de meta_decks impossible : ${error.message} (exécute supabase/schema.sql)`);
+    }
+    existing.push(...data);
+    if (data.length < 1000) break;
+  }
   const doneEvents = new Set((existing ?? []).map((r) => r.source_url));
   const seenPrints = new Set((existing ?? []).map((r) => r.fingerprint));
 
@@ -354,5 +377,7 @@ try {
   console.log(`Terminé en ${Math.round((Date.now() - started) / 1000)} s.`);
 } catch (e) {
   console.error("ECHEC :", e.message);
+  // Sur GitHub, le message apparaît aussi dans les annotations du résumé de l'exécution.
+  if (process.env.GITHUB_ACTIONS) console.log(`::error title=Import méta Modern::${e.message}`);
   process.exit(1);
 }
